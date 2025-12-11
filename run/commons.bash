@@ -48,12 +48,18 @@ if [[ $check_simulation_conf == yes ]]; then
         echo "commons.bash: option is currently NOT set."
     fi
 
+    # Run quality-checks on paths (note that the user-provided runids will be
+    # used in paths, so we check them in the same way)
+    check_paths "$runid_wps"
+    check_paths "$runid_real"
     check_paths "$(pwd)"
     check_paths "$dir_wps"
+    check_paths "$dir_wrf"
+    check_paths "$dir_shared_data"
     check_paths "$dir_outputs"
     check_paths "$dir_work"
-    check_paths "$dir_grib"
     check_paths "$namelist_wps"
+    check_paths "$namelist_real"
 
     if [[ $- == *e* ]]; then
         echo "commons.bash: no problem detected in the simulation's config."

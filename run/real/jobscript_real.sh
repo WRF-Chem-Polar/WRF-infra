@@ -1,25 +1,35 @@
 #!/bin/bash
-#-------- Set up and run real for a WRF-Chem MOZART-MOSAIC run --------
 #
-# Louis Marelle, 2025/03
+# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
+# This script configures and runs real.exe and the associated pre-processors.
 #
 
-# Resources used
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=06:00:00
 
-CONDA_EXE="/proju/wrf-chem/software/micromamba/micromamba"
-CONDA_ROOT_PREFIX="/proju/wrf-chem/software/conda-envs/shared"
-CONDA_ENV_NAME="WRF-Chem-Polar"
-CONDA_RUN="$CONDA_EXE run --root-prefix=$CONDA_ROOT_PREFIX --name=$CONDA_ENV_NAME"
+#-------------#
+# Preparation #
+#-------------#
 
-#-------- Input --------
-CASENAME='WRF_CHEM_TEST'
-CASENAME_COMMENT='MOZARTMOSAIC'
+# We stop execution of the script as soon as a command fails
+set -e
 
-# Root directory with the compiled WRF executables (main/wrf.exe and main/real.exe)
-WRFDIR=~/WRF/src/WRF-Chem-Polar
+# Load simulation parameters and common resources
+source ../simulation.conf
+check_simulation_conf=yes
+source ../commons.bash
+
+submit_dir=$(pwd)
+
+#-------------------------------#
+# User-defined input parameters #
+#-------------------------------#
+
+# Note: these will be eventually moved to ../simulation.conf
 
 # Simulation start year and month
 yys=2012
@@ -32,19 +42,10 @@ mme=03
 dde=08
 hhe=00
 
-NAMELIST="namelist.input.YYYY"
+#-------------#
+# Environment #
+#-------------#
 
-
-#-------- Parameters --------
-# Root directory for WRF input/output
-OUTDIR_ROOT="/data/$(whoami)/WRFChem/"
-SCRATCH_ROOT="/scratchu/$(whoami)"
-# WRF-Chem input data directory
-WRFCHEM_INPUT_DATA_DIR="/proju/wrf-chem/input-data/"
-
-
-#-------- Set up job environment --------
-# Load modules used for WRF compilation
 module purge
 module load gcc/11.2.0
 module load openmpi/4.0.7
@@ -57,76 +58,73 @@ module load jasper/2.0.32
 PATH=$PATH:/home/marelle/WRF/src/wrfchem-preprocessors-dev/mozbc:/home/marelle/WRF/src/wrfchem-preprocessors-dev/wes-coldens:/home/marelle/WRF/src/wrfchem-preprocessors-dev/fire_emis/:/home/marelle/WRF/src/wrfchem-preprocessors-dev/megan_bio_emiss:
 
 # Set run start and end date
-date_s="$yys-$mms-$dds"
-date_e="$yye-$mme-$dde"
 
+#------------------------------------#
+# Prepare REAL files and directories #
+#------------------------------------#
 
-#-------- Set up real input and output directories & files  --------
-# Run id
 ID="$(date +"%Y%m%d").$SLURM_JOBID"
 
-# Case name for the output folder
-if [ -n "$CASENAME_COMMENT" ]; then
-  CASENAME_COMMENT="_${CASENAME_COMMENT}"
-fi
-
-WPSDIR="${OUTDIR_ROOT}/met_em_${CASENAME}_$(date -d "$date_s" "+%Y")"
+WPSDIR="$dir_outputs/met_em_${runid_wps}_$(date -d "$date_s" "+%Y")"
 
 # Directory containing real.exe output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="${OUTDIR_ROOT}/real_${CASENAME}${CASENAME_COMMENT}_$(date -d "$date_s" "+%Y")"
+REALDIR="$dir_outputs/real_${runid_real}_$(date -d "$date_s" "+%Y")"
 if [ -d "$REALDIR" ]; then
   rm -f "$REALDIR/"*
 else
   mkdir -pv "$REALDIR"
 fi
 
-# Also create a temporary scratch run directory
-SCRATCH="$SCRATCH_ROOT/real_${CASENAME}${CASENAME_COMMENT}_$(date -d "$date_s" "+%Y").${ID}.scratch"
+# Also create a temporary work directory
+SCRATCH="$dir_work/real_${runid_real}_$(date -d "$date_s" "+%Y").${ID}.scratch"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
 
 # Write the info on input/output directories to run log file
+date_s="$yys-$mms-$dds"
+date_e="$yye-$mme-$dde"
 echo " "
 echo "-------- $SLURM_JOB_NAME: Launch real.exe and preprocessors --------"
 echo "Running from $date_s to $date_e"
-echo "Running version real.exe from $WRFDIR"
+echo "Running version real.exe from $dir_wrf"
 echo "Running on scratchdir $SCRATCH"
 echo "Writing output to $REALDIR"
 echo "Input files from WPS taken from $WPSDIR"
 
 # Save this slurm script to the output directory
-cp "$0" "$REALDIR/jobscript_real.sh"
+cp $0 $REALDIR/jobscript_real.sh
 
-
-#-------- Run real and preprocessors --------
-cd "$SCRATCH" || exit
+cd $SCRATCH
 
 #---- Copy all needed files to scrach space
 # Input files from run setup directory
-cp "$SLURM_SUBMIT_DIR/"* "$SCRATCH/"
-# Executables and WRF aux files from WRFDIR
-cp "$WRFDIR/run/"* "$SCRATCH/"
-cp "$WRFDIR/main/real.exe" "$SCRATCH/real.exe" || exit
+cp $SLURM_SUBMIT_DIR/* $SCRATCH/
+# Copy executables and WRF auxiliary files to work directory
+cp $dir_wrf/run/* $SCRATCH/
+cp $dir_wrf/main/real.exe $SCRATCH/real.exe
 # met_em WPS files from WPSDIR
-cp "${WPSDIR}/met_em.d"* "$SCRATCH/" || exit
+cp ${WPSDIR}/met_em.d* $SCRATCH/
 
 #---- Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
-wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/${NAMELIST}" | sed -n -e 's/,.*//p')
-wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/${NAMELIST}" | sed -n -e 's/,.*//p')
-wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/${NAMELIST}" | sed -n -e 's/,.*//p')
-wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/${NAMELIST}" | sed -n -e 's/,.*//p')
+wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))
 
-#---- Run real.exe without bio emissions
+#-----------------------------------------#
+# Run real.exe without biogenic emissions #
+#-----------------------------------------#
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: run real.exe without bio emissions--------"
 echo " "
 # Prepare the real.exe namelist, set up run start and end dates
-cp "$SLURM_SUBMIT_DIR/${NAMELIST}" namelist.input || exit
+cp $SLURM_SUBMIT_DIR/$namelist_real namelist.input
 sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
 sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
 sed -i "s/__STARTDAY__/${dds}/g" namelist.input
@@ -142,13 +140,17 @@ mpirun ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
 
-#---- Run megan_bio_emiss preprocessor (needed only for bioemiss_opt = MEGAN,
-# creates a wrfbiochemi_* file)
+#---------------------#
+# Run megan_bio_emiss #
+#---------------------#
+
+# This step creates a wrfbiochemi_* file
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: run megan_bio_emiss --------"
 echo " "
 # megan_bio_emiss often SIGSEGVs at the end but this is not an issue
-MEGANEMIS_DIR="$WRFCHEM_INPUT_DATA_DIR/natural_emissions/terrestrial/megan"
+MEGANEMIS_DIR="$dir_shared_data/natural_emissions/terrestrial/megan"
 ln -s "${MEGANEMIS_DIR}/"*".nc" .
 sed -i "s:MEGANEMIS_DIR:${MEGANEMIS_DIR}:g" megan_bioemiss.inp
 sed -i "s:WRFRUNDIR:$PWD/:g" megan_bioemiss.inp
@@ -162,12 +164,15 @@ fi
 megan_bio_emiss < megan_bioemiss.inp > megan_bioemiss.out
 tail megan_bioemiss.out
 
-#---- Rerun real.exe with bio emissions
+#-----------------------------------------#
+# Re-run real.exe with biogenic emissions #
+#-----------------------------------------#
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: run real.exe with bio emissions --------"
 echo " "
 # Prepare the real.exe namelist, set up run start and end dates
-cp "$SLURM_SUBMIT_DIR/${NAMELIST}" namelist.input
+cp $SLURM_SUBMIT_DIR/$namelist_real namelist.input
 sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
 sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
 sed -i "s/__STARTDAY__/${dds}/g" namelist.input
@@ -183,14 +188,18 @@ mpirun ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
 
-#---- Run mozbc preprocessor (use initial and boundary conditions for chemistry +
+#-----------#
+# Run mozbc #
+#-----------#
+
+# (use initial and boundary conditions for chemistry +
 # aerosols from a MOZART global run, updates the chemistry and aerosol fields
 # in wrfinput* and wrfbdy* files)
 echo " "
 echo "-------- $SLURM_JOB_NAME: run mozbc --------"
 echo " "
 # Find the boundary condition file autmatically in MOZBC_DIR, assuming it is called e.g. cesm-201202.nc
-MOZBC_DIR="$WRFCHEM_INPUT_DATA_DIR/chem_boundary/cesm/"
+MOZBC_DIR="$dir_shared_data/chem_boundary/cesm/"
 MOZBC_FILE="$(ls -1 --color=never "$MOZBC_DIR/cesm-$yys$mms"*".nc" | xargs -n 1 basename | tail -n1)"
 echo "Run MOZBC for $MOZBC_DIR/$MOZBC_FILE"
 if [ -f "$MOZBC_DIR/$MOZBC_FILE" ]; then
@@ -204,7 +213,11 @@ else
 fi
 tail mozbc.out
 
-#---- Run wes-coldens preprocessor (needed only for the MOZART gas phase mechanism, creates a
+#----------------------------#
+# Run wesely and exo_coldens #
+#----------------------------#
+
+# (needed only for the MOZART gas phase mechanism, creates a
 # wrf_season* and exo_coldens* file, containing seasonal dry deposition
 # coefficients and trace gases above the domain top, respectively)
 echo " "
@@ -212,23 +225,28 @@ echo "-------- $SLURM_JOB_NAME: run wesely and exo_coldens --------"
 echo " "
 sed -i "s:WRFRUNDIR:$PWD/:g" wesely.inp
 sed -i "s:WRFRUNDIR:$PWD/:g" exo_coldens.inp
-cp "$WRFCHEM_INPUT_DATA_DIR/dry_deposition/"*"nc" "$SCRATCH"
+cp $dir_shared_data/dry_deposition/*.nc $SCRATCH
 wesely < wesely.inp >  wesely.out
 tail wesely.out
-cp "$WRFCHEM_INPUT_DATA_DIR/photolysis/"*"nc" "$SCRATCH"
+cp $dir_shared_data/photolysis/*.nc $SCRATCH
 exo_coldens < exo_coldens.inp > exo_coldens.out
 tail exo_coldens.out
 # Bug fix, XLONG can sometimes be empty in exo_coldens_dXX
 ncks -x -v XLONG,XLAT exo_coldens_d01 -O exo_coldens_d01
 ncks -A -v XLONG,XLAT wrfinput_d01 exo_coldens_d01
 
-#---- Run fire_emiss preprocessor (create fire emission files, wrffirechemi*)
+#---------------#
+# Run fire_emis #
+#---------------#
+
+# This steps creates fire emission files (wrffirechemi*)
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: run fire_emis --------"
 echo " "
 # Find the fire emission file autmatically in FIREEMIS_DIR, assuming it is called e.g. GLOBAL_FINNv1.5_2012.MOZ.txt
 #TODO update to latest version
-FIREEMIS_DIR="$WRFCHEM_INPUT_DATA_DIR/fire_emissions/finn/version1/"
+FIREEMIS_DIR="$dir_shared_data/fire_emissions/finn/version1/"
 FIREEMIS_FILE="$(ls -1 --color=never "$FIREEMIS_DIR/"*"v1.5"*"_${yys}"*"MOZ"*".txt" | xargs -n 1 basename | tail -n1)"
 echo "Run FIREEMIS for $FIREEMIS_DIR/$FIREEMIS_FILE"
 if [ -f "$FIREEMIS_DIR/$FIREEMIS_FILE" ]; then
@@ -244,15 +262,23 @@ else
 fi
 tail fire_emis.out
 
-#---- Run the python anthro emission preprocessor (create wrfchemi* files)
+#---------------------#
+# Run cams2wrfchem.py #
+#---------------------#
+
+# This step creates wrfchemi* files
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: run emission script --------"
 echo " "
-ANTHRO_EMS_DIR="$WRFCHEM_INPUT_DATA_DIR/anthro_emissions/cams/"
-cp "$SLURM_SUBMIT_DIR/cams2wrfchem.py" "$SCRATCH/"
-$CONDA_RUN python -u cams2wrfchem.py --start ${date_s} --end ${date_e} --domain 1 --dir-em-in ${ANTHRO_EMS_DIR}
+ANTHRO_EMS_DIR="$dir_shared_data/anthro_emissions/cams/"
+cp $SLURM_SUBMIT_DIR/cams2wrfchem.py $SCRATCH/
+$conda_run python -u cams2wrfchem.py --start ${date_s} --end ${date_e} --domain 1 --dir-em-in ${ANTHRO_EMS_DIR}
 
-#---- Initialize snow on sea ice
+#----------------------------#
+# Initialize snow on sea ice #
+#----------------------------#
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: Initialize snow on sea ice --------"
 echo " "
@@ -267,17 +293,17 @@ if ((mms_zero < 5 || mms_zero > 11)); then
   ncap2 -s 'where(SEAICE>0. && XLAT>65.) SNOWC=1.;' wrfinput_d01 -O wrfinput_d01
 fi
 
-#-------- Transfer real.exe output  --------
+#----------#
+# Finalize #
+#----------#
+
 echo " "
 echo "-------- $SLURM_JOB_NAME: transfer real.exe output --------"
 echo " "
-# Clean up
+
 rm -f ./met_em*
-# Transfer files to the output dir
 cp ./*.inp ./*.out ./prep*.m ./rsl* "$REALDIR/"
 cp ./*d0* "$REALDIR/"
 cp ./namelist.input "$REALDIR/namelist.input.real"
 cp ./namelist.output "$REALDIR/"
-
-# Remove scratch dir
 rm -rf "$SCRATCH"
