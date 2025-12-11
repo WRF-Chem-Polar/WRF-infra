@@ -63,6 +63,9 @@ PATH=$PATH:/home/marelle/WRF/src/wrfchem-preprocessors-dev/mozbc:/home/marelle/W
 # Prepare REAL files and directories #
 #------------------------------------#
 
+date_s="$yys-$mms-$dds"
+date_e="$yye-$mme-$dde"
+
 ID="$(date +"%Y%m%d").$SLURM_JOBID"
 
 WPSDIR="$dir_outputs/met_em_${runid_wps}_$(date -d "$date_s" "+%Y")"
@@ -82,8 +85,6 @@ mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
 
 # Write the info on input/output directories to run log file
-date_s="$yys-$mms-$dds"
-date_e="$yye-$mme-$dde"
 echo " "
 echo "-------- $SLURM_JOB_NAME: Launch real.exe and preprocessors --------"
 echo "Running from $date_s to $date_e"
@@ -161,7 +162,9 @@ else
   sed -i "s:SMONTH:$((10#$mms - 1)):g" megan_bioemiss.inp
   sed -i "s:EMONTH:$mme:g" megan_bioemiss.inp
 fi
+set +e # Temporary until we fix the seg fault in megan_bio_emiss
 megan_bio_emiss < megan_bioemiss.inp > megan_bioemiss.out
+set -e # Temporary until we fix the seg fault in megan_bio_emiss
 tail megan_bioemiss.out
 
 #-----------------------------------------#
@@ -307,3 +310,4 @@ cp ./*d0* "$REALDIR/"
 cp ./namelist.input "$REALDIR/namelist.input.real"
 cp ./namelist.output "$REALDIR/"
 rm -rf "$SCRATCH"
+echo "Successful execution of script $0"
