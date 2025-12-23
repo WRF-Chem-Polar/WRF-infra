@@ -6,10 +6,4 @@
 #
 # Environment for WRF on Spirit.
 
-CONDA_EXE="/proju/wrf-chem/software/micromamba/micromamba"
-CONDA_ROOT_PREFIX="/proju/wrf-chem/software/conda-envs/shared"
-CONDA_ENV_NAME="WRF-Chem-Polar"
-CONDA_RUN="$CONDA_EXE run --root-prefix=$CONDA_ROOT_PREFIX --name=$CONDA_ENV_NAME"
-
-NETCDF_FORTRAN_ROOT="$CONDA_ROOT_PREFIX/envs/$CONDA_ENV_NAME"
-HDF5_ROOT="$CONDA_ROOT_PREFIX/envs/$CONDA_ENV_NAME"
+module load /proju/wrf-chem/software/libraries/gcc-v9.4.0/netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module

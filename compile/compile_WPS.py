@@ -63,8 +63,8 @@ def write_job_script(opts):
 
     # Add the call to ./configure and ./compile
     lines.append('echo -e "%d" | \\' % setup)
-    lines.append("$CONDA_RUN ./configure --build-grib2-libs")
-    lines.append("$CONDA_RUN ./compile")
+    lines.append("./configure --build-grib2-libs")
+    lines.append("./compile")
 
     # Write the script
     with open(script, mode="x") as f:
