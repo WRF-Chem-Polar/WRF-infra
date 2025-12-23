@@ -11,6 +11,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=01:00:00
 
+[[ -f ../header.txt ]] && cat ../header.txt
+
 #-------------#
 # Preparation #
 #-------------#

@@ -10,6 +10,7 @@
 #SBATCH --mem=60G
 #SBATCH --time=24:00:00
 
+[[ -f ../header.txt ]] && cat ../header.txt
 
 #-------- Input --------
 CASENAME='WRF_CHEM_TEST'
