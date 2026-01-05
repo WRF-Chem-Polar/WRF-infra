@@ -1,0 +1,37 @@
+
+###################################################################################################
+#                                                                                                 #
+#      A simulation orchestrated by WRF-infra (https://github.com/WRF-Chem-Polar/WRF-infra)       #
+#                                                                                                 #
+###################################################################################################
+#                                                                                                 #
+#                                                                                                 #
+#        ~`¨-,    _ ~~'¨¨¨¨`~~__                                 ,__._                            #
+#       /   ^.  \-~              ~ \  _~~_ .                 ,./°     `¨`~.                       #
+#       (   \ \                      ~/  _  \            _~-/              ``-,.                  #
+#        \          ,            ~     /    |     _~~-°¨`.__.     (o)     /¨    ``;,              #
+#        /         /  __.          _       /     /.--,.,.,-~~~., .,       \         `\.           #
+#        \            \^-`        <^/    /                ``.            _!_-~,.       `.         #
+#       _/                  |            ~                   \, _,.--^¨``   ~\  `        \.       #
+#      /           /   (     |,--_,     |                     |¨_ .            -,          \      #
+#    _/     \     /     (    /    \    /                     / /                 \          \     #
+#   /         |   |      \   `____/    / \                  |                     \          \    #
+#   /          \   (       ,_        _/  |                  !                      !          !   #
+#  /            \            ` ¨    /    \                  \                       \          \  #
+#  /              \            /                            |                        \         `  #
+#                                                                                                 #
+#                                                                                                 #
+###################################################################################################
+#                                                                                                 #
+# ASCII art:                                                                                      #
+# - Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001)                       #
+# - License: Creative Commons Attribution Share Alike 3.0 Unported (CC-BY-SA-3.0)                 #
+#                                                                                                 #
+# Based on the following works (also licensed under the CC-BY-SA-3.0):                            #
+# - Photo "Polar Bear (Sow), Arctic National Wildlife Refuge, Alaska" by Alan D. Wilson           #
+#   (https://commons.wikimedia.org/wiki/File:Polar_Bear_ANWR_10.jpg)                              #
+# - Photo "Emperor Penguin in Adelie Land, Antarctica" by Samuel Blanc                            #
+#   (https://commons.wikimedia.org/wiki/File:Emperor_Penguin_Manchot_empereur.jpg)                #
+#                                                                                                 #
+###################################################################################################
+
