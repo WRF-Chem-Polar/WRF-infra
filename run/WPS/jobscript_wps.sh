@@ -4,7 +4,7 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
-# This script configure and runs WPS, the WRF pre-processor system.
+# This script configures and runs WPS, the WRF pre-processor system.
 #
 
 #SBATCH --nodes=1
@@ -33,8 +33,6 @@ submit_dir=$(pwd)
 
 # Note: these will be eventually moved to ../simulation.conf
 
-CASENAME='WRF_CHEM_TEST'
-
 # Simulation start year and month
 yys=2012
 mms=03
@@ -60,7 +58,6 @@ USE_CHLA_DMS_WPS=true
 # Environment #
 #-------------#
 
-# Load modules used for WPS compilation
 module purge
 module load gcc/11.2.0
 module load openmpi/4.0.7
@@ -109,7 +106,7 @@ fi
 #-----------------------------------#
 
 # Directory containing WPS output (i.e. met_em files)
-OUTDIR="$dir_outputs/met_em_${CASENAME}_$(date -d "$date_s" "+%Y")"
+OUTDIR="$dir_outputs/met_em_${runid_wps}_$(date -d "$date_s" "+%Y")"
 if [ -d "$OUTDIR" ]
 then
   echo "Warning: directory $OUTDIR already exists, overwriting"
@@ -119,7 +116,7 @@ else
 fi
 
 # Also create a temporary run directory
-SCRATCH="$dir_work/met_em_${CASENAME}_$(date -d "$date_s" "+%Y").$SLURM_JOBID"
+SCRATCH="$dir_work/met_em_${runid_wps}_$(date -d "$date_s" "+%Y").$SLURM_JOBID"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
@@ -161,10 +158,12 @@ rm -rf geogrid
 #------------#
 
 echo "-------- Running ungrib.exe --------"
+
 # Create a directory containing links to the grib files of interest
 mkdir -v grib_links
 
 # Create links to the GRIB files in grib_links/
+dir_grib=$dir_shared_data/met_boundary
 date_ungrib=$(date +"%Y%m%d" -d "$date_s")
 while (( $(date -d "$date_ungrib" "+%s") <= $(date -d "$date_e" "+%s") )); do
   if (( INPUT_DATA_SELECT==0 )); then
