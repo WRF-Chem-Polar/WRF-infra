@@ -78,28 +78,56 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Prepare the work directory
 if os.path.lexists(args.work_dir):
     raise RuntimeError("Work directory already exists.")
 commons.run(["mkdir", "-v", "-p", args.work_dir])
 
-# Install first version of WRF
-dir_compile = os.path.join(commons.path_of_repo(), "compile")
-cmd_wrf = [
-    os.path.join(dir_compile, "compile_WRF.py"),
-    "--repository",
-    args.wrf_repository,
-    "--git",
-    args.git,
-]
-dir_wrf = os.path.join(args.work_dir, "WRF_1")
-stdout = commons.run_stdout(
-    cmd_wrf + ["--destination", dir_wrf, "--commit", args.wrf_commit_1]
-)
-jobid_wrf_1 = get_job_id(stdout)
+job_ids = dict()
+for i in range(1, 3):
+    # Install WRF
+    dir_wrf = os.path.join(args.work_dir, "WRF_%d" % i)
+    cmd_wrf = [
+        os.path.join(commons.path_of_repo(), "compile", "compile_WRF.py"),
+        "--repository",
+        args.wrf_repository,
+        "--commit",
+        getattr(args, "wrf_commit_%d" % i),
+        "--destination",
+        dir_wrf,
+        "--git",
+        args.git,
+    ]
+    job_ids["install_wrf_%d" % i] = get_job_id(commons.run_stdout(cmd_wrf))
+    # Prepare WPS installation
+    dir_wps = os.path.join(args.work_dir, "WPS_%d" % i)
+    cmd_wps = [
+        os.path.join(commons.path_of_repo(), "compile", "compile_WPS.py"),
+        "--repository",
+        args.wps_repository,
+        "--commit",
+        args.wps_commit,
+        "--destination",
+        dir_wps,
+        "--wrfdir",
+        dir_wrf,
+        "--git",
+        args.git,
+        "--dry",
+        "yes",
+    ]
+    commons.run(cmd_wps)
+    # Install WPS
+    cmd_wps = [
+        "sbatch",
+        "-d",
+        "afterok:%s" % job_ids["install_wrf_%d" % i],
+        "compile.job",
+    ]
+    stdout = commons.run_stdout(cmd_wps, cwd=dir_wps)
+    job_ids["install_wps_%d" % i] = get_job_id(stdout)
 
-# Install second version of WRF
-dir_wrf = os.path.join(args.work_dir, "WRF_2")
-stdout = commons.run_stdout(
-    cmd_wrf + ["--destination", dir_wrf, "--commit", args.wrf_commit_2]
-)
-jobid_wrf_2 = get_job_id(stdout)
+# Some verbose
+print("\nSummary of job IDs:")
+for key, value in job_ids.items():
+    print(f"    {key}: {value}")
