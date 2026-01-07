@@ -10,6 +10,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=06:00:00
+#SBATCH --partition=zen16
+#SBATCH --mem=6G
 
 [[ -f ../header.txt ]] && cat ../header.txt
 
