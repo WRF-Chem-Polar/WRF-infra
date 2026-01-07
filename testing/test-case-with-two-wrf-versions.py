@@ -47,14 +47,12 @@ parser.add_argument(
     default="4.6.0",
 )
 parser.add_argument(
-    "--wrf-commit-1",
-    help="First Git commit to use for WRF (any valid Git reference).",
-    default="HEAD~1",
-)
-parser.add_argument(
-    "--wrf-commit-2",
-    help="Second Git commit to use for WRF (any valid Git reference).",
-    default="HEAD",
+    "--wrf-commits",
+    help=(
+        "Git commits to use for WRF (comma-separated list of valid Git "
+        "references)."
+    ),
+    default="HEAD,HEAD~1",
 )
 parser.add_argument(
     "--work-dir",
@@ -77,6 +75,7 @@ parser.add_argument(
     default="git",
 )
 args = parser.parse_args()
+wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
 
 # Prepare the work directory
 if os.path.lexists(args.work_dir):
@@ -84,7 +83,9 @@ if os.path.lexists(args.work_dir):
 commons.run(["mkdir", "-v", "-p", args.work_dir])
 
 job_ids = dict()
-for i in range(1, 3):
+for i in range(1, len(wrf_commits) + 1):
+    wrf_commit = wrf_commits[i - 1]
+
     # Install WRF
     dir_wrf = os.path.join(args.work_dir, "WRF_%d" % i)
     cmd_wrf = [
@@ -99,6 +100,7 @@ for i in range(1, 3):
         args.git,
     ]
     job_ids["install_wrf_%d" % i] = get_job_id(commons.run_stdout(cmd_wrf))
+
     # Prepare WPS installation
     dir_wps = os.path.join(args.work_dir, "WPS_%d" % i)
     cmd_wps = [
@@ -117,6 +119,7 @@ for i in range(1, 3):
         "yes",
     ]
     commons.run(cmd_wps)
+
     # Install WPS
     cmd_wps = [
         "sbatch",
