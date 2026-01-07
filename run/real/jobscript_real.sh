@@ -301,7 +301,7 @@ echo "-------- $SLURM_JOB_NAME: transfer real.exe output --------"
 echo " "
 
 rm -f ./met_em*
-cp ./*.inp ./*.out ./prep*.m ./rsl* "$REALDIR/"
+cp ./*.inp ./*.out ./rsl* "$REALDIR/"
 cp ./*d0* "$REALDIR/"
 cp ./namelist.input "$REALDIR/namelist.input.real"
 cp ./namelist.output "$REALDIR/"
