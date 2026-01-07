@@ -126,6 +126,8 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     last_job = f"Install WPS {i}"
     job_ids[last_job] = get_job_id(commons.run_stdout(cmd_wps, cwd=dir_wps))
 
+    # TODO: change the scratch and output directory in simulation.conf
+
     # Run all model components
     for job in ["WPS", "real", "WRF-Chem"]:
         dir_run = [os.path.join(commons.path_of_repo()), "run", job]
