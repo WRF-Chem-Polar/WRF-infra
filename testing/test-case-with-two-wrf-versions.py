@@ -83,26 +83,27 @@ if os.path.lexists(args.work_dir):
 commons.run(["mkdir", "-v", "-p", args.work_dir])
 
 job_ids = dict()
-for i in range(1, len(wrf_commits) + 1):
-    wrf_commit = wrf_commits[i - 1]
+for i, wrf_commit in enumerate(wrf_commits, start=1):
+    print(f"\nProcessing commit {i}: {wrf_commit}...")
 
     # Install WRF
-    dir_wrf = os.path.join(args.work_dir, "WRF_%d" % i)
+    dir_wrf = os.path.join(args.work_dir, f"WRF_{i}")
     cmd_wrf = [
         os.path.join(commons.path_of_repo(), "compile", "compile_WRF.py"),
         "--repository",
         args.wrf_repository,
         "--commit",
-        getattr(args, "wrf_commit_%d" % i),
+        wrf_commit,
         "--destination",
         dir_wrf,
         "--git",
         args.git,
     ]
-    job_ids["install_wrf_%d" % i] = get_job_id(commons.run_stdout(cmd_wrf))
+    last_job = f"Install WRF {i}"
+    job_ids[last_job] = get_job_id(commons.run_stdout(cmd_wrf))
 
     # Prepare WPS installation
-    dir_wps = os.path.join(args.work_dir, "WPS_%d" % i)
+    dir_wps = os.path.join(args.work_dir, f"WPS_{i}")
     cmd_wps = [
         os.path.join(commons.path_of_repo(), "compile", "compile_WPS.py"),
         "--repository",
@@ -121,14 +122,23 @@ for i in range(1, len(wrf_commits) + 1):
     commons.run(cmd_wps)
 
     # Install WPS
-    cmd_wps = [
-        "sbatch",
-        "-d",
-        "afterok:%s" % job_ids["install_wrf_%d" % i],
-        "compile.job",
-    ]
-    stdout = commons.run_stdout(cmd_wps, cwd=dir_wps)
-    job_ids["install_wps_%d" % i] = get_job_id(stdout)
+    cmd_wps = ["sbatch", "-d", f"afterok:{job_ids[last_job]}", "compile.job"]
+    last_job = f"Install WPS {i}"
+    job_ids[last_job] = get_job_id(commons.run_stdout(cmd_wps, cwd=dir_wps))
+
+    # Run all model components
+    for job in ["WPS", "real", "WRF-Chem"]:
+        dir_run = [os.path.join(commons.path_of_repo()), "run", job]
+        jobscript = f"jobscript_{job.lower().replace('-', '')}.sh"
+        cmd_run = [
+            "sbatch",
+            "-d",
+            f"afterok:{job_ids[last_job]}",
+            os.path.join(dir_run, jobscript),
+        ]
+        stdout = commons.run_stdout(cmd_run, cwd=dir_run)
+        last_job = f"Run {job} {i}"
+        job_ids[last_job] = get_job_id(stdout)
 
 # Some verbose
 print("\nSummary of job IDs:")
