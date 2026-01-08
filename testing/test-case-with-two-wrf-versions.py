@@ -130,7 +130,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
 
     # Run all model components
     for job in ["WPS", "real", "WRF-Chem"]:
-        dir_run = [os.path.join(commons.path_of_repo()), "run", job]
+        dir_run = os.path.join(commons.path_of_repo(), "run", job)
         jobscript = f"jobscript_{job.lower().replace('-', '')}.sh"
         cmd_run = [
             "sbatch",
@@ -141,6 +141,13 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         stdout = commons.run_stdout(cmd_run, cwd=dir_run)
         last_job = f"Run {job} {i}"
         job_ids[last_job] = get_job_id(stdout)
+
+# Launch the job to analyze the results of the simulation
+dependencies = ",".join(f"afterok:{job_id}" for job_id in job_ids.values())
+dir_job = os.path.join(commons.path_of_repo(), "testing")
+cmd_run = ["sbatch", "-d", dependencies, "analyse-results.job"]
+last_job = "Analyze results"
+job_ids[last_job] = get_job_id(commons.run_stdout(cmd_run, cwd=dir_job))
 
 # Some verbose
 print("\nSummary of job IDs:")
