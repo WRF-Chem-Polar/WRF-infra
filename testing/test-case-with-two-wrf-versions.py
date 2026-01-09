@@ -37,6 +37,28 @@ def get_job_id(stdout):
     return matches[0].split()[-1]
 
 
+def replace_options_in_conf(filepath, new_options):
+    """Replace options by new values in given configuration file.
+
+    Parameters
+    ----------
+    filepath: str
+        Path to the configuration file.
+    new_options: dict
+        Dictionary of the new values (the keys are the names of the options).
+
+    """
+    with open(filepath, mode="r") as f:
+        lines = f.read().split("\n")
+    for opt, value in new_options.items():
+        idx = [i for i, line in enumerate(lines) if line.startswith(f"{opt}=")]
+        if len(idx) != 1:
+            raise RuntimeError(f"Could not modify option {opt} in {filepath}.")
+        lines[idx[0]] = f"{opt}={value}"
+    with open(filepath, mode="w") as f:
+        f.write("\n".join(lines))
+
+
 parser = argparse.ArgumentParser(
     description="Run and compare test case for two versions of WRF.",
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -133,7 +155,17 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     last_job = f"Install WPS {i}"
     job_ids[last_job] = get_job_id(commons.run_stdout(cmd_wps, cwd=dir_wps))
 
-    # TODO: change the scratch and output directory in simulation.conf
+    # Clone WRF-infra and update simulation.conf
+    dir_infra = os.path.join(args.work_dir, f"WRF-infra_{i}")
+    commons.run([args.git, "clone", commons.path_of_repo(), dir_infra])
+    filepath = os.path.join(dir_infra, "run", "simulation.conf")
+    new_options = dict(
+        dir_wps=dir_wps,
+        dir_wrf=dir_wrf,
+        dir_outputs=os.path.join(args.work_dir, f"outputs_{i}"),
+        dir_work=os.path.join(args.work_dir, f"scratch_{i}"),
+    )
+    replace_options_in_conf(filepath, new_options)
 
     # Run all model components
     for job in ["WPS", "real", "WRF-Chem"]:
