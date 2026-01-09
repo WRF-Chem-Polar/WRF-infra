@@ -34,7 +34,7 @@ def get_job_id(stdout):
     ]
     if len(matches) != 1:
         raise RuntimeError("Could not determine unique job ID.")
-    return matches[0].split[-1]
+    return matches[0].split()[-1]
 
 
 parser = argparse.ArgumentParser(
@@ -44,7 +44,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--wps-commit",
     help="Git commit to use for WPS (any valid Git reference).",
-    default="4.6.0",
+    default="v4.6.0",
 )
 parser.add_argument(
     "--wrf-commits",
@@ -74,6 +74,11 @@ parser.add_argument(
     help="Git command (useful to use a non-default installation).",
     default="git",
 )
+parser.add_argument(
+    "--python",
+    help="Python command (useful to use a non-default installation).",
+    default="python",
+)
 args = parser.parse_args()
 wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
 
@@ -89,6 +94,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     # Install WRF
     dir_wrf = os.path.join(args.work_dir, f"WRF_{i}")
     cmd_wrf = [
+        args.python,
         os.path.join(commons.path_of_repo(), "compile", "compile_WRF.py"),
         "--repository",
         args.wrf_repository,
@@ -105,6 +111,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     # Prepare WPS installation
     dir_wps = os.path.join(args.work_dir, f"WPS_{i}")
     cmd_wps = [
+        args.python,
         os.path.join(commons.path_of_repo(), "compile", "compile_WPS.py"),
         "--repository",
         args.wps_repository,
