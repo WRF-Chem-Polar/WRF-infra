@@ -17,7 +17,7 @@ CASENAME='WRF_CHEM_TEST'
 CASENAME_COMMENT='MOZARTMOSAIC'
 
 # Root directory with the compiled WRF executables (main/wrf.exe and main/real.exe)
-WRFDIR=~/WRF/src/WRF-Chem-Polar
+WRFDIR=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Polar
 
 # Simulation start year and month
 yys=2012
@@ -35,7 +35,7 @@ NAMELIST="namelist.input.YYYY"
 
 #-------- Parameters --------
 # Root directory for WRF input/output
-OUTDIR_ROOT="/data/$(whoami)/WRFChem/"
+OUTDIR_ROOT="/data/$(whoami)/WRF-Chem-Polar/"
 SCRATCH_ROOT="/scratchu/$(whoami)"
 INDIR_ROOT="$OUTDIR_ROOT"
 # WRF-Chem input data directory
@@ -45,12 +45,7 @@ WRFCHEM_INPUT_DATA_DIR="/proju/wrf-chem/input-data/"
 #-------- Set up job environment --------
 # Load modules used for WRF compilation
 module purge
-module load gcc/11.2.0
-module load openmpi/4.0.7
-module load netcdf-c/4.7.4
-module load netcdf-fortran/4.5.3
-module load hdf5/1.10.7
-module load jasper/2.0.32
+module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module
 
 # Set run start and end date
 date_s="$yys-$mms-$dds"
@@ -99,10 +94,9 @@ cd "$SCRATCH" || exit
 cp "$SLURM_SUBMIT_DIR/"* "$SCRATCH/"
 # Executables and WRF aux files from WRFDIR
 cp "$WRFDIR/run/"* "$SCRATCH/"
-cp "$WRFDIR/main/wrf.exe" "$SCRATCH/wrf.exe"
 
 #  Copy and prepare the WRF namelist, set up run start and end dates
-cp "$SLURM_SUBMIT_DIR/${NAMELIST}" namelist.input
+cp -vf "$SLURM_SUBMIT_DIR/${NAMELIST}" namelist.input
 # Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
