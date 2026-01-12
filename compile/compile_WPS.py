@@ -28,8 +28,10 @@ def prepare_environment_variables(opts):
         HDF5="$HDF5_ROOT",
         WRF_DIR=cms.process_path(opts.wrfdir),
     )
-    format_ = lambda v: str(v) if isinstance(v, int) else '"%s"' % v
-    return ["export %s=%s" % (k, format_(v)) for k, v in env_vars.items()]
+    return [
+        "export %s=%s" % (k, str(v) if isinstance(v, int) else '"%s"' % v)
+        for k, v in env_vars.items()
+    ]
 
 
 def write_job_script(opts):
