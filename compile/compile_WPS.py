@@ -23,11 +23,11 @@ def prepare_environment_variables(opts):
         The lines setting environment variables.
 
     """
-    env_vars = dict(
-        NETCDF="$NETCDF_FORTRAN_ROOT",
-        HDF5="$HDF5_ROOT",
-        WRF_DIR=cms.process_path(opts.wrfdir),
-    )
+    env_vars = {
+        "NETCDF": "$NETCDF_FORTRAN_ROOT",
+        "HDF5": "$HDF5_ROOT",
+        "WRF_DIR": cms.process_path(opts.wrfdir),
+    }
     return [
         f"export {k}={str(v) if isinstance(v, int) else f'"{v}"'}"
         for k, v in env_vars.items()
