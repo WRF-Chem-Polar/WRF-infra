@@ -75,7 +75,7 @@ def write_job_script(opts):
     """
     # Platform, directories, and files
     host = cms.identify_host_platform()
-    envfile = os.path.join(cms.path_of_repo(), "env", "%s.sh" % host)
+    envfile = os.path.join(cms.path_of_repo(), "env", f"{host}.sh")
     script = os.path.join(opts.destination, "compile.job")
 
     # Prepare header of file (hash bang and scheduler options)
