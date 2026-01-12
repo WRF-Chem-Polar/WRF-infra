@@ -465,27 +465,31 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             lats = lats[0]
         return lons, lats
 
-    def value_around_point(self, lon, lat, method="centre"):
+    def value_around_point(self, lon, lat, method="centre", window=3):
         """Return dataset around given location.
 
-        Find 9 nearest gridpoints to a given coordinate (lon,lat)
+        Find window**2 nearest gridpoints to a given coordinate (lon,lat)
         and return either the central gridpoint or a statistic (mean,
-        min, max) over the 3×3 grid, depending on the chosen method.
+        min, max) over the grid, depending on the chosen method.
 
         Parameters
         ----------
-        lat : float or int
+        lat : numeric
             The target latitude value
-        lon : float or int
+        lon : numeric
             The target longitude value, in [-180,180] or in [0, 360].
         method : {"centre", "mean", "min", "max"}, default="centre"
             Determines which value to return:
             - "centre": the gridpoint containing the target coordinate.
-            - "mean": mean value over the 3×3 grid.
-            - "min": minimum value over the 3×3 grid.
-            - "max": maximum value over the 3×3 grid.
+            - "mean": mean value over window*window points around target.
+            - "min": minimum value over window*window points
+            - "max": maximum value over window*window points
+        window : int
+            Width of the square neighborhood (in grid cells) used for 
+            mean/min/max. Must be an odd integer.
         NB: in cases where (lon,lat) is on an edge or corner of the domain,
-        method=mean/min/max will be calculated over only 6 or 4 gridpoints.
+        the window is clipped to the available grid cells, so mean/min/max 
+        may be computed over fewer than window*window points.
 
         Returns
         -------
@@ -496,6 +500,9 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         ------
         ValueError
             If `method` is not an expected value.
+        
+        ValueError
+            If window is even or negative.
 
         ValueError
             If (lon,lat) is not within the model domain.
@@ -506,6 +513,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError(
                 f"Invalid mode: {method!r}. Expected one of {allowed}."
             )
+        if not isinstance(window, int) or window < 1 or window % 2 == 0:
+            raise ValueError("window must be a positive odd integer")
 
         # Test if point is inside model domain
         wrflons, wrflats = self.lonlat
@@ -533,10 +542,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         if method == "centre":
             extracted = self._dataset.isel(south_north=j, west_east=i)
         else:
-            # make index arrays for 9 nearest points, making sure 0 < i < nx
+            # make index arrays for window**2 nearest points, making sure 0 < i < nx
             (ny, nx) = wrflons.shape
-            imin, imax = max(0, i - 1), min(nx, i + 2)
-            jmin, jmax = max(0, j - 1), min(ny, j + 2)
+            r = window // 2  # half-width of the window
+            imin, imax = max(0, i-r), min(nx, i+r+1)
+            jmin, jmax = max(0, j-r), min(ny, j+r+1)
             islice = range(imin, imax)
             jslice = range(jmin, jmax)
             subset = self._dataset.isel(south_north=jslice, west_east=islice)
