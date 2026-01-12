@@ -73,7 +73,7 @@ def write_job_script(opts):
     with open(script, mode="x") as f:
         f.write("\n".join(lines))
         f.write("\n")
-    cms.run(["chmod", "744", script], cwd=opts.destination)
+    os.chmod(script, 0o744)
 
 
 if __name__ == "__main__":
