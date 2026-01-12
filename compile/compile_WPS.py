@@ -62,7 +62,7 @@ def write_job_script(opts):
         env = [line.strip() for line in f.readlines()]
     lines += [line for line in env if line != "" and not line.startswith("#")]
     lines += prepare_environment_variables(opts)
-    setup = dict(spirit=1 + opts.parallel)[host]
+    setup = {"spirit": 1 + opts.parallel}[host]
 
     # Add the call to ./configure and ./compile
     lines.append('echo -e "%d" | \\' % setup)
