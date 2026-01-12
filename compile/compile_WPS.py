@@ -54,7 +54,8 @@ def write_job_script(opts):
         if host in ("spirit",):
             lines += cms.prepare_slurm_options("00:30:00")
         else:
-            raise NotImplementedError("Unsupported host: %s." % host)
+            msg = f"Unsupported host: {host}."
+            raise NotImplementedError(msg)
 
     # Platform-specific environment
     with open(envfile) as f:
