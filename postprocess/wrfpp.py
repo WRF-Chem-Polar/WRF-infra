@@ -517,18 +517,12 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError("window must be a positive odd integer")
 
         # Test if point is inside model domain
-        wrflons, wrflats = self.lonlat
-        xx, yy = self.ll2xy(wrflons, wrflats)
-        x, y = self.ll2xy(lon, lat)
-        if (
-            x < np.amin(xx)
-            or x > np.amax(xx)
-            or y < np.amin(yy)
-            or y > np.amax(yy)
-        ):
+        indomain = self.is_inside_domain(lon, lat)
+        if not indomain:
             raise ValueError(f"Point ({lon}, {lat}) is outside model domain.")
 
         # Get (i,j) indices of model gridpoint containing (lon,lat)
+        wrflons, wrflats = self.lonlat
         i, j = nearest_indices(
             lon,
             lat,
@@ -554,6 +548,33 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 dim=["south_north", "west_east"], keep_attrs=True
             )
         return extracted
+
+    def is_inside_domain(self, lon, lat):
+        """Return True if and only if given point is inside domain.
+
+        Parameters
+        ----------
+        lon: numeric
+            Longitude of the point, in [-180; 180] or [0; 360]. 
+        lat: numeric
+            Latitude of the point, in [-90; 90].
+
+        Returns
+        -------
+        bool
+            True if the point is located inside the WRF-Chem domain.
+        """
+        wrflons, wrflats = self.lonlat
+        dx, dy = self._dataset.attrs["DX"], self._dataset.attrs["DY"]
+        xx, yy = self.ll2xy(wrflons, wrflats)
+        x, y = self.ll2xy(lon, lat)
+        indomain =  (
+            x > np.amin(xx) - dx/2
+            and x < np.amax(xx) + dx/2
+            and y > np.amin(yy) - dy/2
+            and y < np.amax(yy) + dy/2
+        )
+        return indomain
 
     # Derived variables
 
