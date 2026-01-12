@@ -29,7 +29,7 @@ def prepare_environment_variables(opts):
         WRF_DIR=cms.process_path(opts.wrfdir),
     )
     return [
-        "export %s=%s" % (k, str(v) if isinstance(v, int) else '"%s"' % v)
+        f"export {k}={str(v) if isinstance(v, int) else f'"{v}"'}"
         for k, v in env_vars.items()
     ]
 
