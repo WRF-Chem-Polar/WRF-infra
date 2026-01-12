@@ -92,7 +92,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if opts.scheduler:
-        cmd = [dict(spirit="sbatch")[host], "compile.job"]
+        cmd = [{"spirit": "sbatch"}[host], "compile.job"]
     else:
         cmd = ["./compile.job"]
     cms.run(cmd, cwd=opts.destination)
