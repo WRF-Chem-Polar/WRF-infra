@@ -70,10 +70,11 @@ args = parser.parse_args()
 
 env_dir = os.path.join(args.env_root_prefix, "envs", args.env_name)
 if os.path.lexists(commons.process_path(env_dir)):
-    raise RuntimeError(
+    msg = (
         "The destination directory already exists. "
         "Please remove it manually and re-run this script."
     )
+    raise RuntimeError(msg)
 
 # Parse the pyproject.toml file
 
