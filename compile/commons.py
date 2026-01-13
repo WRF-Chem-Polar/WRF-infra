@@ -20,7 +20,7 @@ URL_WRFCHEMPOLAR = "%s/WRF-Chem-Polar.git" % URL_GROUP_POLAR
 class ConvertToBoolean(argparse.Action):
     """Action to convert command-line arguments to booleans."""
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, _, namespace, values, option_string=None):
         """Convert command line option value to boolean.
 
         See https://docs.python.org/3/library/argparse.html#action-classes for
