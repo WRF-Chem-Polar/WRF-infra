@@ -187,9 +187,11 @@ def run_stdout(args, **kwargs):
         If the command returns a non-zero exit code.
 
     """
-    forbidden_kwargs = [arg in kwargs for arg in ("capture_output", "text")]
+    nope_list = ("capture_output", "text")
+    forbidden_kwargs = list(filter(lambda kwarg: kwarg in nope_list, kwargs))
     if forbidden_kwargs:
-        raise ValueError(f"Forbidden keyword argument(s): {forbidden_kwargs}.")
+        msg = f"Forbidden keyword argument(s): {", ".join(forbidden_kwargs)}."
+        raise ValueError(msg)
     out = run(args, capture_output=True, text=True, **kwargs)
     return out.stdout[:-1].split("\n")
 
