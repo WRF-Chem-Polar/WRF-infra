@@ -41,12 +41,12 @@ def prepare_environment_variables(opts):
 
     """
     host = cms.identify_host_platform()
-    env_vars = dict(
-        EM_CORE=1,
-        NMM_CORE=0,
-        NETCDF="$NETCDF_FORTRAN_ROOT",
-        HDF5="$HDF5_ROOT",
-    )
+    env_vars = {
+        "EM_CORE": 1,
+        "NMM_CORE": 0,
+        "NETCDF": "$NETCDF_FORTRAN_ROOT",
+        "HDF5": "$HDF5_ROOT",
+    }
     # For some reason, just using the chem and kpp options is not enough, one
     # also has to explicitly set the corresponding environment variables
     if "chem" in opts.components:
