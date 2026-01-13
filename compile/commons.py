@@ -80,8 +80,7 @@ def process_path(path):
     """
     if path is None or path.strip() == "":
         return None
-    else:
-        return os.path.abspath(os.path.expanduser(path))
+    return os.path.abspath(os.path.expanduser(path))
 
 
 def path_of_repo(path=None):
