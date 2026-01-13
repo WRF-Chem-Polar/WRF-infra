@@ -268,7 +268,10 @@ def prepare_argparser(which):
     )
     parser.add_argument(
         "--dry",
-        help="Whether this is a dry run.",
+        help=(
+            "Whether this is a dry run (dry run: clone the repository and "
+            "create the compile script, but do not run the compile script)."
+        ),
         action=ConvertToBoolean,
         default=False,
     )
