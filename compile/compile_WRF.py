@@ -96,7 +96,7 @@ def write_job_script(opts):
 
     # Add the call to ./configure
     lines.append('echo -e "%d\\n%d" | \\' % (setup, nesting))
-    lines.append("./configure%s" % prepare_components(opts))
+    lines.append(f"./configure{prepare_components(opts)}")
 
     # Add the call to ./compile
     lines.append("./compile %s" % opts.executable)
