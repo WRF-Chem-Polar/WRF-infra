@@ -111,7 +111,8 @@ def path_of_repo(path=None):
         return abspath
     parent = os.path.dirname(abspath)
     if parent == abspath:
-        raise RuntimeError("Could not determine path to git repository.")
+        msg = "Could not determine path to git repository."
+        raise RuntimeError(msg)
     else:
         return path_of_repo(parent)
 
