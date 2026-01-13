@@ -219,7 +219,8 @@ def prepare_argparser(which):
         commit = "polar/main"
         patches = None
     else:
-        raise Exception("Invalid choice: %s." % which)
+        msg = f"Invalid choice: {which}."
+        raise RuntimeError(msg)
 
     # Common command-line arguments
     parser = argparse.ArgumentParser(
