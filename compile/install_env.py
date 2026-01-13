@@ -142,7 +142,7 @@ def exec_chmod(chmod, perm):
         arguments.
 
     """
-    return ["-exec", args.chmod, perm, "{}", ";"]
+    return ["-exec", chmod, perm, "{}", ";"]
 
 
 # Executable files
