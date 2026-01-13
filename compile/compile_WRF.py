@@ -99,7 +99,7 @@ def write_job_script(opts):
     lines.append(f"./configure{prepare_components(opts)}")
 
     # Add the call to ./compile
-    lines.append("./compile %s" % opts.executable)
+    lines.append(f"./compile {opts.executable}")
 
     # Write the script
     with open(script, mode="x") as f:
