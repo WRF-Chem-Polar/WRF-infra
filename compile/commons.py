@@ -58,7 +58,8 @@ def identify_host_platform():
     try:
         platform = known_plateforms[nodename]
     except KeyError:
-        raise NotImplementedError("Unknown host platform: %s." % nodename)
+        msg = f"Unknown host platform: {nodename}."
+        raise NotImplementedError(msg)
     return platform
 
 
