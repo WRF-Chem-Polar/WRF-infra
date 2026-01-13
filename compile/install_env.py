@@ -146,7 +146,7 @@ def exec_chmod(chmod, perm):
 
 # Executable files
 commons.run_stdout(
-    [args.find, "-type", "f", "-perm", "-u=x"] + exec_chmod(args.chmod, "550"),
+    [args.find, "-type", "f", "-perm", "-u=x", *exec_chmod(args.chmod, "550")],
     cwd=args.env_root_prefix,
 )
 
