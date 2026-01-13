@@ -99,8 +99,9 @@ cmd = [
     "--override-channels",
     "--strict-channel-priority",
     "--yes",
-    "python%s" % python,
-] + dependencies
+    f"python{python}",
+    *dependencies,
+]
 
 # Add optional dependencies
 known_groups = pyproject["project"]["optional-dependencies"]
