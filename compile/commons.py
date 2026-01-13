@@ -159,8 +159,8 @@ def run(args, **kwargs):
 
     """
     out = subprocess.run(args, **kwargs)
-    if out.returncode != 0:
-        msg = "Command '%s' exited with non-zero return code." % " ".join(args)
+    if out.returncode:
+        msg = f"Command '{" ".join(args)}' exited with non-zero return code."
         raise RuntimeError(msg)
     return out
 
