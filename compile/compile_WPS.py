@@ -60,7 +60,7 @@ def write_job_script(opts):
     # Platform-specific environment
     with open(envfile) as f:
         env = [line.strip() for line in f]
-    lines += [line for line in env if line != "" and not line.startswith("#")]
+    lines += [line for line in env if line and not line.startswith("#")]
     lines += prepare_environment_variables(opts)
     setup = {"spirit": 1 + opts.parallel}[host]
 
