@@ -161,6 +161,6 @@ commons.run_stdout(
 
 # Directories
 commons.run_stdout(
-    [args.find, "-type", "d"] + exec_chmod(args.chmod, "550"),
+    [args.find, "-type", "d", *exec_chmod(args.chmod, "550")],
     cwd=args.env_root_prefix,
 )
