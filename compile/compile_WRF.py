@@ -88,7 +88,7 @@ def write_job_script(opts):
 
     # Platform-specific environment
     with open(envfile) as f:
-        env = [line.strip() for line in f.readlines()]
+        env = [line.strip() for line in f]
     lines += [line for line in env if line != "" and not line.startswith("#")]
     lines += prepare_environment_variables(opts)
     setup = dict(spirit=34)[host]
