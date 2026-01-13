@@ -35,7 +35,8 @@ class ConvertToBoolean(argparse.Action):
         elif values.lower() in ("false", "f", "no", "n"):
             values = False
         else:
-            raise ValueError('Could not convert "%s" to boolean.' % values)
+            msg = f'Could not convert "{values}" to boolean.'
+            raise ValueError(msg)
         setattr(namespace, option_string, values)
 
 
