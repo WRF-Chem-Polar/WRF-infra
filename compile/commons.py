@@ -248,7 +248,7 @@ def prepare_argparser(which):
     parser.add_argument(
         "--destination",
         help="Directory that will host the installation.",
-        default="./%s" % which,
+        default=f"./{which}",
     )
     parser.add_argument(
         "--git",
