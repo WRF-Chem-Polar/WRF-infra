@@ -91,7 +91,7 @@ def write_job_script(opts):
         env = [line.strip() for line in f]
     lines += [line for line in env if line != "" and not line.startswith("#")]
     lines += prepare_environment_variables(opts)
-    setup = dict(spirit=34)[host]
+    setup = {"spirit": 34}[host]
     nesting = 1
 
     # Add the call to ./configure
