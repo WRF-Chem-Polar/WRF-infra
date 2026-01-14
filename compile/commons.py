@@ -346,7 +346,8 @@ def get_options(which):
         parser.set_defaults(**opts_from_file)
         opts = parser.parse_args()
     if opts.repository.startswith("http://"):
-        raise ValueError("We do not allow http connections (not secure).")
+        msg = "We do not allow http connections (not secure)."
+        raise ValueError(msg)
     if repo_is_local(opts.repository):
         opts.repository = process_path(opts.repository)
     opts.destination = process_path(opts.destination)
