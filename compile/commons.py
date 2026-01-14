@@ -352,12 +352,9 @@ def get_options(which):
         opts.repository = process_path(opts.repository)
     opts.destination = process_path(opts.destination)
     if "components" in opts:
-        if opts.components.strip() == "":
-            opts.components = []
-        else:
-            opts.components = [
-                comp.strip() for comp in opts.components.split(",")
-            ]
+        opts.components = [
+            comp.strip() for comp in opts.components.split(",") if comp.strip()
+        ]
     opts.patches = process_path(opts.patches)
     opts.sources = process_path(opts.sources)
     return opts
