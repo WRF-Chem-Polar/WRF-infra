@@ -336,7 +336,8 @@ def get_options(which):
         with open(opts.optfile) as f:
             opts_from_file = json.load(f)
         if not isinstance(opts_from_file, dict):
-            raise ValueError("Option file must represent a JSON dictionnary.")
+            msg = "Option file must represent a JSON dictionnary."
+            raise ValueError(msg)
         for optname in opts_from_file:
             if optname not in opts:
                 raise ValueError("Unknown option in file: %s." % optname)
