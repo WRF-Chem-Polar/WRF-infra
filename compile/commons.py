@@ -306,7 +306,8 @@ def prepare_argparser(which):
             default="kpp,chem",
         )
     else:
-        raise Exception("Invalid choice: %s." % which)
+        msg = f"Invalid choice: {which}."
+        raise ValueError(msg)
 
     return parser
 
