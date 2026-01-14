@@ -340,7 +340,8 @@ def get_options(which):
             raise ValueError(msg)
         for optname in opts_from_file:
             if optname not in opts:
-                raise ValueError("Unknown option in file: %s." % optname)
+                msg = f"Unknown option in file: {optname}."
+                raise ValueError(msg)
         parser.set_defaults(**opts_from_file)
         opts = parser.parse_args()
     if opts.repository.startswith("http://"):
