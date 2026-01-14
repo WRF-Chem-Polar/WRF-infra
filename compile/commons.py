@@ -160,7 +160,7 @@ def run(args, **kwargs):
     """
     out = subprocess.run(args, **kwargs)
     if out.returncode:
-        msg = f"Command '{" ".join(args)}' exited with non-zero return code."
+        msg = f"Command '{' '.join(args)}' exited with non-zero return code."
         raise RuntimeError(msg)
     return out
 
@@ -190,7 +190,7 @@ def run_stdout(args, **kwargs):
     nope_list = ("capture_output", "text")
     forbidden_kwargs = list(filter(lambda kwarg: kwarg in nope_list, kwargs))
     if forbidden_kwargs:
-        msg = f"Forbidden keyword argument(s): {", ".join(forbidden_kwargs)}."
+        msg = f"Forbidden keyword argument(s): {', '.join(forbidden_kwargs)}."
         raise ValueError(msg)
     out = run(args, capture_output=True, text=True, **kwargs)
     return out.stdout[:-1].split("\n")
@@ -381,6 +381,30 @@ def clone_and_checkout(opts):
         raise RuntimeError("Destination directory already exists.")
     run([opts.git, "clone", opts.repository, opts.destination])
     run([opts.git, "checkout", opts.commit], cwd=opts.destination)
+
+
+def format_shell_value(value):
+    """Format shell value.
+
+    Parameters
+    ----------
+    value: str | int
+        Value to format.
+
+    Returns
+    -------
+    str
+        A version of value that is suitable to write in a shell script as
+        `my_variable=value`.
+
+    """
+    if isinstance(value, str):
+        return f'"{value}"'
+    elif isinstance(value, int):
+        return str(value)
+    else:
+        msg = f"Unsupported type for input value: {type(value)}."
+        raise TypeError(msg)
 
 
 def prepare_slurm_options(time):
