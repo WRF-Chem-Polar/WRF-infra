@@ -104,36 +104,6 @@ def _units_mpl(units):
     return " ".join(split)
 
 
-def nearest_indices(lon, lat, gridlons, gridlats, dx, dy):
-    """Return indices (i, j) of gridpoint nearest to (lon, lat).
-
-    Parameters
-    ----------
-    lat, lon : float or int
-        Target coordinate in degrees. Longitude can be in [-180,180] or
-        in [0, 360].
-    gridlons, gridlats : np.ndarray
-        2D arrays of longitudes and latitudes for the model grid.
-    dx, dy : float
-        Grid spacing in metres.
-
-    Returns
-    -------
-    tuple of int
-        Indices (i, j) of the nearest grid point.
-    """
-    geod = pyproj.Geod(ellps="WGS84")
-    _, _, dists = geod.inv(
-        np.full(gridlons.shape, lon),
-        np.full(gridlats.shape, lat),
-        gridlons,
-        gridlats,
-    )
-
-    j, i = np.unravel_index(np.argmin(dists), gridlons.shape)
-    return i, j
-
-
 class GenericDatasetAccessor(ABC):
     """Template for xarray dataset accessors.
 
@@ -485,10 +455,10 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             - "min": minimum value over window*window points
             - "max": maximum value over window*window points
         window : int
-            Width of the square neighborhood (in grid cells) used for 
+            Width of the square neighborhood (in grid cells) used for
             mean/min/max. Must be an odd integer.
         NB: in cases where (lon,lat) is on an edge or corner of the domain,
-        the window is clipped to the available grid cells, so mean/min/max 
+        the window is clipped to the available grid cells, so mean/min/max
         may be computed over fewer than window*window points.
 
         Returns
@@ -500,7 +470,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         ------
         ValueError
             If `method` is not an expected value.
-        
+
         ValueError
             If window is even or negative.
 
@@ -516,31 +486,19 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         if not isinstance(window, int) or window < 1 or window % 2 == 0:
             raise ValueError("window must be a positive odd integer")
 
-        # Test if point is inside model domain
-        indomain = self.is_inside_domain(lon, lat)
-        if not indomain:
-            raise ValueError(f"Point ({lon}, {lat}) is outside model domain.")
-
         # Get (i,j) indices of model gridpoint containing (lon,lat)
-        wrflons, wrflats = self.lonlat
-        i, j = nearest_indices(
-            lon,
-            lat,
-            wrflons,
-            wrflats,
-            self._dataset.attrs["DX"],
-            self._dataset.attrs["DY"],
-        )
+        # (will raise error if point outside domain)
+        i, j = self.nearest_indices(lon, lat)
 
         # Extract from model output
         if method == "centre":
             extracted = self._dataset.isel(south_north=j, west_east=i)
         else:
             # make index arrays for window**2 nearest points, making sure 0 < i < nx
-            (ny, nx) = wrflons.shape
+            (ny, nx) = self.lonlat[0].shape
             r = window // 2  # half-width of the window
-            imin, imax = max(0, i-r), min(nx, i+r+1)
-            jmin, jmax = max(0, j-r), min(ny, j+r+1)
+            imin, imax = max(0, i - r), min(nx, i + r + 1)
+            jmin, jmax = max(0, j - r), min(ny, j + r + 1)
             islice = range(imin, imax)
             jslice = range(jmin, jmax)
             subset = self._dataset.isel(south_north=jslice, west_east=islice)
@@ -555,7 +513,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Parameters
         ----------
         lon: numeric
-            Longitude of the point, in [-180; 180] or [0; 360]. 
+            Longitude of the point, in [-180; 180] or [0; 360].
         lat: numeric
             Latitude of the point, in [-90; 90].
 
@@ -568,13 +526,50 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         dx, dy = self._dataset.attrs["DX"], self._dataset.attrs["DY"]
         xx, yy = self.ll2xy(wrflons, wrflats)
         x, y = self.ll2xy(lon, lat)
-        indomain =  (
-            x > np.amin(xx) - dx/2
-            and x < np.amax(xx) + dx/2
-            and y > np.amin(yy) - dy/2
-            and y < np.amax(yy) + dy/2
+        indomain = (
+            x > np.amin(xx) - dx / 2
+            and x < np.amax(xx) + dx / 2
+            and y > np.amin(yy) - dy / 2
+            and y < np.amax(yy) + dy / 2
         )
         return indomain
+
+    def nearest_indices(self, lon, lat):
+        """Return indices (i, j) of gridpoint nearest to (lon, lat).
+
+        Parameters
+        ----------
+        lat, lon : numeric
+            Target coordinate in degrees. Longitude can be in [-180,180] or
+            in [0, 360].
+
+        Returns
+        -------
+        tuple of int
+            Indices (i, j) of the nearest grid point.
+
+        Raises
+        ------
+        ValueError
+            If (lon,lat) is not within the model domain.
+
+        """
+        # Test if point is inside model domain
+        indomain = self.is_inside_domain(lon, lat)
+        if not indomain:
+            raise ValueError(f"Point ({lon}, {lat}) is outside model domain.")
+
+        wrflons, wrflats = self.lonlat
+        geod = pyproj.Geod(ellps="WGS84")
+        _, _, dists = geod.inv(
+            np.full(wrflons.shape, lon),
+            np.full(wrflons.shape, lat),
+            wrflons,
+            wrflats,
+        )
+
+        j, i = np.unravel_index(np.argmin(dists), wrflons.shape)
+        return i, j
 
     # Derived variables
 
