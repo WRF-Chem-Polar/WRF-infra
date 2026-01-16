@@ -1,7 +1,32 @@
-[tool.black]
+[project]
 
-line-length=79
+requires-python = ">= 3.13"
+
+[project.optional-dependencies]
+
+preprocess = [
+    "pyproj",
+    "netcdf4",
+    "xarray",
+    "shapely",
+]
+wrfpp = [
+    "pyproj",
+    "netcdf4",
+    "xarray",
+    "cartopy",
+]
+# We add Emacs and Vim to our "dev" dependencies to benefit from modern
+# features such as "auto format with ruff on save"
+dev = [
+    "ruff",
+    "emacs",
+    "vim",
+]
+data = [
+    "copernicusmarine"
+]
 
 [tool.ruff]
 
-line-length=79
+line-length = 79

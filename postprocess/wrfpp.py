@@ -472,6 +472,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate cloud liquid water path."""
         return WRFCloudLiquidWaterPath(self._dataset)
 
+    @property
     def altitude_asl_c(self):
         """The DerivedVariable object to calculate grid cell height center above sea level."""
         return WRFAltitudeASL_C(self._dataset)
