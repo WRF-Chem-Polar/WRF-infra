@@ -154,8 +154,8 @@ commons.run_stdout(
 
 # Non-executable files
 commons.run_stdout(
-    [args.find, "-type", "f", "!", "-perm", "550"]
-    + exec_chmod(args.chmod, "440"),
+    [args.find, "-type", "f", "!", "-perm", "550",
+     *exec_chmod(args.chmod, "440")],
     cwd=args.env_root_prefix,
 )
 
