@@ -441,7 +441,7 @@ def write_options(opts):
         The pre-processed user-defined installation options.
 
     """
-    opts_dict = dict((key, value) for key, value in vars(opts).items())
+    opts_dict = dict(vars(opts).items())
     opts_dict.pop("optfile")
     opts_dict.pop("destination")
     cmd = ["git", "rev-parse", "HEAD"]
