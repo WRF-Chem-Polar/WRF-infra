@@ -429,7 +429,7 @@ def prepare_slurm_options(time):
     if host == "spirit":
         slurm["partition"] = "zen16"
         slurm["mem"] = "12GB"
-    return ["#SBATCH --%s=%s" % (key, value) for key, value in slurm.items()]
+    return [f"#SBATCH --{key}={value}" for key, value in slurm.items()]
 
 
 def write_options(opts):
