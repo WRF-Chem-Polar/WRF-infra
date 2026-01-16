@@ -473,8 +473,8 @@ def process_patches(opts):
         if os.path.exists(path_in_repo):
             run(["patch", path_in_repo, patch])
         else:
-            msg = "Warning: file %s does not exist so cannot be patched."
-            print(msg % path_in_repo)
+            msg = f"File {path_in_repo} does not exist so cannot be patched."
+            raise RuntimeError(msg)
 
 
 def process_extra_sources(opts):
