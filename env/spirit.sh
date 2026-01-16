@@ -11,7 +11,3 @@
 
 module purge
 module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module
-
-# This directory contains useful system-wide libraries, but needs to be listed
-# explicitly for the WRF compilation script to work
-export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
