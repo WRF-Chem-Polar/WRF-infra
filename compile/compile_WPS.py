@@ -6,7 +6,8 @@
 
 import sys
 import os.path
-import commons as cms
+from wrfinfra import generic
+from wrfinfra import compilation
 
 
 def prepare_environment_variables(opts):
