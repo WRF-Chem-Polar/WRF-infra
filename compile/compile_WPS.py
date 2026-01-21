@@ -6,8 +6,7 @@
 
 import sys
 import os.path
-from wrfinfra import generic
-from wrfinfra import compilation
+from wrfinfra import generic, compilation
 
 
 def prepare_environment_variables(opts):
@@ -27,10 +26,10 @@ def prepare_environment_variables(opts):
     env_vars = {
         "NETCDF": "$NETCDF_FORTRAN_ROOT",
         "HDF5": "$HDF5_ROOT",
-        "WRF_DIR": cms.process_path(opts.wrfdir),
+        "WRF_DIR": generic.process_path(opts.wrfdir),
     }
     return [
-        f"export {name}={cms.format_shell_value(value)}"
+        f"export {name}={compilation.format_shell_value(value)}"
         for name, value in env_vars.items()
     ]
 
@@ -45,15 +44,15 @@ def write_job_script(opts):
 
     """
     # Platform, directories, and files
-    host = cms.identify_host_platform()
-    envfile = os.path.join(cms.path_of_repo(), "env", f"{host}.sh")
+    host = generic.identify_host_platform()
+    envfile = os.path.join(generic.path_of_repo(), "env", f"{host}.sh")
     script = os.path.join(opts.destination, "compile.job")
 
     # Prepare header of file (hash bang and scheduler options)
     lines = ["#!/bin/bash"]
     if opts.scheduler:
         if host in ("spirit",):
-            lines += cms.prepare_slurm_options("00:30:00")
+            lines += compilation.prepare_slurm_options("00:30:00")
         else:
             msg = f"Unsupported host: {host}."
             raise NotImplementedError(msg)
@@ -80,14 +79,14 @@ def write_job_script(opts):
 if __name__ == "__main__":
     # Actually do the work (parse user options, checkout, compile)
 
-    host = cms.identify_host_platform()
-    opts = cms.get_options("WPS")
+    host = generic.identify_host_platform()
+    opts = compilation.get_options("WPS")
 
-    cms.clone_and_checkout(opts)
-    cms.write_options(opts)
+    generic.clone_and_checkout(opts)
+    compilation.write_options(opts)
     write_job_script(opts)
-    cms.process_patches(opts)
-    cms.process_extra_sources(opts)
+    compilation.process_patches(opts)
+    compilation.process_extra_sources(opts)
 
     if opts.dry:
         sys.exit(0)
@@ -96,4 +95,4 @@ if __name__ == "__main__":
         cmd = [{"spirit": "sbatch"}[host], "compile.job"]
     else:
         cmd = ["./compile.job"]
-    cms.run(cmd, cwd=opts.destination)
+    generic.run(cmd, cwd=opts.destination)

@@ -14,12 +14,12 @@ import os
 import argparse
 import datetime
 import tomllib
-import commons
+from wrfinfra import generic
 
 # Command-line arguments
 
 # Default values
-host = commons.identify_host_platform()
+host = generic.identify_host_platform()
 env_name = "WRF-Chem-Polar_" + datetime.datetime.today().strftime("%Y-%m-%d")
 env_root_prefix = "~/conda-envs"
 conda = "micromamba"
@@ -69,7 +69,7 @@ args = parser.parse_args()
 # We refuse to overwrite an existing environment
 
 env_dir = os.path.join(args.env_root_prefix, "envs", args.env_name)
-if os.path.lexists(commons.process_path(env_dir)):
+if os.path.lexists(generic.process_path(env_dir)):
     msg = (
         "The destination directory already exists. "
         "Please remove it manually and re-run this script."
@@ -78,7 +78,7 @@ if os.path.lexists(commons.process_path(env_dir)):
 
 # Parse the pyproject.toml file
 
-file_pyproject = os.path.join(commons.path_of_repo(), "pyproject.toml")
+file_pyproject = os.path.join(generic.path_of_repo(), "pyproject.toml")
 with open(file_pyproject, mode="rb") as f:
     pyproject = tomllib.load(f)
 python = pyproject["project"]["requires-python"].replace(" ", "")
@@ -119,7 +119,7 @@ for group in groups:
         raise ValueError("Unknown group of optional dependencies: %s." % group)
     cmd += deps
 
-commons.run(cmd)
+generic.run(cmd)
 
 # Fix permissions:
 #  - To current user and group members: read and execute acces.
@@ -147,13 +147,13 @@ def exec_chmod(chmod, perm):
 
 
 # Executable files
-commons.run_stdout(
+generic.run_stdout(
     [args.find, "-type", "f", "-perm", "-u=x", *exec_chmod(args.chmod, "550")],
     cwd=args.env_root_prefix,
 )
 
 # Non-executable files
-commons.run_stdout(
+generic.run_stdout(
     [
         args.find,
         "-type",
@@ -167,7 +167,7 @@ commons.run_stdout(
 )
 
 # Directories
-commons.run_stdout(
+generic.run_stdout(
     [args.find, "-type", "d", *exec_chmod(args.chmod, "550")],
     cwd=args.env_root_prefix,
 )
