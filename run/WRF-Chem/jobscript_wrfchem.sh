@@ -1,7 +1,10 @@
 #!/bin/bash
-#-------- Set up and run WRF-Chem with MOZART-MOSAIC-4bin-AQ --------
 #
-# Louis Marelle, 2025/03
+# Copyright (c) 2025-now LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
+# This script configures and runs WRF+WRF-Chem.
 #
 
 # Resources used
@@ -91,12 +94,12 @@ cd "$SCRATCH" || exit
 
 #---- Copy all needed files to scrach space
 # Input files from run setup directory
-cp "$SLURM_SUBMIT_DIR/"* "$SCRATCH/"
+cp "$submit_dir/"* "$SCRATCH/"
 # Executables and WRF aux files from dir_wrf
 cp "$dir_wrf/run/"* "$SCRATCH/"
 
 #  Copy and prepare the WRF namelist, set up run start and end dates
-cp -vf $SLURM_SUBMIT_DIR/$namelist_wrf namelist.input
+cp -vf $submit_dir/$namelist_wrf namelist.input
 # Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
