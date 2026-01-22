@@ -7,7 +7,7 @@
 import argparse
 import os
 import re
-import commons
+from wrfinfra import generic
 
 
 def get_job_id(stdout):
@@ -84,12 +84,12 @@ parser.add_argument(
 parser.add_argument(
     "--wps-repository",
     help="URL of the WPS repository (remote or local).",
-    default=commons.URL_WPS,
+    default=generic.URL_WPS,
 )
 parser.add_argument(
     "--wrf-repository",
     help="URL of the WRF repository (remote or local).",
-    default=commons.URL_WRFCHEMPOLAR,
+    default=generic.URL_WRFCHEMPOLAR,
 )
 parser.add_argument(
     "--git",
@@ -107,7 +107,7 @@ wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
 # Prepare the work directory
 if os.path.lexists(args.work_dir):
     raise RuntimeError("Work directory already exists.")
-commons.run(["mkdir", "-v", "-p", args.work_dir])
+generic.run(["mkdir", "-v", "-p", args.work_dir])
 
 job_ids = dict()
 for i, wrf_commit in enumerate(wrf_commits, start=1):
@@ -117,7 +117,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     dir_wrf = os.path.join(args.work_dir, f"WRF_{i}")
     cmd_wrf = [
         args.python,
-        os.path.join(commons.path_of_repo(), "compile", "compile_WRF.py"),
+        os.path.join(generic.path_of_repo(), "compile", "compile_WRF.py"),
         "--repository",
         args.wrf_repository,
         "--commit",
@@ -128,13 +128,13 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         args.git,
     ]
     last_job = f"Install WRF {i}"
-    job_ids[last_job] = get_job_id(commons.run_stdout(cmd_wrf))
+    job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wrf))
 
     # Prepare WPS installation
     dir_wps = os.path.join(args.work_dir, f"WPS_{i}")
     cmd_wps = [
         args.python,
-        os.path.join(commons.path_of_repo(), "compile", "compile_WPS.py"),
+        os.path.join(generic.path_of_repo(), "compile", "compile_WPS.py"),
         "--repository",
         args.wps_repository,
         "--commit",
@@ -148,16 +148,16 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         "--dry",
         "yes",
     ]
-    commons.run(cmd_wps)
+    generic.run(cmd_wps)
 
     # Install WPS
     cmd_wps = ["sbatch", "-d", f"afterok:{job_ids[last_job]}", "compile.job"]
     last_job = f"Install WPS {i}"
-    job_ids[last_job] = get_job_id(commons.run_stdout(cmd_wps, cwd=dir_wps))
+    job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wps, cwd=dir_wps))
 
     # Clone WRF-infra and update simulation.conf
     dir_infra = os.path.join(args.work_dir, f"WRF-infra_{i}")
-    commons.run([args.git, "clone", commons.path_of_repo(), dir_infra])
+    generic.run([args.git, "clone", generic.path_of_repo(), dir_infra])
     filepath = os.path.join(dir_infra, "run", "simulation.conf")
     new_options = dict(
         dir_wps=dir_wps,
@@ -169,7 +169,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
 
     # Run all model components
     for job in ["WPS", "real", "WRF-Chem"]:
-        dir_run = os.path.join(commons.path_of_repo(), "run", job)
+        dir_run = os.path.join(generic.path_of_repo(), "run", job)
         jobscript = f"jobscript_{job.lower().replace('-', '')}.sh"
         cmd_run = [
             "sbatch",
@@ -177,16 +177,16 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
             f"afterok:{job_ids[last_job]}",
             os.path.join(dir_run, jobscript),
         ]
-        stdout = commons.run_stdout(cmd_run, cwd=dir_run)
+        stdout = generic.run_stdout(cmd_run, cwd=dir_run)
         last_job = f"Run {job} {i}"
         job_ids[last_job] = get_job_id(stdout)
 
 # Launch the job that analyzes the results of all the simulations
 dependencies = ",".join(f"afterok:{job_id}" for job_id in job_ids.values())
-dir_job = os.path.join(commons.path_of_repo(), "testing")
+dir_job = os.path.join(generic.path_of_repo(), "testing")
 cmd_run = ["sbatch", "-d", dependencies, "analyse-results.job"]
 last_job = "Analyze results"
-job_ids[last_job] = get_job_id(commons.run_stdout(cmd_run, cwd=dir_job))
+job_ids[last_job] = get_job_id(generic.run_stdout(cmd_run, cwd=dir_job))
 
 # Some verbose
 print("\nSummary of job IDs:")
