@@ -1,6 +1,6 @@
 # Installing WRF-Chem-Polar and WPS
 
-This tutorial explains the steps to download and compile the [WRF-Chem-Polar model](https://github.com/Regional-Modeling-LATMOS-IGE/WRF-Chem-Polar). Note that this tutorial doesn't currently cover the software dependencies or hardware requirements needed to compile the model, since it is anticipated that users will already be working in a compatible environment such as the ESPRI Spirit machine where the dependencies are already installed.
+This tutorial explains the steps to download and compile the [WRF-Chem-Polar model](https://github.com/WRF-Chem-Polar/WRF-Chem-Polar). Note that this tutorial does not currently cover the software dependencies or hardware requirements needed to compile the model, since it is anticipated that users will already be working in a compatible environment such as the ESPRI Spirit machine where the dependencies are already installed.
 
 Consult the WRF and WPS user guides for more general information on the installation procedure. The instructions here rely on Python wrappers around the existing official WRF and WPS compilation scripts.
 
