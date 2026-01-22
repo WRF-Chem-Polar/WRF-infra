@@ -1,4 +1,4 @@
-Running a simulation from the scripts in this repo requires certain external data for things like initial and boundary conditions. 
+Running a simulation from the scripts in this repository requires certain external data for things like initial and boundary conditions. 
 
 Download scripts to obtain the data are currently under construction and will be documented here in the future. For now, there is an overview below of each type of data required to run the simulation as configured by the scripts in this repo.
 
