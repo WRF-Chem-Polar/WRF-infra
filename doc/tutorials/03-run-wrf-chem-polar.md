@@ -48,7 +48,7 @@ cd run/real/
 sbatch jobscript_real.sh
 ```
 
-Once the job has completed, view the slurm log file. The expected output is somewhat case dependent, but for the example in this repo, there should be output related to the following, without error messages:
+Once the job has completed, view the slurm log file. The expected output is somewhat case dependent, but for the example in this repository, there should be output related to the following, without error messages:
 - real.exe
 - megan_bio_emiss (creates biogenic emissions)
 - real.exe (2nd time)
