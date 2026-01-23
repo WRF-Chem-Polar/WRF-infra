@@ -163,6 +163,9 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     generic.run([args.git, "clone", generic.path_of_repo(), dir_infra])
     filepath = os.path.join(dir_infra, "run", "simulation.conf")
     new_options = dict(
+        runid_wps=f"wps{i}",
+        runid_real=f"real{i}",
+        runid_wrf=f"wrf{i}",
         dir_wps=dir_wps,
         dir_wrf=dir_wrf,
         dir_outputs=os.path.join(args.work_dir, f"outputs_{i}"),
