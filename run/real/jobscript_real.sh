@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2025-now LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
@@ -97,7 +97,7 @@ cd $SCRATCH
 
 #---- Copy all needed files to scrach space
 # Input files from run setup directory
-cp $SLURM_SUBMIT_DIR/* $SCRATCH/
+cp $submit_dir/* $SCRATCH/
 # Copy executables and WRF auxiliary files to work directory
 cp $dir_wrf/run/* $SCRATCH/
 # met_em WPS files from WPSDIR
@@ -106,10 +106,10 @@ cp ${WPSDIR}/met_em.d* $SCRATCH/
 #---- Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
-wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
-wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
-wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
-wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' "$SLURM_SUBMIT_DIR/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
+wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))
 
@@ -121,7 +121,7 @@ echo " "
 echo "-------- $SLURM_JOB_NAME: run real.exe without bio emissions--------"
 echo " "
 # Prepare the real.exe namelist, set up run start and end dates
-cp -vf $SLURM_SUBMIT_DIR/$namelist_real namelist.input
+cp -vf $submit_dir/$namelist_real namelist.input
 sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
 sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
 sed -i "s/__STARTDAY__/${dds}/g" namelist.input
@@ -171,7 +171,7 @@ echo " "
 echo "-------- $SLURM_JOB_NAME: run real.exe with bio emissions --------"
 echo " "
 # Prepare the real.exe namelist, set up run start and end dates
-cp $SLURM_SUBMIT_DIR/$namelist_real namelist.input
+cp $submit_dir/$namelist_real namelist.input
 sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
 sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
 sed -i "s/__STARTDAY__/${dds}/g" namelist.input
@@ -271,7 +271,7 @@ echo " "
 echo "-------- $SLURM_JOB_NAME: run emission script --------"
 echo " "
 ANTHRO_EMS_DIR="$dir_shared_data/anthro_emissions/cams/"
-cp $SLURM_SUBMIT_DIR/cams2wrfchem.py $SCRATCH/
+cp $submit_dir/cams2wrfchem.py $SCRATCH/
 $conda_run python -u cams2wrfchem.py --start ${date_s} --end ${date_e} --domain 1 --dir-em-in ${ANTHRO_EMS_DIR}
 
 #----------------------------#

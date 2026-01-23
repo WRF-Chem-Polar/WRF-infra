@@ -52,6 +52,7 @@ if [[ $check_simulation_conf == yes ]]; then
     # used in paths, so we check them in the same way)
     check_paths "$runid_wps"
     check_paths "$runid_real"
+    check_paths "$runid_wrf"
     check_paths "$(pwd)"
     check_paths "$dir_wps"
     check_paths "$dir_wrf"
@@ -60,6 +61,7 @@ if [[ $check_simulation_conf == yes ]]; then
     check_paths "$dir_work"
     check_paths "$namelist_wps"
     check_paths "$namelist_real"
+    check_paths "$namelist_wrf"
 
     if [[ $- == *e* ]]; then
         echo "commons.bash: no problem detected in the simulation's config."
