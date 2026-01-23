@@ -169,7 +169,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
 
     # Run all model components
     for job in ["WPS", "real", "WRF-Chem"]:
-        dir_run = os.path.join(generic.path_of_repo(), "run", job)
+        dir_run = os.path.join(dir_infra, "run", job)
         jobscript = f"jobscript_{job.lower().replace('-', '')}.sh"
         cmd_run = [
             "sbatch",
