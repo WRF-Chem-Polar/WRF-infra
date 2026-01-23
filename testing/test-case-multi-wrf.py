@@ -33,7 +33,8 @@ def get_job_id(stdout):
         if re.fullmatch("Submitted batch job [0-9]+", line) is not None
     ]
     if len(matches) != 1:
-        raise RuntimeError("Could not determine unique job ID.")
+        msg = "Could not determine unique job ID."
+        raise RuntimeError(msg)
     return matches[0].split()[-1]
 
 
@@ -53,7 +54,8 @@ def replace_options_in_conf(filepath, new_options):
     for opt, value in new_options.items():
         idx = [i for i, line in enumerate(lines) if line.startswith(f"{opt}=")]
         if len(idx) != 1:
-            raise RuntimeError(f"Could not modify option {opt} in {filepath}.")
+            msg = f"Could not modify option {opt} in {filepath}."
+            raise RuntimeError(msg)
         lines[idx[0]] = f"{opt}={value}"
     with open(filepath, mode="w") as f:
         f.write("\n".join(lines))
@@ -106,7 +108,8 @@ wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
 
 # Prepare the work directory
 if os.path.lexists(args.work_dir):
-    raise RuntimeError("Work directory already exists.")
+    msg = "Work directory already exists."
+    raise RuntimeError(msg)
 generic.run(["mkdir", "-v", "-p", args.work_dir])
 
 job_ids = dict()
