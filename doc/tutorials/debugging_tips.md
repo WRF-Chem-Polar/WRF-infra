@@ -9,13 +9,7 @@ give an increasing amount of print statements. To get the maximum number of prin
 grid cell in the chem_driver routine (the modified chem_driver.F is also available in this repository). This code loops over the grid cells and 
 prints the chemical concentration for Br in the grid cell i=10, j=25, and k=1:
 ```
-do i=ips,ipe
-    do j=jps,jpe
-        if ( i==10 .and. j==25) then
-            write(*,*) "THIS IS AN EXAMPLE PRINT STATEMENT FOR BR ", chem(i,1,j,p_Br)
-        endif
-    enddo
-enddo
+write(*,*) "THIS IS AN EXAMPLE PRINT STATEMENT FOR BR ", chem(10,1,25,p_Br)
 ```
 
 3. If modifications are made inside the chem/ folder only, no need to do a full clean compile. If Registry or KPP is modified, a full compile is needed.
