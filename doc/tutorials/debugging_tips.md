@@ -20,4 +20,4 @@ enddo
 
 3. If modifications are made inside the chem/ folder only, no need to do a full clean compile. If Registry or KPP is modified, a full compile is needed.
 
-4. Whenever modifying the code, modify the .F files, not the .f90 which are automatically generated uopn compilation. Any change is .f90 files will then be lost.
+4. Whenever modifying the code, modify the .F files, not the .f90 which are automatically generated upon compilation. Any change to .f90 files will be lost.
