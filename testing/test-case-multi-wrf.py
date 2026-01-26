@@ -104,21 +104,21 @@ parser.add_argument(
     default="python",
 )
 args = parser.parse_args()
-work_dir = generic.process_path(args.work_dir)
+dir_work = generic.process_path(args.work_dir)
 wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
 
 # Prepare the work directory
-if os.path.lexists(work_dir):
+if os.path.lexists(dir_work):
     msg = "Work directory already exists."
     raise RuntimeError(msg)
-generic.run(["mkdir", "-v", "-p", work_dir])
+generic.run(["mkdir", "-v", "-p", dir_work])
 
 job_ids = dict()
 for i, wrf_commit in enumerate(wrf_commits, start=1):
     print(f"\nProcessing commit {i}: {wrf_commit}...")
 
     # Install WRF
-    dir_wrf = os.path.join(work_dir, f"WRF_{i}")
+    dir_wrf = os.path.join(dir_work, f"WRF_{i}")
     cmd_wrf = [
         args.python,
         os.path.join(generic.path_of_repo(), "compile", "compile_WRF.py"),
@@ -135,7 +135,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wrf))
 
     # Prepare WPS installation
-    dir_wps = os.path.join(work_dir, f"WPS_{i}")
+    dir_wps = os.path.join(dir_work, f"WPS_{i}")
     cmd_wps = [
         args.python,
         os.path.join(generic.path_of_repo(), "compile", "compile_WPS.py"),
@@ -160,7 +160,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wps, cwd=dir_wps))
 
     # Clone WRF-infra and update simulation.conf
-    dir_infra = os.path.join(work_dir, f"WRF-infra_{i}")
+    dir_infra = os.path.join(dir_work, f"WRF-infra_{i}")
     generic.run([args.git, "clone", generic.path_of_repo(), dir_infra])
     filepath = os.path.join(dir_infra, "run", "simulation.conf")
     new_options = dict(
@@ -169,8 +169,8 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         runid_wrf=f"wrf{i}",
         dir_wps=dir_wps,
         dir_wrf=dir_wrf,
-        dir_outputs=os.path.join(work_dir, f"outputs_{i}"),
-        dir_work=os.path.join(work_dir, f"scratch_{i}"),
+        dir_outputs=os.path.join(dir_work, f"outputs_{i}"),
+        dir_work=os.path.join(dir_work, f"scratch_{i}"),
     )
     replace_options_in_conf(filepath, new_options)
 
@@ -189,11 +189,12 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         job_ids[last_job] = get_job_id(stdout)
 
 # Launch the job that analyzes the results of all the simulations
-dependencies = ",".join(f"afterok:{job_id}" for job_id in job_ids.values())
 dir_job = os.path.join(generic.path_of_repo(), "testing")
-cmd_run = ["sbatch", "-d", dependencies, "analyse-results.job"]
+jobscript = os.path.join(dir_job, "analyse-results.bash")
+dependencies = ",".join(f"afterok:{job_id}" for job_id in job_ids.values())
+cmd_run = ["sbatch", "-d", dependencies, jobscript]
 last_job = "Analyze results"
-job_ids[last_job] = get_job_id(generic.run_stdout(cmd_run, cwd=dir_job))
+job_ids[last_job] = get_job_id(generic.run_stdout(cmd_run, cwd=dir_work))
 
 # Some verbose
 print("\nSummary of job IDs:")
