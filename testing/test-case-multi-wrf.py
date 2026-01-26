@@ -104,20 +104,21 @@ parser.add_argument(
     default="python",
 )
 args = parser.parse_args()
+work_dir = generic.process_path(args.work_dir)
 wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
 
 # Prepare the work directory
-if os.path.lexists(args.work_dir):
+if os.path.lexists(work_dir):
     msg = "Work directory already exists."
     raise RuntimeError(msg)
-generic.run(["mkdir", "-v", "-p", args.work_dir])
+generic.run(["mkdir", "-v", "-p", work_dir])
 
 job_ids = dict()
 for i, wrf_commit in enumerate(wrf_commits, start=1):
     print(f"\nProcessing commit {i}: {wrf_commit}...")
 
     # Install WRF
-    dir_wrf = os.path.join(args.work_dir, f"WRF_{i}")
+    dir_wrf = os.path.join(work_dir, f"WRF_{i}")
     cmd_wrf = [
         args.python,
         os.path.join(generic.path_of_repo(), "compile", "compile_WRF.py"),
@@ -134,7 +135,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wrf))
 
     # Prepare WPS installation
-    dir_wps = os.path.join(args.work_dir, f"WPS_{i}")
+    dir_wps = os.path.join(work_dir, f"WPS_{i}")
     cmd_wps = [
         args.python,
         os.path.join(generic.path_of_repo(), "compile", "compile_WPS.py"),
@@ -159,7 +160,7 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wps, cwd=dir_wps))
 
     # Clone WRF-infra and update simulation.conf
-    dir_infra = os.path.join(args.work_dir, f"WRF-infra_{i}")
+    dir_infra = os.path.join(work_dir, f"WRF-infra_{i}")
     generic.run([args.git, "clone", generic.path_of_repo(), dir_infra])
     filepath = os.path.join(dir_infra, "run", "simulation.conf")
     new_options = dict(
@@ -168,8 +169,8 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         runid_wrf=f"wrf{i}",
         dir_wps=dir_wps,
         dir_wrf=dir_wrf,
-        dir_outputs=os.path.join(args.work_dir, f"outputs_{i}"),
-        dir_work=os.path.join(args.work_dir, f"scratch_{i}"),
+        dir_outputs=os.path.join(work_dir, f"outputs_{i}"),
+        dir_work=os.path.join(work_dir, f"scratch_{i}"),
     )
     replace_options_in_conf(filepath, new_options)
 
