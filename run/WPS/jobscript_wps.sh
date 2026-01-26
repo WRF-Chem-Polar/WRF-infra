@@ -134,6 +134,7 @@ sed -i "5s/YYYY/${yye}/g" namelist.wps
 sed -i "5s/MM/${mme}/g" namelist.wps
 sed -i "5s/DD/${dde}/g" namelist.wps
 sed -i "5s/HH/${hhe}/g" namelist.wps
+sed -i "s/<geog_data_path>/${dir_geog_data}/g" namelist.wps
 
 #-------------#
 # Run geogrid #
