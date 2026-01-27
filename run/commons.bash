@@ -37,6 +37,72 @@ function check_paths {
     return 0
 }
 
+function check_dates {
+    # Run quality check on given dates.
+    #
+    # Parameters
+    # ----------
+    # date_1, date_2, ...: str
+    #     Dates to check. Accepted formats are:
+    #     - YYYY-mm-ddZ
+    #     - YYYY-mm-ddTHH:MMZ
+    #     (the Z at the end enforces UTC)
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if all the dates are parsable and valid, non-zero otherwise.
+    #
+    local d="[0-9]"
+    local re_date="$d$d$d$d-$d$d-$d$d"
+    local re_time="$d$d:$d$d"
+    for arg in "$@"; do
+        echo "commons.bash: check_dates: checking date: \"$arg\""
+        if [[ ! "${arg}" =~ ^${re_date}(|T${re_time})Z$ ]]; then
+            echo "commons.bash: check_dates: invalid format." >&2
+            return 1
+        elif ! date -d "${arg}" > /dev/null 2>&1; then
+            echo "commons.bash: check_dates: invalid date." >&2
+            return 2
+        fi
+    done
+    return 0
+}
+
+function check_period {
+    # Run quality check on given period.
+    #
+    # Parameters
+    # ----------
+    # date_start: str
+    #     Start date of the period.
+    # date_end: str
+    #     End date of the period.
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if the period is correct (dates are valid and
+    #     end_date > start_date), non-zero otherwise.
+    #
+    echo "commons.bash: check_period: $@."
+    if [[ $# -ne 2 ]]; then
+        echo "commons.bash: check_period: need exactly 2 arguments." >&2
+        return 1
+    elif ! check_dates "$1" "$2"; then
+        echo "commons.bash: check_period: invalid date(s)." >&2
+        return 2
+    fi
+    local opts="--utc --rfc-3339=ns"
+    local start=$(date ${opts} --date="$1")
+    local end=$(date ${opts} --date="$2")
+    if [[ ! "${end}" > "${start}" ]]; then
+        echo "commons.bash: check_period: start >= end." >&2
+        return 3
+    fi
+    return 0
+}
+
 if [[ $check_simulation_conf == yes ]]; then
 
     echo "commons.bash: Quality checking the simulation's configuration..."
@@ -62,6 +128,9 @@ if [[ $check_simulation_conf == yes ]]; then
     check_paths "$namelist_wps"
     check_paths "$namelist_real"
     check_paths "$namelist_wrf"
+
+    # Run quality checks on dates
+    check_period "${date_start}" "${date_end}"
 
     if [[ $- == *e* ]]; then
         echo "commons.bash: no problem detected in the simulation's config."
