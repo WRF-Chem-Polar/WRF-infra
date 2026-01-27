@@ -2,7 +2,7 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-"""Run and compare the results of the test case for two versions of WRF."""
+"""Run and compare the results of the test case for multiple WRF versions."""
 
 import argparse
 import os
