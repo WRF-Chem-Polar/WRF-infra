@@ -33,18 +33,6 @@ submit_dir=$(pwd)
 
 # Note: these will be eventually moved to ../simulation.conf
 
-# Simulation start year and month
-yys=2012
-mms=03
-dds=01
-hhs=00
-
-# Simulation end year, month, day, hour
-yye=2012
-mme=03
-dde=08
-hhe=00
-
 # Select the input data.
 # 0=ERA5 reanalysis, 1=ERA-INTERIM reanalysis 2=NCEP/FNL reanalysis
 INPUT_DATA_SELECT=0
@@ -65,34 +53,16 @@ module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2
 # Sanity checks on inputs #
 #-------------------------#
 
-# Set run start and end date
-date_s="$yys-$mms-$dds"
-date_e="$yye-$mme-$dde"
-
-echo ""
-# All of these inputs should be integers
-if ! [ "$yys" -eq "$yys" ] || ! [ "$mms" -eq "$mms" ] ||  ! [ "$dds" -eq "$dds" ] \
-|| ! [ "$yye" -eq "$yye" ] || ! [ "$mme" -eq "$mme" ] ||  ! [ "$dde" -eq "$dde" ]; then
-  echo "Error, inputs to this script should be integers" >&2
-  exit 1
+ms_start=$(date -d "${date_start}" +%M%S)
+ms_end=$(date -d "${date_end}" +%M%S)
+if [[ "${ms_start}" != "0000" || "${ms_end}" != "0000" ]]; then
+    echo "This script assumes that start and end dates are o'clock hours." >&2
+    exit 1
 fi
+
 # The INPUT_DATA_SELECT selector should be set to one of the expected values
 if (( (INPUT_DATA_SELECT < 0) | (INPUT_DATA_SELECT > 2) )); then
   echo "Error, INPUT_DATA_SELECT = ${INPUT_DATA_SELECT}, should be between 0 and 2" >&2
-  exit 1
-fi
-# Dates should be in the YYYY-MM-DD format
-if (( ${#yys} !=4 | ${#mms} !=2 | ${#dds} !=2  )); then
-  echo "Error, start year, month, date format must be YYYY, MM, DD; now $yys, $mms, $dds" >&2
-  exit 1
-fi
-if (( ${#yye} !=4 | ${#mme} !=2 | ${#dde} !=2  )); then
-  echo "Error, end year, month, date format must be YYYY, MM, DD; now $yye, $mme, $dde" >&2
-  exit 1
-fi
-# Start date should be before end date
-if  (( $(date -d "$date_s" "+%s") >= $(date -d "$date_e" "+%s") )); then
-  echo "Error: start date $date_s >= end date $date_e" >&2
   exit 1
 fi
 
@@ -101,7 +71,7 @@ fi
 #-----------------------------------#
 
 # Directory containing WPS output (i.e. met_em files)
-OUTDIR="$dir_outputs/met_em_${runid_wps}_$(date -d "$date_s" "+%Y")"
+OUTDIR="$dir_outputs/wps_${runid_wps}"
 if [ -d "$OUTDIR" ]
 then
   echo "Warning: directory $OUTDIR already exists, overwriting"
@@ -111,7 +81,7 @@ else
 fi
 
 # Also create a temporary run directory
-SCRATCH="$dir_work/met_em_${runid_wps}_$(date -d "$date_s" "+%Y").$SLURM_JOBID"
+SCRATCH="$dir_work/wps_${runid_wps}.${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
@@ -120,20 +90,16 @@ cd "$SCRATCH" || exit
 echo "Running WPS executables from $dir_wps"
 echo "Running on scratchdir $SCRATCH"
 echo "Writing output to $OUTDIR"
-echo "Running from $date_s to $date_e"
+echo "Running from ${date_start} to ${date_end}"
 
 cp $submit_dir/* "$SCRATCH/"
 
 #  Prepare the WPS namelist
 cp $namelist_wps namelist.wps
-sed -i "4s/YYYY/${yys}/g" namelist.wps
-sed -i "4s/MM/${mms}/g" namelist.wps
-sed -i "4s/DD/${dds}/g" namelist.wps
-sed -i "4s/HH/${hhs}/g" namelist.wps
-sed -i "5s/YYYY/${yye}/g" namelist.wps
-sed -i "5s/MM/${mme}/g" namelist.wps
-sed -i "5s/DD/${dde}/g" namelist.wps
-sed -i "5s/HH/${hhe}/g" namelist.wps
+sed -i \
+    -e "s/<start_date>/$(date -d ${date_start} +%Y-%m-%d_%H:%M:%S)/g" \
+    -e "s/<end_date>/$(date -d ${date_end} +%Y-%m-%d_%H:%M:%S)/g" \
+    namelist.wps
 
 #-------------#
 # Run geogrid #
@@ -159,8 +125,8 @@ mkdir -v grib_links
 
 # Create links to the GRIB files in grib_links/
 dir_grib=$dir_shared_data/met_boundary
-date_ungrib=$(date +"%Y%m%d" -d "$date_s")
-while (( $(date -d "$date_ungrib" "+%s") <= $(date -d "$date_e" "+%s") )); do
+date_ungrib=$(date +"%Y%m%d" -d "${date_start}")
+while (( $(date -d "${date_ungrib}" "+%s") <= $(date -d "${date_end}" "+%s") )); do
   if (( INPUT_DATA_SELECT==0 )); then
     ln -sf "$dir_grib/era5/ERA5_grib1_invariant_fields/e5.oper.invariant."* grib_links/
     ln -sf "$dir_grib/era5/ERA5_grib1_$(date +"%Y" -d "$date_ungrib")/e5"*"pl"*"$(date +"%Y%m" -d "$date_ungrib")"* grib_links/
@@ -221,29 +187,18 @@ ln -sf $dir_wps/metgrid/METGRID.TBL metgrid/METGRID.TBL
 
 # In order to use the daily averaged skin temperature for lakes, tavgsfc (thus also metgrid)
 # should be run once per day
-date_s_met=$(date +"%Y%m%d" -d "$date_s")
+date_s_met=$(date +"%Y%m%d" -d "${date_start}")
 # Loop on run days
-while (( $(date -d "$date_s_met +1 day" "+%s") <= $(date -d "$date_e" "+%s") )); do
+while (( $(date -d "${date_s_met} +1 day" "+%s") <= $(date -d "${date_end}" "+%s") )); do
   date_e_met=$(date +"%Y%m%d" -d "$date_s_met + 1 day");
   echo "$date_s_met"
-  # Start and end years/months/days for this metgrid/tavg run
-  yys_met=${date_s_met:0:4}
-  mms_met=${date_s_met:4:2}
-  dds_met=${date_s_met:6:2}
-  yye_met=${date_e_met:0:4}
-  mme_met=${date_e_met:4:2}
-  dde_met=${date_e_met:6:2}
-  # Prepare the namelist
-  cp -f $namelist_wps namelist.wps
-  sed -i "4s/YYYY/${yys_met}/g" namelist.wps
-  sed -i "4s/MM/${mms_met}/g" namelist.wps
-  sed -i "4s/DD/${dds_met}/g" namelist.wps
-  sed -i "4s/HH/00/g" namelist.wps
-  sed -i "5s/YYYY/${yye_met}/g" namelist.wps
-  sed -i "5s/MM/${mme_met}/g" namelist.wps
-  sed -i "5s/DD/${dde_met}/g" namelist.wps
-  sed -i "5s/HH/00/g" namelist.wps
-  sed -i "s/'_FILE_metgrid_'/'FILE'/" namelist.wps
+  #  Prepare the WPS namelist
+  cp $namelist_wps namelist.wps
+  sed -i \
+      -e "s/<start_date>/$(date -d ${date_s_met} +%Y-%m-%d_00:00:00)/g" \
+      -e "s/<end_date>/$(date -d ${date_e_met} +%Y-%m-%d_00:00:00)/g" \
+      -e "s/<FILE_metgrid>/FILE/" \
+      namelist.wps
   # Run avg_tsfc and metgrid
   ./avg_tsfc.exe
   mpirun ./metgrid.exe
@@ -263,13 +218,18 @@ if [[ -v $conda_run ]]; then
 fi
 
 if $USE_CHLA_DMS_WPS; then
-  #---- Add chlorophyll-a oceanic concentrations to met_em*
-  echo "python -u add_chloroa_wps.py $SCRATCH/ ${date_s} ${date_e}"
-  $conda_run python -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
-  #---- Add DMS oceanic concentrations to met_em*
-  echo "python -u add_dmsocean_wps.py $SCRATCH/ ${date_s} ${date_e}"
-  $conda_run python -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    date_s=$(date -d "${date_start}" +%Y-%m-%d)
+    date_e=$(date -d "${date_end}" +%Y-%m-%d)
+
+    #---- Add chlorophyll-a oceanic concentrations to met_em*
+    echo "python -u add_chloroa_wps.py $SCRATCH/ ${date_s} ${date_e}"
+    "${cmd_python}" -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+
+    #---- Add DMS oceanic concentrations to met_em*
+    echo "python -u add_dmsocean_wps.py $SCRATCH/ ${date_s} ${date_e}"
+    "${cmd_python}" -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+
 fi
 
 #----------#
