@@ -53,8 +53,8 @@ module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2
 # Sanity checks on inputs #
 #-------------------------#
 
-ms_start=$(date -d "${date_start}" +%M%S)
-ms_end=$(date -d "${date_end}" +%M%S)
+ms_start=$(utc -d "${date_start}" +%M%S)
+ms_end=$(utc -d "${date_end}" +%M%S)
 if [[ "${ms_start}" != "0000" || "${ms_end}" != "0000" ]]; then
     echo "This script assumes that start and end dates are o'clock hours." >&2
     exit 1
@@ -97,8 +97,8 @@ cp $submit_dir/* "$SCRATCH/"
 #  Prepare the WPS namelist
 cp $namelist_wps namelist.wps
 sed -i \
-    -e "s/<start_date>/$(date -d ${date_start} +%Y-%m-%d_%H:%M:%S)/g" \
-    -e "s/<end_date>/$(date -d ${date_end} +%Y-%m-%d_%H:%M:%S)/g" \
+    -e "s/<start_date>/$(utc -d ${date_start} +%Y-%m-%d_%H:%M:%S)/g" \
+    -e "s/<end_date>/$(utc -d ${date_end} +%Y-%m-%d_%H:%M:%S)/g" \
     namelist.wps
 
 #-------------#
@@ -125,24 +125,24 @@ mkdir -v grib_links
 
 # Create links to the GRIB files in grib_links/
 dir_grib=$dir_shared_data/met_boundary
-date_ungrib=$(date +"%Y%m%d" -d "${date_start}")
-while (( $(date -d "${date_ungrib}" "+%s") <= $(date -d "${date_end}" "+%s") )); do
+date_ungrib=$(utc "+%Y-%m-%dZ" -d "${date_start}")
+while (( $(utc -d "${date_ungrib}" "+%s") <= $(utc -d "${date_end}" "+%s") )); do
   if (( INPUT_DATA_SELECT==0 )); then
     ln -sf "$dir_grib/era5/ERA5_grib1_invariant_fields/e5.oper.invariant."* grib_links/
-    ln -sf "$dir_grib/era5/ERA5_grib1_$(date +"%Y" -d "$date_ungrib")/e5"*"pl"*"$(date +"%Y%m" -d "$date_ungrib")"* grib_links/
-    ln -sf "$dir_grib/era5/ERA5_grib1_$(date +"%Y" -d "$date_ungrib")/e5"*"sfc"*"$(date +"%Y%m" -d "$date_ungrib")"* grib_links/
+    ln -sf "$dir_grib/era5/ERA5_grib1_$(utc "+%Y" -d "$date_ungrib")/e5"*"pl"*"$(utc "+%Y%m" -d "$date_ungrib")"* grib_links/
+    ln -sf "$dir_grib/era5/ERA5_grib1_$(utc "+%Y" -d "$date_ungrib")/e5"*"sfc"*"$(utc "+%Y%m" -d "$date_ungrib")"* grib_links/
   # ERA-interim input
   elif (( INPUT_DATA_SELECT==1 )); then
     # NB we updated the $GRIB_DIR file path but the new path doesn't contain ERA-I
     # so these lines will fail
-    ln -sf "$dir_grib/ERAI/ERA-Int_grib1_$(date +"%Y" -d "$date_ungrib")/ei.oper."*"pl"*"$(date +"%Y%m%d" -d "$date_ungrib")"* grib_links/
-    ln -sf "$dir_grib/ERAI/ERA-Int_grib1_$(date +"%Y" -d "$date_ungrib")/ei.oper."*"sfc"*"$(date +"%Y%m%d" -d "$date_ungrib")"* grib_links/
+    ln -sf "$dir_grib/ERAI/ERA-Int_grib1_$(utc "+%Y" -d "$date_ungrib")/ei.oper."*"pl"*"$(utc "+%Y%m%d" -d "$date_ungrib")"* grib_links/
+    ln -sf "$dir_grib/ERAI/ERA-Int_grib1_$(utc "+%Y" -d "$date_ungrib")/ei.oper."*"sfc"*"$(utc "+%Y%m%d" -d "$date_ungrib")"* grib_links/
   # FNL input
   elif (( INPUT_DATA_SELECT==2 )); then
-    ln -sf "$dir_grib/fnl/ds083.2/FNL$(date +"%Y" -d "$date_ungrib")/fnl_$(date +"%Y%m%d" -d "$date_ungrib")"* grib_links/
+    ln -sf "$dir_grib/fnl/ds083.2/FNL$(utc "+%Y" -d "$date_ungrib")/fnl_$(utc "+%Y%m%d" -d "$date_ungrib")"* grib_links/
   fi
   # Go to the next date to ungrib
-  date_ungrib=$(date +"%Y%m%d" -d "$date_ungrib + 1 day");
+  date_ungrib=$(utc "+%Y-%m-%dZ" -d "${date_ungrib} + 1 day");
 done
 
 # Create links with link_grib.csh, ungrib with ungrib.exe
@@ -187,16 +187,16 @@ ln -sf $dir_wps/metgrid/METGRID.TBL metgrid/METGRID.TBL
 
 # In order to use the daily averaged skin temperature for lakes, tavgsfc (thus also metgrid)
 # should be run once per day
-date_s_met=$(date +"%Y%m%d" -d "${date_start}")
+date_s_met=$(utc "+%Y-%m-%dZ" -d "${date_start}")
 # Loop on run days
-while (( $(date -d "${date_s_met} +1 day" "+%s") <= $(date -d "${date_end}" "+%s") )); do
-  date_e_met=$(date +"%Y%m%d" -d "$date_s_met + 1 day");
+while (( $(utc -d "${date_s_met} +1 day" "+%s") <= $(utc -d "${date_end}" "+%s") )); do
+  date_e_met=$(utc "+%Y-%m-%dZ" -d "${date_s_met} + 1 day");
   echo "$date_s_met"
   #  Prepare the WPS namelist
   cp $namelist_wps namelist.wps
   sed -i \
-      -e "s/<start_date>/$(date -d ${date_s_met} +%Y-%m-%d_00:00:00)/g" \
-      -e "s/<end_date>/$(date -d ${date_e_met} +%Y-%m-%d_00:00:00)/g" \
+      -e "s/<start_date>/$(utc -d ${date_s_met} +%Y-%m-%d_00:00:00)/g" \
+      -e "s/<end_date>/$(utc -d ${date_e_met} +%Y-%m-%d_00:00:00)/g" \
       -e "s/<FILE_metgrid>/FILE/" \
       namelist.wps
   # Run avg_tsfc and metgrid
@@ -212,23 +212,18 @@ rm -rf metgrid
 # Post process outputs from metgrid #
 #-----------------------------------#
 
-cmd_python="python"
-if [[ -v $conda_run ]]; then
-    cmd_python=$conda_run python
-fi
-
 if $USE_CHLA_DMS_WPS; then
 
-    date_s=$(date -d "${date_start}" +%Y-%m-%d)
-    date_e=$(date -d "${date_end}" +%Y-%m-%d)
+    date_s=$(utc -d "${date_start}" +%Y-%m-%d)
+    date_e=$(utc -d "${date_end}" +%Y-%m-%d)
 
     #---- Add chlorophyll-a oceanic concentrations to met_em*
     echo "python -u add_chloroa_wps.py $SCRATCH/ ${date_s} ${date_e}"
-    "${cmd_python}" -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    $conda_run python -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
     #---- Add DMS oceanic concentrations to met_em*
     echo "python -u add_dmsocean_wps.py $SCRATCH/ ${date_s} ${date_e}"
-    "${cmd_python}" -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    $conda_run python -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
 fi
 
