@@ -29,23 +29,6 @@ source ../commons.bash
 
 submit_dir=$(pwd)
 
-#-------------------------------#
-# User-defined input parameters #
-#-------------------------------#
-
-# Note: these will be eventually moved to ../simulation.conf
-
-# Simulation start year and month
-yys=2012
-mms=03
-dds=01
-hhs=00
-# Simulation end year, month, day, hour
-yye=2012
-mme=03
-dde=08
-hhe=00
-
 #-------------#
 # Environment #
 #-------------#
@@ -60,15 +43,10 @@ PATH=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Preprocessing-Tools/bin:$PAT
 # Prepare REAL files and directories #
 #------------------------------------#
 
-date_s="$yys-$mms-$dds"
-date_e="$yye-$mme-$dde"
-
-ID="$(date +"%Y%m%d").$SLURM_JOBID"
-
-WPSDIR="$dir_outputs/met_em_${runid_wps}_$(date -d "$date_s" "+%Y")"
+WPSDIR="$dir_outputs/wps_${runid_wps}"
 
 # Directory containing real.exe output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="$dir_outputs/real_${runid_real}_$(date -d "$date_s" "+%Y")"
+REALDIR="$dir_outputs/real_${runid_wps}_${runid_real}"
 if [ -d "$REALDIR" ]; then
   rm -f "$REALDIR/"*
 else
@@ -76,7 +54,7 @@ else
 fi
 
 # Also create a temporary work directory
-SCRATCH="$dir_work/real_${runid_real}_$(date -d "$date_s" "+%Y").${ID}.scratch"
+SCRATCH="$dir_work/real_${runid_wps}_${runid_real}.${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
@@ -84,7 +62,7 @@ cd "$SCRATCH" || exit
 # Write the info on input/output directories to run log file
 echo " "
 echo "-------- $SLURM_JOB_NAME: Launch real.exe and preprocessors --------"
-echo "Running from $date_s to $date_e"
+echo "Running from ${date_start} to ${date_end}"
 echo "Running version real.exe from $dir_wrf"
 echo "Running on scratchdir $SCRATCH"
 echo "Writing output to $REALDIR"
@@ -122,17 +100,19 @@ echo "-------- $SLURM_JOB_NAME: run real.exe without bio emissions--------"
 echo " "
 # Prepare the real.exe namelist, set up run start and end dates
 cp -vf $submit_dir/$namelist_real namelist.input
-sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
-sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
-sed -i "s/__STARTDAY__/${dds}/g" namelist.input
-sed -i "s/__STARTHOUR__/${hhs}/g" namelist.input
-sed -i "s/__ENDYEAR__/${yye}/g" namelist.input
-sed -i "s/__ENDMONTH__/${mme}/g" namelist.input
-sed -i "s/__ENDDAY__/${dde}/g" namelist.input
-sed -i "s/__ENDHOUR__/${hhe}/g" namelist.input
-sed -i "s/__BIO_EMISS_OPT__/0/g" namelist.input
-sed -i "s/__XWAVENUM__/$xwavenum/g" namelist.input
-sed -i "s/__YWAVENUM__/$ywavenum/g" namelist.input
+sed -i \
+    -e "s/<start_year>/$(utc -d ${date_start} +%Y)/g" \
+    -e "s/<start_month>/$(utc -d ${date_start} +%m)/g" \
+    -e "s/<start_day>/$(utc -d ${date_start} +%d)/g" \
+    -e "s/<start_hour>/$(utc -d ${date_start} +%H)/g" \
+    -e "s/<end_year>/$(utc -d ${date_end} +%Y)/g" \
+    -e "s/<end_month>/$(utc -d ${date_end} +%m)/g" \
+    -e "s/<end_day>/$(utc -d ${date_end} +%d)/g" \
+    -e "s/<end_hour>/$(utc -d ${date_end} +%H)/g" \
+    -e "s/<bio_emiss_opt>/0/g" \
+    -e "s/<xwavenum>/${xwavenum}/g" \
+    -e "s/<ywavenum>/${ywavenum}/g"\
+    namelist.input
 mpirun ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
@@ -171,18 +151,9 @@ echo " "
 echo "-------- $SLURM_JOB_NAME: run real.exe with bio emissions --------"
 echo " "
 # Prepare the real.exe namelist, set up run start and end dates
-cp $submit_dir/$namelist_real namelist.input
-sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
-sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
-sed -i "s/__STARTDAY__/${dds}/g" namelist.input
-sed -i "s/__STARTHOUR__/${hhs}/g" namelist.input
-sed -i "s/__ENDYEAR__/${yye}/g" namelist.input
-sed -i "s/__ENDMONTH__/${mme}/g" namelist.input
-sed -i "s/__ENDDAY__/${dde}/g" namelist.input
-sed -i "s/__ENDHOUR__/${hhe}/g" namelist.input
-sed -i "s/__BIO_EMISS_OPT__/3/g" namelist.input
-sed -i "s/__XWAVENUM__/$xwavenum/g" namelist.input
-sed -i "s/__YWAVENUM__/$ywavenum/g" namelist.input
+sed -i \
+    "s/[ \t]*bio_emiss_opt[ \t]*=.*/bio_emiss_opt = 3, 3, 3,/g" \
+    namelist.input.YYYY
 mpirun ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
@@ -199,7 +170,7 @@ echo "-------- $SLURM_JOB_NAME: run mozbc --------"
 echo " "
 # Find the boundary condition file autmatically in MOZBC_DIR, assuming it is called e.g. cesm-201202.nc
 MOZBC_DIR="$dir_shared_data/chem_boundary/cesm/"
-MOZBC_FILE="$(ls -1 --color=never "$MOZBC_DIR/cesm-$yys$mms"*".nc" | xargs -n 1 basename | tail -n1)"
+MOZBC_FILE="$(ls -1 --color=never "$MOZBC_DIR/cesm-$(utc -d ${date_start} +%Y%m)"*".nc" | xargs -n 1 basename | tail -n1)"
 echo "Run MOZBC for $MOZBC_DIR/$MOZBC_FILE"
 if [ -f "$MOZBC_DIR/$MOZBC_FILE" ]; then
   sed -i "s:dir_moz =.*:dir_moz = \'$MOZBC_DIR\':g" cesmbc_mozartmosaic4bin.inp
@@ -246,14 +217,14 @@ echo " "
 # Find the fire emission file autmatically in FIREEMIS_DIR, assuming it is called e.g. GLOBAL_FINNv1.5_2012.MOZ.txt
 #TODO update to latest version
 FIREEMIS_DIR="$dir_shared_data/fire_emissions/finn/version1/"
-FIREEMIS_FILE="$(ls -1 --color=never "$FIREEMIS_DIR/"*"v1.5"*"_${yys}"*"MOZ"*".txt" | xargs -n 1 basename | tail -n1)"
+FIREEMIS_FILE="$(ls -1 --color=never "$FIREEMIS_DIR/"*"v1.5"*"_$(utc -d ${date_start} +%Y)"*"MOZ"*".txt" | xargs -n 1 basename | tail -n1)"
 echo "Run FIREEMIS for $FIREEMIS_DIR/$FIREEMIS_FILE"
 if [ -f "$FIREEMIS_DIR/$FIREEMIS_FILE" ]; then
   sed -i "s:fire_directory    = .*:fire_directory    = \'$FIREEMIS_DIR\',:g" fire_emis_mozartmosaic.inp
   sed -i "s:fire_filename(1)  = .*:fire_filename(1)  = \'$FIREEMIS_FILE\',:g" fire_emis_mozartmosaic.inp
   sed -i "s:wrf_directory     = .*:wrf_directory     = \'$PWD/\',:g" fire_emis_mozartmosaic.inp
-  sed -i "s:start_date        = .*:start_date        = \'$yys-$mms-$dds\',:g" fire_emis_mozartmosaic.inp
-  sed -i "s:end_date          = .*:end_date          = \'$yye-$mme-$dde\',:g" fire_emis_mozartmosaic.inp
+  sed -i "s:start_date        = .*:start_date        = \'$(utc -d ${date_start} +%Y-%m-%d)\',:g" fire_emis_mozartmosaic.inp
+  sed -i "s:end_date          = .*:end_date          = \'$(utc -d ${date_end} +%Y-%m-%d)\',:g" fire_emis_mozartmosaic.inp
   fire_emis < fire_emis_mozartmosaic.inp > fire_emis.out
 else
   echo "Error: could not find fire emis file"
@@ -272,7 +243,12 @@ echo "-------- $SLURM_JOB_NAME: run emission script --------"
 echo " "
 ANTHRO_EMS_DIR="$dir_shared_data/anthro_emissions/cams/"
 cp $submit_dir/cams2wrfchem.py $SCRATCH/
-$conda_run python -u cams2wrfchem.py --start ${date_s} --end ${date_e} --domain 1 --dir-em-in ${ANTHRO_EMS_DIR}
+$conda_run python -u \
+           cams2wrfchem.py \
+           --start $(utc -d ${date_start} +%Y-%m-%d) \
+           --end $(utc -d ${date_end} +%Y-%m-%d) \
+           --domain 1 \
+           --dir-em-in ${ANTHRO_EMS_DIR}
 
 #----------------------------#
 # Initialize snow on sea ice #
