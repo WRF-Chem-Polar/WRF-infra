@@ -43,26 +43,21 @@ function check_dates {
     # Parameters
     # ----------
     # date_1, date_2, ...: str
-    #     Dates to check. Accepted formats are:
-    #     - YYYY-mm-ddZ
-    #     - YYYY-mm-ddTHH:MMZ
-    #     (the Z at the end enforces UTC)
+    #     Dates to check. Accepted formats are anything parsable by the shell
+    #     function `date`, but dates must be **explicitly** set in UTC.
     #
     # Returns
     # -------
     # int
     #     Zero if all the dates are parsable and valid, non-zero otherwise.
     #
-    local d="[0-9]"
-    local re_date="$d$d$d$d-$d$d-$d$d"
-    local re_time="$d$d:$d$d"
     for arg in "$@"; do
         echo "commons.bash: check_dates: checking date: \"$arg\""
-        if [[ ! "${arg}" =~ ^${re_date}(|T${re_time})Z$ ]]; then
-            echo "commons.bash: check_dates: invalid format." >&2
-            return 1
-        elif ! date -d "${arg}" > /dev/null 2>&1; then
+        if ! date -d "${arg}" > /dev/null 2>&1; then
             echo "commons.bash: check_dates: invalid date." >&2
+            return 1
+        elif [[ $(date --utc -d "${arg}" +%s) != $(date -d "${arg}" +%s) ]]; then
+            echo "commons.bash: check_dates: date is not UTC." >&2
             return 2
         fi
     done
@@ -101,6 +96,49 @@ function check_period {
         return 3
     fi
     return 0
+}
+
+function utc {
+    # Call the date function with parameters "as is" but enforce use of UTC.
+    #
+    # Parameters
+    # ----------
+    # Any: str
+    #     Any parameters that can be passed to the date function. If a date is
+    #     given (with -d or --date), it must be explicitly given in UTC.
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if everything went well, non-zero otherwise.
+    #
+    # Echoes
+    # ------
+    # Whatever the date function echoes.
+    #
+    local i arg the_date
+    for ((i = 1; i <= $#; i++)); do
+        arg=${!i}
+        if [[ "${arg}" == "-d" || "${arg}" == "--date" ]]; then
+            if [[ $i < $# ]]; then
+                i=$((i+1))
+                the_date=${!i}
+            else
+                echo "commons.bash: utc: missing date." >&2
+                return 3
+            fi
+        elif [[ "${arg}" == --date=* ]]; then
+            the_date=${arg#--date=}
+        fi
+        if [[ -v the_date ]]; then
+            if ! check_dates "${the_date}" > /dev/null 2>&1 ; then
+                echo "commons.bash: utc: invalid date: ${the_date}." >&2
+                return 4
+            fi
+        fi
+    done
+    date --utc "${@%$'\n'}"
+    return $?
 }
 
 if [[ $check_simulation_conf == yes ]]; then
