@@ -29,23 +29,6 @@ source ../commons.bash
 
 submit_dir=$(pwd)
 
-#-------------------------------#
-# User-defined input parameters #
-#-------------------------------#
-
-# Note: these will be eventually moved to ../simulation.conf
-
-# Simulation start year and month
-yys=2012
-mms=03
-dds=01
-hhs=00
-# Simulation end year, month, day, hour
-yye=2012
-mme=03
-dde=08
-hhe=00
-
 #-------------#
 # Environment #
 #-------------#
@@ -57,19 +40,14 @@ module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2
 # Prepare #
 #---------#
 
-date_s="$yys-$mms-$dds"
-date_e="$yye-$mme-$dde"
-
-ID="$(date +"%Y%m%d").$SLURM_JOBID"
-
 # Directory containing real output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="${dir_outputs}/real_${runid_real}_$(date -d "$date_s" "+%Y")"
+REALDIR="${dir_outputs}/real_${runid_wps}_${runid_real}"
 # Directory containing WRF-Chem output
-OUTDIR="${dir_outputs}/DONE.${runid_wrf}.$ID"
+OUTDIR="${dir_outputs}/wrf_${runid_wps}_${runid_real}_${runid_wrf}"
 mkdir -pv "$OUTDIR"
 
 # Also create a temporary run directory
-SCRATCH="$dir_work/DONE.${runid_wrf}.$ID.scratch"
+SCRATCH="$dir_work/wrf_${runid_wps}_${runid_real}_${runid_wrf}.${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
@@ -77,7 +55,7 @@ cd "$SCRATCH" || exit
 # Write the info on input/output directories to run log file
 echo " "
 echo "-------- $SLURM_JOB_NAME --------"
-echo "Running from $date_s to $date_e"
+echo "Running from ${date_start} to ${date_end}"
 echo "Running version wrf.exe from $dir_wrf"
 echo "Running on scratchdir $SCRATCH"
 echo "Writing output to $OUTDIR"
@@ -110,17 +88,19 @@ wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))
 # Edit the namelist
-sed -i "s/__STARTYEAR__/${yys}/g" namelist.input
-sed -i "s/__STARTMONTH__/${mms}/g" namelist.input
-sed -i "s/__STARTDAY__/${dds}/g" namelist.input
-sed -i "s/__STARTHOUR__/${hhs}/g" namelist.input
-sed -i "s/__ENDYEAR__/${yye}/g" namelist.input
-sed -i "s/__ENDMONTH__/${mme}/g" namelist.input
-sed -i "s/__ENDDAY__/${dde}/g" namelist.input
-sed -i "s/__ENDHOUR__/${hhe}/g" namelist.input
-sed -i "s/__BIO_EMISS_OPT__/3/g" namelist.input
-sed -i "s/__XWAVENUM__/$xwavenum/g" namelist.input
-sed -i "s/__YWAVENUM__/$ywavenum/g" namelist.input
+sed -i \
+    -e "s/<start_year>/$(utc -d ${date_start} +%Y)/g" \
+    -e "s/<start_month>/$(utc -d ${date_start} +%m)/g" \
+    -e "s/<start_day>/$(utc -d ${date_start} +%d)/g" \
+    -e "s/<start_hour>/$(utc -d ${date_start} +%H)/g" \
+    -e "s/<end_year>/$(utc -d ${date_end} +%Y)/g" \
+    -e "s/<end_month>/$(utc -d ${date_end} +%m)/g" \
+    -e "s/<end_day>/$(utc -d ${date_end} +%d)/g" \
+    -e "s/<end_hour>/$(utc -d ${date_end} +%H)/g" \
+    -e "s/<bio_emiss_opt>/3/g" \
+    -e "s/<xwavenum>/${xwavenum}/g" \
+    -e "s/<ywavenum>/${ywavenum}/g"\
+    namelist.input
 
 # Copy the input files from real.exe
 cp "${REALDIR}/wrfinput_d01" "$SCRATCH/"
@@ -132,15 +112,12 @@ cp "${REALDIR}/wrffdda_d01" "$SCRATCH/"
 cp "${REALDIR}/wrflowinp_d01" "$SCRATCH/"
 # wrfchemi and wrffirechemi files are only needed for WRF-Chem if anthropogenic
 # and fire emissions are active
-date_s_chem=$(date +"%Y%m%d" -d "$date_s")
-while (( $(date -d "$date_s_chem" "+%s") <= $(date -d "$date_e" "+%s") )); do
-  date_e_chem=$(date +"%Y%m%d" -d "$date_s_chem + 1 day");
-  yys_chem=${date_s_chem:0:4}
-  mms_chem=${date_s_chem:4:2}
-  dds_chem=${date_s_chem:6:2}
-  cp "${REALDIR}/wrfchemi_d01_$yys_chem-$mms_chem-$dds_chem"* "$SCRATCH/"
-  cp "${REALDIR}/wrffirechemi_d01_$yys_chem-$mms_chem-$dds_chem"* "$SCRATCH/"
-  date_s_chem=$date_e_chem
+date_chem=$(utc +"%Y%m%dZ" -d "${date_start}")
+while (( $(utc -d "${date_chem}" "+%s") <= $(utc -d "${date_end}" "+%s") )); do
+  suffix=$(utc -d ${date_chem} +%Y-%m-%d)
+  cp "${REALDIR}/wrfchemi_d01_${suffix}"* "$SCRATCH/"
+  cp "${REALDIR}/wrffirechemi_d01_${suffix}"* "$SCRATCH/"
+  date_chem=$(utc +"%Y%m%dZ" -d "${date_chem} + 1 day")
 done
 # exo_coldens and wrf_season_wes_usgs only  needed for MOZART gas phase chemistry
 cp "${REALDIR}/exo_coldens_d01" "$SCRATCH/"
