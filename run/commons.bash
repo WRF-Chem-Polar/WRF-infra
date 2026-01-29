@@ -38,13 +38,14 @@ function check_paths {
 }
 
 function check_dates {
-    # Run quality check on given dates.
+    # Run quality checks on given dates.
     #
     # Parameters
     # ----------
     # date_1, date_2, ...: str
     #     Dates to check. Accepted formats are anything parsable by the shell
-    #     function `date`, but dates must be **explicitly** set in UTC.
+    #     function `date`. If your system's timezone is not UTC, then the
+    #     timezone must be explicitly specified in the dates.
     #
     # Returns
     # -------
@@ -56,8 +57,11 @@ function check_dates {
         if ! date -d "${arg}" > /dev/null 2>&1; then
             echo "commons.bash: check_dates: invalid date." >&2
             return 1
-        elif [[ $(date --utc -d "${arg}" +%s) != $(date -d "${arg}" +%s) ]]; then
-            echo "commons.bash: check_dates: date is not UTC." >&2
+        fi
+        local not_forced_to_utc=$(TZ=Australia/Sydney date -d "${arg}" +%s)
+        local forced_to_utc=$(TZ=Australia/Sydney date --utc -d "${arg}" +%s)
+        if [[ "${not_forced_to_utc}" != "${forced_to_utc}" ]]; then
+            echo "commons.bash: check_dates: implicit non-UTC time zone." >&2
             return 2
         fi
     done
@@ -105,7 +109,8 @@ function utc {
     # ----------
     # Any: str
     #     Any parameters that can be passed to the date function. If a date is
-    #     given (with -d or --date), it must be explicitly given in UTC.
+    #     given (with -d or --date) and if your system's timezone is not UTC,
+    #     then the timezone must be explicitly specified in the date.
     #
     # Returns
     # -------
