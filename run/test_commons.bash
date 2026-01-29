@@ -46,6 +46,111 @@ if check_paths "$valid_path_1" "$invalid_path_1"; then
     ((n_failed++))
 fi
 
+# Unit tests for check_dates
+
+valid_date_1="2025-12-31Z"
+valid_date_2="2025-05-12T21:50Z"
+valid_date_3="2028-02-29Z"
+invalid_date_1="2026-02-29Z"
+invalid_date_2="2025-12-31T00:00"
+invalid_date_3="hello world"
+
+if ! check_dates "${valid_date_1}"; then
+    echo A unit test has failed: check_dates "${valid_date_1}"
+    ((n_failed++))
+fi
+if ! check_dates "${valid_date_2}"; then
+    echo A unit test has failed: check_dates "${valid_date_2}"
+    ((n_failed++))
+fi
+if ! check_dates "${valid_date_3}"; then
+    echo A unit test has failed: check_dates "${valid_date_3}"
+    ((n_failed++))
+fi
+if ! check_dates "${valid_date_1}" "${valid_date_2}"; then
+    echo A unit test has failed: check_dates "${valid_date_1}" "${valid_date_2}"
+    ((n_failed++))
+fi
+if check_dates "${invalid_date_1}"; then
+    echo A unit test has failed: check_dates "${invalid_date_1}"
+    ((n_failed++))
+fi
+if check_dates "${invalid_date_2}"; then
+    echo A unit test has failed: check_dates "${invalid_date_2}"
+    ((n_failed++))
+fi
+if check_dates "${invalid_date_3}"; then
+    echo A unit test has failed: check_dates "${invalid_date_3}"
+    ((n_failed++))
+fi
+if check_dates "${valid_date_1}" "${invalid_date_3}"; then
+    echo A unit test has failed: check_dates "${valid_date_1}" "${invalid_date_3}"
+    ((n_failed++))
+fi
+
+# Unit tests for check_period
+
+valid_date_1="2025-12-31Z"
+valid_date_2="2026-05-12T21:50Z"
+valid_date_3="1789-07-14Z"
+invalid_date_1="2026-02-21"
+
+if ! check_period "${valid_date_1}" "${valid_date_2}"; then
+    echo A unit test has failed: check_period "${valid_date_1}" "${valid_date_2}"
+    ((n_failed++))
+fi
+if ! check_period "${valid_date_3}" "${valid_date_1}"; then
+    echo A unit test has failed: check_period "${valid_date_3}" "${valid_date_1}"
+    ((n_failed++))
+fi
+if check_period "${valid_date_2}" "${valid_date_1}"; then
+    echo A unit test has failed: check_period "${valid_date_2}" "${valid_date_1}"
+    ((n_failed++))
+fi
+if check_period "${valid_date_1}" "${valid_date_1}"; then
+    echo A unit test has failed: check_period "${valid_date_1}" "${valid_date_1}"
+    ((n_failed++))
+fi
+if check_period "${valid_date_1}"; then
+    echo A unit test has failed: check_period "${valid_date_1}"
+    ((n_failed++))
+fi
+if check_period "${valid_date_1}" "${invalid_date_1}"; then
+    echo A unit test has failed: check_period "${valid_date_1}" "${invalid_date_1}"
+    ((n_failed++))
+fi
+
+# Unit tests for utc
+
+valid_date_1="2025-12-31Z"
+valid_date_2="2025-12-31Z + 1 day"
+invalid_date="2026-02-21"
+
+if ! utc -d "${valid_date_1}" > /dev/null 2>&1; then
+    echo A unit test has failed: utc "${valid_date_1}"
+    ((n_failed++))
+fi
+if ! utc --date "${valid_date_1}" > /dev/null 2>&1; then
+    echo A unit test has failed: utc "${valid_date_1}"
+    ((n_failed++))
+fi
+if ! utc --date="${valid_date_1}" > /dev/null 2>&1; then
+    echo A unit test has failed: utc "${valid_date_1}"
+    ((n_failed++))
+fi
+if ! utc --date="${valid_date_2}" > /dev/null 2>&1; then
+    echo A unit test has failed: utc "${valid_date_2}"
+    ((n_failed++))
+fi
+if utc --date="${invalid_date}" > /dev/null 2>&1; then
+    echo A unit test has failed: utc "${invalid_date}"
+    ((n_failed++))
+fi
+if [[ $(utc --date=2025-12-15T21:00Z "+%Y%d %H%M") != "202515 2100" ]]; then
+    echo A unit test has failed: utc --date=2025-12-15T21:00Z +%Y%d %H%M
+    ((n_failed++))
+fi
+
 # Conclusion
 
 echo -e "\nSummary:"
