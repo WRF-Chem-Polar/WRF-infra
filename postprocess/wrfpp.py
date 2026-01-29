@@ -26,7 +26,9 @@ The WRF model:
 # Required imports
 from abc import ABC, abstractmethod
 import warnings
+import datetime
 import numpy as np
+import scipy
 import xarray as xr
 
 # Optional imports
@@ -123,20 +125,8 @@ class GenericDatasetAccessor(ABC):
     def __getitem__(self, *args, **kwargs):
         return self._dataset.__getitem__(*args, **kwargs)
 
-    @property
-    def dims(self):
-        return self._dataset.dims
-
-    @property
-    def sizes(self):
-        return self._dataset.sizes
-
-    @property
-    def attrs(self):
-        return self._dataset.attrs
-
-    def close(self, *args, **kwargs):
-        return self._dataset.close(*args, **kwargs)
+    def __getattr__(self, name):
+        return getattr(self._dataset, name)
 
     # Facilities for dealing with units
 
@@ -420,6 +410,179 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError("Unsupported projection: %s." % proj["proj"])
         return crs
 
+    # Coordinates
+
+    def dimensionality(self, varname):
+        """Return the dimensionality of given variable.
+
+        Parameters
+        ----------
+        varname: str
+             The name of the variable of interest.
+
+        Returns
+        -------
+        str
+            The dimensionality of the variable, for example "yx" for a variable
+            that depends on latitude and longitude. Possible values are:
+            - t for time
+            - z for vertical coordinate
+            - y for latitude
+            - x for longitude
+
+        """
+        out = ""
+        for dim in getattr(self, varname).dims:
+            if dim == "Time":
+                out += "t"
+            elif dim in ("bottom_top", "bottom_top_stag"):
+                out += "z"
+            elif dim in ("south_north", "south_north_stag"):
+                out += "y"
+            elif dim in ("west_east", "west_east_stag"):
+                out += "x"
+            else:
+                msg = f"Unknown dimension: {dim}."
+                raise ValueError(msg)
+        return out
+
+    @property
+    def times(self):
+        """The timestamps of the file, as a Numpy array of datetimes."""
+        strptime = datetime.datetime.strptime
+        return np.array(
+            [
+                strptime(t.decode("UTF-8"), "%Y-%m-%d_%H:%M:%S")
+                for t in self._dataset["Times"].values
+            ]
+        )
+
+    def lonlat_var(self, varname):
+        """Return the longitude and latitude arrays for given variable.
+
+        Parameters
+        ----------
+        varname: str
+             The name of the variable of interest.
+
+        Returns
+        -------
+        xr.DataArray
+            The longitude values.
+        xr.DataArray
+            The latitude values.
+
+        """
+        dims = [
+            dim
+            for dim in getattr(self, varname).dims
+            if dim.startswith("south_north") or dim.startswith("west_east")
+        ]
+        if dims == ["south_north", "west_east"]:
+            lon, lat = self["XLONG"], self["XLAT"]
+        elif dims == ["south_north_stag", "west_east"]:
+            lon, lat = self["XLONG_V"], self["XLAT_V"]
+        elif dims == ["south_north", "west_east_stag"]:
+            lon, lat = self["XLONG_U"], self["XLAT_U"]
+        else:
+            msg = f"Cannot get lon/lat for variable {varname}."
+            raise ValueError(msg)
+        return lon, lat
+
+    # Interpolation
+
+    def _delaunay_xy(self, varname):
+        """Return the (x,y) Delaunay triangulation for given variable.
+
+        Parameters
+        ----------
+        varname: str
+            The name of the variable of interest.
+
+        Returns
+        -------
+        scipy.spatial.Delaunay
+            The Delaunay triangulation in (x,y) space for given variable.
+
+        """
+        x, y = self.ll2xy(*self.lonlat_var(varname))
+        x = np.expand_dims(x.flatten(), 1)
+        y = np.expand_dims(y.flatten(), 1)
+        return scipy.spatial.Delaunay(np.hstack([x, y]))
+
+    def interp_h(self, varname, lon, lat):
+        """Interpolate WRF variable (native or derived) horizontally.
+
+        Parameters
+        ----------
+        varname: str
+            The name of the variable of interest.
+        lon: scalar or numeric array
+            Longitude(s) at which to interpolate.
+        lat: scalar or numeric array
+            Latitude(s) at which to interpolate. Must have the same shape as
+            "lon".
+
+        Return
+        ------
+        xr.DataArray
+            Interpolated values (at all times and/or all heights, if any).
+
+        """
+
+        # Quality controls on input parameters
+        dimensionality = self.dimentionality(varname)
+        if "yx" not in dimensionality:
+            msg = f"Cannot interpolate variable {varname} horizontally."
+            raise ValueError(msg)
+
+        # Convert scalars into arrays if needed
+        if isinstance(lon, float) or isinstance(lon, int):
+            lon = np.array([lon])
+        if isinstance(lat, float) or isinstance(lat, int):
+            lat = np.array([lat])
+        if lon.shape != lat.shape:
+            msg = "Arrays lon and lat must have the same shape."
+            raise ValueError(msg)
+
+        # Prepare the interpolation
+        interpolator = scipy.interpolate.LinearNDInterpolator
+        delaunay = self._delaunay_xy(varname)
+        x, y = self.ll2xy(lon, lat)
+        array = getattr(self, varname)
+
+        # For clarity, we handle each dimentionality manually
+        if dimensionality == "yx":
+            interp = interpolator(delaunay, array.values.flatten())
+            out = interp(x, y)
+
+        elif dimensionality == "tyx":
+            out = np.full(array.shape[:1] + x.shape, np.nan)
+            for t in range(out.shape[0]):
+                interp = interpolator(
+                    delaunay, array.values[t, :, :].flatten()
+                )
+                out[t, :] = interp(x, y)
+
+        elif dimensionality == "tzyx":
+            out = np.full(array.shape[:2] + x.shape, np.nan)
+            for t in range(out.shape[0]):
+                for z in range(out.shape[1]):
+                    interp = interpolator(
+                        delaunay, array.values[t, z, :, :].flatten()
+                    )
+                    out[t, z, :] = interp(x, y)
+
+        else:
+            msg = f"Unknown dimensionality: {dimensionality}."
+            raise ValueError(msg)
+
+        return xr.DataArray(
+            out,
+            name=array.name,
+            attrs=dict(units=array.attrs["units"]),
+        )
+
     # Derived variables
 
     @property
@@ -521,30 +684,8 @@ class DerivedVariable(ABC):
         """
         pass
 
-    @property
-    def values(self):
-        """The values object corresponding to the derived variable.
-
-        Returns
-        -------
-        np.array
-            The values object corresponding to the derived variable.
-
-        """
-        return self[:].values
-
-    def __str__(self):
-        """String representation of the DataArray of the derived variable.
-
-        Warnings
-        --------
-        If the dataset has been opened without activating dask, calling this
-        method will calculate the entire array of the derived variable. This is
-        inefficient for large data sets. This is not a problem if dask is
-        activated because lazy loading will be used in this case.
-
-        """
-        return self[:].__str__()
+    def __getattr__(self, name):
+        return getattr(self[:], name)
 
 
 class WRFPotentialTemperature(DerivedVariable):
