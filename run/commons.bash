@@ -44,8 +44,7 @@ function check_dates {
     # ----------
     # date_1, date_2, ...: str
     #     Dates to check. Accepted formats are anything parsable by the shell
-    #     function `date`. If your system's timezone is not UTC, then the
-    #     timezone must be explicitly specified in the dates.
+    #     function `date` as long as the timezone is explicitly specified.
     #
     # Returns
     # -------
@@ -61,7 +60,7 @@ function check_dates {
         local not_forced_to_utc=$(TZ=Australia/Sydney date -d "${arg}" +%s)
         local forced_to_utc=$(TZ=Australia/Sydney date --utc -d "${arg}" +%s)
         if [[ "${not_forced_to_utc}" != "${forced_to_utc}" ]]; then
-            echo "commons.bash: check_dates: implicit non-UTC time zone." >&2
+            echo "commons.bash: check_dates: implicit timezone." >&2
             return 2
         fi
     done
@@ -108,9 +107,9 @@ function utc {
     # Parameters
     # ----------
     # Any: str
-    #     Any parameters that can be passed to the date function. If a date is
-    #     given (with -d or --date) and if your system's timezone is not UTC,
-    #     then the timezone must be explicitly specified in the date.
+    #     Any parameter that can be passed to the date function. If a date is
+    #     given (with -d or --date) then the timezone must be explicitly
+    #     specified in the date.
     #
     # Returns
     # -------
