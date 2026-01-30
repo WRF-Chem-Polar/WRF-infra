@@ -128,6 +128,26 @@ def _units_mpl(units):
     return " ".join(split)
 
 
+def wrftime2datetime(times):
+    """Convert given WRF timestamps to a Numpy array of datetimes.
+
+    Parameters
+    ----------
+    times: iterable of WRF timestamps
+        The timestamps to process.
+
+    Returns
+    -------
+    np.array(datetimes)
+        The processed timestamps.
+
+    """
+    strptime = datetime.datetime.strptime
+    return np.array(
+        [strptime(t.decode("UTF-8"), "%Y-%m-%d_%H:%M:%S") for t in times]
+    )
+
+
 class GenericDatasetAccessor(ABC):
     """Template for xarray dataset accessors.
 
@@ -470,13 +490,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
     @property
     def times(self):
         """The timestamps of the file, as a Numpy array of datetimes."""
-        strptime = datetime.datetime.strptime
-        return np.array(
-            [
-                strptime(t.decode("UTF-8"), "%Y-%m-%d_%H:%M:%S")
-                for t in self._dataset["Times"].values
-            ]
-        )
+        return wrftime2datetime(self["Times"].values)
 
     def lonlat_var(self, varname):
         """Return the longitude and latitude arrays for given variable.
@@ -484,7 +498,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Parameters
         ----------
         varname: str
-             The name of the variable of interest.
+            The name of the variable of interest.
 
         Returns
         -------
@@ -508,7 +522,18 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         else:
             msg = f"Cannot get lon/lat for variable {varname}."
             raise ValueError(msg)
-        return lon, lat
+        # Quality controls on longitude and latitude
+        if lon.dims != lat.dims or lon.shape != lat.shape:
+            msg = "Inconsistent dims or shapes for longitudes and latitudes."
+            raise ValueError(msg)
+        if lon.dims[0] != "Time":
+            msg = f"Expecting first dimension to be Time, got {lon.dims[0]}."
+            raise ValueError(msg)
+        for t in range(1, lon.shape[0]):
+            if np.any(lon[t] != lon[0]) or np.any(lat[t] != lat[0]):
+                msg = "Longitude and/or latitude not constant with time."
+                raise ValueError(msg)
+        return lon[0, :, :], lat[0, :, :]
 
     # Interpolation
 
@@ -564,12 +589,21 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             msg = f"Cannot interpolate variable {varname} horizontally."
             raise ValueError(msg)
 
-        # Pre-process input arguments
-        lon = lon if _is_iterable(lon) else np.array([lon])
-        lat = lat if _is_iterable(lat) else np.array([lat])
-        if lon.shape != lat.shape:
-            msg = 'Inputs "lon" and "lat" must have the same shape.'
+        # Transform lon and lat into meshgridded arrays
+        if not hasattr(lon, "shape"):
+            lon = np.array(lon)
+        if not hasattr(lat, "shape"):
+            lat = np.array(lat)
+        if len(lon.shape) == 1 and len(lat.shape) == 1:
+            lon, lat = np.meshgrid(lon, lat, indexing="xy")
+        elif len(lon.shape) != 2 or len(lat.shape) != 2:
+            msg = '"lon" and "lat" must be scalars, vectors, or 2D arrays.'
             raise ValueError(msg)
+        if lon.shape != lat.shape:
+            msg = '"lon" and "lat" must have the same shape.'
+            raise ValueError(msg)
+
+        # Set up the list of time and level indices
         if "t" not in dimensionality and times is not None:
             msg = f"Cannot specify times for variable {varname}."
             raise ValueError(msg)
@@ -590,34 +624,42 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         delaunay = self._delaunay_xy(varname)
         x, y = self.ll2xy(lon, lat)
 
-        # For clarity, we handle each dimentionality manually
-        if dimensionality == "yx":
-            out = np.full(x.shape, np.nan)
-            out[:] = interpolator(delaunay, array.values.flatten())(x, y)
-
-        elif dimensionality == "tyx":
-            out = np.full((len(times),) + x.shape, np.nan)
+        # For clarity, we handle each dimensionality manually
+        if dimensionality == "tyx":
+            values = np.full((len(times),) + x.shape, np.nan)
             for t_out, t_in in enumerate(times):
-                out[t_out, :] = interpolator(
-                    delaunay, array.values[t_in, :, :].flatten()
+                values[t_out, :] = interpolator(
+                    delaunay,
+                    array.values[t_in, :, :].flatten(),
                 )(x, y)
 
         elif dimensionality == "tzyx":
-            out = np.full((len(times), len(levels)) + x.shape, np.nan)
+            values = np.full((len(times), len(levels)) + x.shape, np.nan)
             for t_out, t_in in enumerate(times):
                 for z_out, z_in in enumerate(levels):
-                    out[t_out, z_out, :] = interpolator(
-                        delaunay, array.values[t_in, z_in, :, :].flatten()
+                    values[t_out, z_out, :] = interpolator(
+                        delaunay,
+                        array.values[t_in, z_in, :, :].flatten(),
                     )(x, y)
 
         else:
             msg = f"Unknown dimensionality: {dimensionality}."
             raise ValueError(msg)
 
+        # Return DataArray with metadata, same format as any WRF variable
+        dims_lonlat = [d for d in array.dims if not d.startswith("bottom_top")]
+        shape_lonlat = (len(times),) + lon.shape
+        lon = np.concat([lon] * len(times)).reshape(shape_lonlat)
+        lat = np.concat([lat] * len(times)).reshape(shape_lonlat)
         return xr.DataArray(
-            out,
-            name=array.name,
-            attrs=dict(units=array.attrs["units"]),
+            values,
+            dims=array.dims,
+            coords={
+                "XTIME": (["Time"], [self["Times"].values[i] for i in times]),
+                "XLONG": (dims_lonlat, lon),
+                "XLAT": (dims_lonlat, lat),
+            },
+            attrs=array.attrs,
         )
 
     # Derived variables
