@@ -555,6 +555,13 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         xr.DataArray
             Interpolated values.
 
+        Notes
+        -----
+        Although users provide longitude and latitude values, the interpolation
+        is performed in the x,y space backstage. It uses the projection defined
+        in the wrfout file, so bad results might ensue if the projection was
+        poorly chosen for the domain.
+
         """
         data = getattr(self, varname)
 
