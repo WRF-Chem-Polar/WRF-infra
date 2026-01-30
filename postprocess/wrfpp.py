@@ -55,6 +55,27 @@ constants = dict(
 )
 
 
+def _is_iterable(obj):
+    """Check whether object is iterable.
+
+    Parameters
+    ----------
+    obj: any
+        The object to check.
+
+    Returns
+    -------
+    bool
+        True if object is iterable, False otherwise.
+
+    """
+    try:
+        iter(obj)
+    except TypeError:
+        return False
+    return True
+
+
 def _transformer_from_crs(crs, reverse=False):
     """Return the pyproj Transformer corresponding to given CRS.
 
@@ -510,7 +531,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         y = np.expand_dims(y.flatten(), 1)
         return scipy.spatial.Delaunay(np.hstack([x, y]))
 
-    def interp_h(self, varname, lon, lat):
+    def interp_h(self, varname, lon, lat, times=None, levels=None):
         """Interpolate WRF variable (native or derived) horizontally.
 
         Parameters
@@ -522,34 +543,52 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         lat: scalar or numeric array
             Latitude(s) at which to interpolate. Must have the same shape as
             "lon".
+        times: int, iterable of int, or None
+            Indices of times at which to calculate horizontally interpolated
+            values. If None, then all times are used.
+        levels: int, iterable of int, or None
+            Indices of vertical levels at which to calculate horizontally
+            interpolated values. If None, then all levels are used.
 
         Return
         ------
         xr.DataArray
-            Interpolated values (at all times and/or all heights, if any).
+            Interpolated values.
 
         """
+        array = getattr(self, varname)
 
         # Quality controls on input parameters
-        dimensionality = self.dimentionality(varname)
+        dimensionality = self.dimensionality(varname)
         if "yx" not in dimensionality:
             msg = f"Cannot interpolate variable {varname} horizontally."
             raise ValueError(msg)
 
-        # Convert scalars into arrays if needed
-        if isinstance(lon, float) or isinstance(lon, int):
-            lon = np.array([lon])
-        if isinstance(lat, float) or isinstance(lat, int):
-            lat = np.array([lat])
+        # Pre-process input arguments
+        lon = lon if _is_iterable(lon) else np.array([lon])
+        lat = lat if _is_iterable(lat) else np.array([lat])
         if lon.shape != lat.shape:
-            msg = "Arrays lon and lat must have the same shape."
+            msg = 'Inputs "lon" and "lat" must have the same shape.'
             raise ValueError(msg)
+        if "t" not in dimensionality and times is not None:
+            msg = f"Cannot specify times for variable {varname}."
+            raise ValueError(msg)
+        elif "t" in dimensionality and times is None:
+            times = range(array.shape[dimensionality.index("t")])
+        elif "t" in dimensionality and not _is_iterable(times):
+            times = [times]
+        if "z" not in dimensionality and levels is not None:
+            msg = f"Cannot specify levels for variable {varname}."
+            raise ValueError(msg)
+        elif "z" in dimensionality and levels is None:
+            levels = range(array.shape[dimensionality.index("z")])
+        elif "z" in dimensionality and not _is_iterable(levels):
+            levels = [levels]
 
         # Prepare the interpolation
         interpolator = scipy.interpolate.LinearNDInterpolator
         delaunay = self._delaunay_xy(varname)
         x, y = self.ll2xy(lon, lat)
-        array = getattr(self, varname)
 
         # For clarity, we handle each dimentionality manually
         if dimensionality == "yx":
@@ -557,21 +596,21 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             out = interp(x, y)
 
         elif dimensionality == "tyx":
-            out = np.full(array.shape[:1] + x.shape, np.nan)
-            for t in range(out.shape[0]):
+            out = np.full((len(times),) + x.shape, np.nan)
+            for t_out, t_in in enumerate(times):
                 interp = interpolator(
-                    delaunay, array.values[t, :, :].flatten()
+                    delaunay, array.values[t_in, :, :].flatten()
                 )
-                out[t, :] = interp(x, y)
+                out[t_out, :] = interp(x, y)
 
         elif dimensionality == "tzyx":
-            out = np.full(array.shape[:2] + x.shape, np.nan)
-            for t in range(out.shape[0]):
-                for z in range(out.shape[1]):
+            out = np.full((len(times), len(levels)) + x.shape, np.nan)
+            for t_out, t_in in enumerate(times):
+                for z_out, z_in in enumerate(levels):
                     interp = interpolator(
-                        delaunay, array.values[t, z, :, :].flatten()
+                        delaunay, array.values[t_in, z_in, :, :].flatten()
                     )
-                    out[t, z, :] = interp(x, y)
+                    out[t_out, z_out, :] = interp(x, y)
 
         else:
             msg = f"Unknown dimensionality: {dimensionality}."
