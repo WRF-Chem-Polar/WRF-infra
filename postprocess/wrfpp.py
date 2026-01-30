@@ -581,7 +581,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             Interpolated values.
 
         """
-        array = getattr(self, varname)
+        data = getattr(self, varname)
 
         # Quality controls on input parameters
         dimensionality = self.dimensionality(varname)
@@ -608,14 +608,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             msg = f"Cannot specify times for variable {varname}."
             raise ValueError(msg)
         elif "t" in dimensionality and times is None:
-            times = range(array.shape[dimensionality.index("t")])
+            times = range(data.shape[dimensionality.index("t")])
         elif "t" in dimensionality and not _is_iterable(times):
             times = [times]
         if "z" not in dimensionality and levels is not None:
             msg = f"Cannot specify levels for variable {varname}."
             raise ValueError(msg)
         elif "z" in dimensionality and levels is None:
-            levels = range(array.shape[dimensionality.index("z")])
+            levels = range(data.shape[dimensionality.index("z")])
         elif "z" in dimensionality and not _is_iterable(levels):
             levels = [levels]
 
@@ -630,7 +630,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             for t_out, t_in in enumerate(times):
                 values[t_out, :] = interpolator(
                     delaunay,
-                    array.values[t_in, :, :].flatten(),
+                    data.values[t_in, :, :].flatten(),
                 )(x, y)
 
         elif dimensionality == "tzyx":
@@ -639,7 +639,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 for z_out, z_in in enumerate(levels):
                     values[t_out, z_out, :] = interpolator(
                         delaunay,
-                        array.values[t_in, z_in, :, :].flatten(),
+                        data.values[t_in, z_in, :, :].flatten(),
                     )(x, y)
 
         else:
@@ -647,19 +647,19 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError(msg)
 
         # Return DataArray with metadata, same format as any WRF variable
-        dims_lonlat = [d for d in array.dims if not d.startswith("bottom_top")]
+        dims_lonlat = [d for d in data.dims if not d.startswith("bottom_top")]
         shape_lonlat = (len(times),) + lon.shape
         lon = np.concat([lon] * len(times)).reshape(shape_lonlat)
         lat = np.concat([lat] * len(times)).reshape(shape_lonlat)
         return xr.DataArray(
             values,
-            dims=array.dims,
+            dims=data.dims,
             coords={
                 "XTIME": (["Time"], [self["Times"].values[i] for i in times]),
                 "XLONG": (dims_lonlat, lon),
                 "XLAT": (dims_lonlat, lat),
             },
-            attrs=array.attrs,
+            attrs=data.attrs,
         )
 
     # Derived variables
