@@ -1143,7 +1143,7 @@ class WRFBoxDz(DerivedVariable):
             box_dz,
             name="WRF grid box dz (vertical extent)",
             attrs=dict(
-                long_name="Grid grid box dz (vertical extent)",
+                long_name="WRF grid box dz (vertical extent)",
                 units="m",
             ),
         )
