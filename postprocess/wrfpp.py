@@ -592,25 +592,23 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         # For clarity, we handle each dimentionality manually
         if dimensionality == "yx":
-            interp = interpolator(delaunay, array.values.flatten())
-            out = interp(x, y)
+            out = np.full(x.shape, np.nan)
+            out[:] = interpolator(delaunay, array.values.flatten())(x, y)
 
         elif dimensionality == "tyx":
             out = np.full((len(times),) + x.shape, np.nan)
             for t_out, t_in in enumerate(times):
-                interp = interpolator(
+                out[t_out, :] = interpolator(
                     delaunay, array.values[t_in, :, :].flatten()
-                )
-                out[t_out, :] = interp(x, y)
+                )(x, y)
 
         elif dimensionality == "tzyx":
             out = np.full((len(times), len(levels)) + x.shape, np.nan)
             for t_out, t_in in enumerate(times):
                 for z_out, z_in in enumerate(levels):
-                    interp = interpolator(
+                    out[t_out, z_out, :] = interpolator(
                         delaunay, array.values[t_in, z_in, :, :].flatten()
-                    )
-                    out[t_out, z_out, :] = interp(x, y)
+                    )(x, y)
 
         else:
             msg = f"Unknown dimensionality: {dimensionality}."
