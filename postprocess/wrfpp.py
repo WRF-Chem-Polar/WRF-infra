@@ -128,26 +128,6 @@ def _units_mpl(units):
     return " ".join(split)
 
 
-def wrftime2datetime(times):
-    """Convert given WRF timestamps to a Numpy array of datetimes.
-
-    Parameters
-    ----------
-    times: iterable of WRF timestamps
-        The timestamps to process.
-
-    Returns
-    -------
-    np.array(datetimes)
-        The processed timestamps.
-
-    """
-    strptime = datetime.datetime.strptime
-    return np.array(
-        [strptime(t.decode("UTF-8"), "%Y-%m-%d_%H:%M:%S") for t in times]
-    )
-
-
 class GenericDatasetAccessor(ABC):
     """Template for xarray dataset accessors.
 
@@ -486,11 +466,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 msg = f"Unknown dimension: {dim}."
                 raise ValueError(msg)
         return out
-
-    @property
-    def times(self):
-        """The timestamps of the file, as a Numpy array of datetimes."""
-        return wrftime2datetime(self["Times"].values)
 
     def lonlat_var(self, varname):
         """Return the longitude and latitude arrays for given variable.
