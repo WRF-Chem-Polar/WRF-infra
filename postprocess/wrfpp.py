@@ -26,6 +26,7 @@ The WRF model:
 # Required imports
 from abc import ABC, abstractmethod
 import warnings
+import datetime
 import numpy as np
 import xarray as xr
 
@@ -103,6 +104,42 @@ def _units_mpl(units):
         if n != len(s):
             split[i] = "%s$^{%s}$" % (s[: n + 1], s[n + 1 :])
     return " ".join(split)
+
+
+def wrfdate_to_datetime(date):
+    """Convert single WRF date to datetime instance.
+
+    Parameters
+    ----------
+    date: numpy.bytes_
+        The date in the native WRF format.
+
+    Returns
+    -------
+    datetime.datetime
+        The date in a more suitable format.
+
+    """
+    return datetime.datetime.strptime(
+        date.decode("UTF-8"), "%Y-%m-%d_%H:%M:%S"
+    )
+
+
+def wrfdates_to_datetimes(dates):
+    """Convert WRF dates to array of datetime instances.
+
+    Parameters
+    ----------
+    dates: single numpy.bytes_ or iterable or array of these
+        The dates in their native WRF format.
+
+    Returns
+    -------
+    numpy array of datetime.datetime
+        The dates in a more suitable format.
+
+    """
+    return np.vectorize(wrfdate_to_datetime)(dates)
 
 
 class GenericDatasetAccessor(ABC):
@@ -419,6 +456,13 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         else:
             raise ValueError("Unsupported projection: %s." % proj["proj"])
         return crs
+
+    # Coordinates
+
+    @property
+    def times(self):
+        """The file's timestamps, as a numpy array of datetime instances."""
+        return wrfdates_to_datetimes(self["Times"])
 
     # Derived variables
 
