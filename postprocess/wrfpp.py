@@ -154,7 +154,7 @@ class GenericDatasetAccessor(ABC):
             The units of this variable as defined in the NetCDF file.
 
         """
-        attrs = self[varname].attrs
+        attrs = getattr(self, varname).attrs
         try:
             units = attrs["units"]
         except KeyError:
