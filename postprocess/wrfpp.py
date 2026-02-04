@@ -466,17 +466,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         xarray.Dataset
             The data from the extracted gridpoint(s).
 
-        Raises
-        ------
-        ValueError
-            If `method` is not an expected value.
-
-        ValueError
-            If window is even or negative.
-
-        ValueError
-            If (lon,lat) is not within the model domain.
-
         """
         allowed = {"centre", "mean", "min", "max"}
         if method not in allowed:
