@@ -572,9 +572,9 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         # Transform lon and lat into meshgridded arrays
         if not hasattr(lon, "shape"):
-            lon = np.array(lon)
+            lon = np.array([lon])
         if not hasattr(lat, "shape"):
-            lat = np.array(lat)
+            lat = np.array([lat])
         if len(lon.shape) == 1 and len(lat.shape) == 1:
             lon, lat = np.meshgrid(lon, lat, indexing="xy")
         elif len(lon.shape) != 2 or len(lat.shape) != 2:
