@@ -480,11 +480,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """
         allowed = {"centre", "mean", "min", "max"}
         if method not in allowed:
-            raise ValueError(
-                f"Invalid mode: {method!r}. Expected one of {allowed}."
-            )
+            msg = f"Invalid mode: {method!r}. Expected one of {allowed}."
+            raise ValueError(msg)
         if not isinstance(window, int) or window < 1 or window % 2 == 0:
-            raise ValueError("window must be a positive odd integer")
+            msg = "window must be a positive odd integer"
+            raise ValueError(msg)
 
         # Get (i,j) indices of model gridpoint containing (lon,lat)
         # (will raise error if point outside domain)
@@ -496,7 +496,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         else:
             # make index arrays for window**2 nearest points, making sure 0 < i < nx
             (ny, nx) = self.lonlat[0].shape
-            r = window // 2  # half-width of the window
+            r = window // 2
             imin, imax = max(0, i - r), min(nx, i + r + 1)
             jmin, jmax = max(0, j - r), min(ny, j + r + 1)
             islice = range(imin, imax)
@@ -554,10 +554,9 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             If (lon,lat) is not within the model domain.
 
         """
-        # Test if point is inside model domain
-        indomain = self.is_inside_domain(lon, lat)
-        if not indomain:
-            raise ValueError(f"Point ({lon}, {lat}) is outside model domain.")
+        if not self.is_inside_domain(lon, lat):
+            msg = f"Point ({lon}, {lat}) is outside model domain."
+            raise ValueError(msg)
 
         wrflons, wrflats = self.lonlat
         geod = pyproj.Geod(ellps="WGS84")
