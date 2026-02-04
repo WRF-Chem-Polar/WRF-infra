@@ -13,6 +13,7 @@ preprocess = [
 wrfpp = [
     "pyproj",
     "netcdf4",
+    "scipy",
     "xarray",
     "cartopy",
 ]
