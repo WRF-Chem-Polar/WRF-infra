@@ -563,12 +563,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         """
         data = getattr(self, varname)
-
-        # Quality controls on input parameters
         dimensionality = self.dimensionality(varname)
-        if "yx" not in dimensionality:
-            msg = f"Cannot interpolate variable {varname} horizontally."
-            raise ValueError(msg)
 
         # Transform lon and lat into meshgridded arrays
         if not hasattr(lon, "shape"):
