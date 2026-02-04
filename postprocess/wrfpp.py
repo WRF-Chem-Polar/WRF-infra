@@ -629,7 +629,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError(msg)
 
         # Return DataArray with metadata, same format as any WRF variable
-        dims_lonlat = [d for d in data.dims if not d.startswith("bottom_top")]
+        dims_lonlat = [data.dims[dimensionality.index(dim)] for dim in "tyx"]
         shape_lonlat = (len(times),) + lon.shape
         lon = np.concat([lon] * len(times)).reshape(shape_lonlat)
         lat = np.concat([lat] * len(times)).reshape(shape_lonlat)
