@@ -526,13 +526,12 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         dx, dy = self._dataset.attrs["DX"], self._dataset.attrs["DY"]
         xx, yy = self.ll2xy(wrflons, wrflats)
         x, y = self.ll2xy(lon, lat)
-        indomain = (
-            x > np.amin(xx) - dx / 2
-            and x < np.amax(xx) + dx / 2
-            and y > np.amin(yy) - dy / 2
-            and y < np.amax(yy) + dy / 2
+        return (
+            x >= np.amin(xx) - dx / 2
+            and x <= np.amax(xx) + dx / 2
+            and y >= np.amin(yy) - dy / 2
+            and y <= np.amax(yy) + dy / 2
         )
-        return indomain
 
     def nearest_indices(self, lon, lat):
         """Return indices (i, j) of gridpoint nearest to (lon, lat).
