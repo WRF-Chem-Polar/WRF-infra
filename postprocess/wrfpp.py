@@ -579,7 +579,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             msg = '"lon" and "lat" must have the same shape.'
             raise ValueError(msg)
 
-        # Set up the list of time and level indices
+        # Set up the list(s) of time and level indices
         if "t" not in dimensionality and times is not None:
             msg = f"Cannot specify times for variable {varname}."
             raise ValueError(msg)
