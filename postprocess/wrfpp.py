@@ -461,8 +461,34 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
     @property
     def times(self):
-        """The file's timestamps, as a numpy array of datetime instances."""
+        """The file's timestamps.
+
+        Returns
+        -------
+        numpy array of datetime instances
+            The file's timestamps.
+
+        """
         return wrfdates_to_datetimes(self["Times"])
+
+    @property
+    def dt(self):
+        """The file's time step.
+
+        Returns
+        -------
+        timedelta | None
+            The file's timestep (None if the file has fewer then 2 time steps).
+
+        """
+        if self.sizes["Time"] < 2:
+            return None
+        times = self.times
+        dt = set(times[1:] - times[:-1])
+        if len(dt) != 1:
+            msg = "The file's timestep is not constant."
+            raise ValueError(msg)
+        return list(dt)[0]
 
     # Derived variables
 
