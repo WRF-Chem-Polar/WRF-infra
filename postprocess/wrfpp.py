@@ -599,28 +599,34 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             levels = range(data.shape[dimensionality.index("z")])
         elif "z" in dimensionality and not _is_iterable(levels):
             levels = [levels]
+        selection = {}
+        if "t" in dimensionality:
+            selection[data.dims[dimensionality.index("t")]] = times
+        if "z" in dimensionality:
+            selection[data.dims[dimensionality.index("z")]] = levels
 
         # Prepare the interpolation
+        values_in = data.isel(**selection).values
         interpolator = scipy.interpolate.LinearNDInterpolator
         delaunay = self._delaunay_xy(varname)
         x, y = self.ll2xy(lon, lat)
 
         # For clarity, we handle each dimensionality manually
         if dimensionality == "tyx":
-            values = np.full((len(times),) + x.shape, np.nan)
-            for t_out, t_in in enumerate(times):
-                values[t_out, :] = interpolator(
+            values_out = np.full((len(times),) + x.shape, np.nan)
+            for t in range(len(times)):
+                values_out[t, :] = interpolator(
                     delaunay,
-                    data.values[t_in, :, :].flatten(),
+                    values_in[t, :, :].flatten(),
                 )(x, y)
 
         elif dimensionality == "tzyx":
-            values = np.full((len(times), len(levels)) + x.shape, np.nan)
-            for t_out, t_in in enumerate(times):
-                for z_out, z_in in enumerate(levels):
-                    values[t_out, z_out, :] = interpolator(
+            values_out = np.full((len(times), len(levels)) + x.shape, np.nan)
+            for t in range(len(times)):
+                for z in range(len(levels)):
+                    values_out[t, z, :] = interpolator(
                         delaunay,
-                        data.values[t_in, z_in, :, :].flatten(),
+                        values_in[t, z, :, :].flatten(),
                     )(x, y)
 
         else:
@@ -633,7 +639,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         lon = np.concat([lon] * len(times)).reshape(shape_lonlat)
         lat = np.concat([lat] * len(times)).reshape(shape_lonlat)
         return xr.DataArray(
-            values,
+            values_out,
             dims=data.dims,
             coords={
                 "XTIME": (["Time"], [self["Times"].values[i] for i in times]),
