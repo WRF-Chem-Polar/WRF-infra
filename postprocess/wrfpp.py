@@ -451,6 +451,50 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError("Unsupported projection: %s." % proj["proj"])
         return crs
 
+    def lonlat_var(self, varname):
+        """Return the longitude and latitude arrays for given variable.
+
+        Parameters
+        ----------
+        varname: str
+            The name of the variable of interest.
+
+        Returns
+        -------
+        xr.DataArray
+            The longitude values.
+        xr.DataArray
+            The latitude values.
+
+        """
+        dims = [
+            dim
+            for dim in getattr(self, varname).dims
+            if dim.startswith("south_north") or dim.startswith("west_east")
+        ]
+        if dims == ["south_north", "west_east"]:
+            lon, lat = self["XLONG"], self["XLAT"]
+        elif dims == ["south_north_stag", "west_east"]:
+            lon, lat = self["XLONG_V"], self["XLAT_V"]
+        elif dims == ["south_north", "west_east_stag"]:
+            lon, lat = self["XLONG_U"], self["XLAT_U"]
+        else:
+            msg = f"Cannot get lon/lat for variable {varname}."
+            raise ValueError(msg)
+        # Quality controls on longitude and latitude
+        if lon.dims != lat.dims or lon.shape != lat.shape:
+            msg = "Inconsistent dims or shapes for longitudes and latitudes."
+            raise ValueError(msg)
+        if lon.dims[0] != "Time":
+            msg = f"Expecting first dimension to be Time, got {lon.dims[0]}."
+            raise ValueError(msg)
+        for t in range(1, lon.shape[0]):
+            if np.any(lon[t] != lon[0]) or np.any(lat[t] != lat[0]):
+                msg = "Longitude and/or latitude not constant with time."
+                raise ValueError(msg)
+        return lon[0, :, :], lat[0, :, :]
+
+
     # Coordinates
 
     @property
