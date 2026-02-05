@@ -478,7 +478,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Returns
         -------
         timedelta | None
-            The file's timestep (None if the file has fewer then 2 time steps).
+            The file's time step (None if the file has fewer than 2 time steps).
 
         """
         if self.sizes["Time"] < 2:
