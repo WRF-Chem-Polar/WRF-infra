@@ -123,20 +123,8 @@ class GenericDatasetAccessor(ABC):
     def __getitem__(self, *args, **kwargs):
         return self._dataset.__getitem__(*args, **kwargs)
 
-    @property
-    def dims(self):
-        return self._dataset.dims
-
-    @property
-    def sizes(self):
-        return self._dataset.sizes
-
-    @property
-    def attrs(self):
-        return self._dataset.attrs
-
-    def close(self, *args, **kwargs):
-        return self._dataset.close(*args, **kwargs)
+    def __getattr__(self, name):
+        return getattr(self._dataset, name)
 
     # Facilities for dealing with units
 
@@ -681,30 +669,8 @@ class DerivedVariable(ABC):
         """
         pass
 
-    @property
-    def values(self):
-        """The values object corresponding to the derived variable.
-
-        Returns
-        -------
-        np.array
-            The values object corresponding to the derived variable.
-
-        """
-        return self[:].values
-
-    def __str__(self):
-        """String representation of the DataArray of the derived variable.
-
-        Warnings
-        --------
-        If the dataset has been opened without activating dask, calling this
-        method will calculate the entire array of the derived variable. This is
-        inefficient for large data sets. This is not a problem if dask is
-        activated because lazy loading will be used in this case.
-
-        """
-        return self[:].__str__()
+    def __getattr__(self, name):
+        return getattr(self[:], name)
 
 
 class WRFPotentialTemperature(DerivedVariable):
