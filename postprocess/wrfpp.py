@@ -56,12 +56,12 @@ constants = dict(
 
 
 def open_dataset(*args, **kwargs):
-    """Wrapper around xarray.open_mfdaset for WRF output files.
+    """Wrapper around xarray.open_mfdataset for WRF output files.
 
     Parameters
     ----------
     *args, **kwargs
-        Any parameter accepted by xarray.open_daset.
+        Any parameter accepted by xarray.open_dataset.
 
     Returns
     -------
@@ -73,14 +73,14 @@ def open_dataset(*args, **kwargs):
 
 
 def open_mfdataset(paths, **kwargs):
-    """Wrapper around xarray.open_mfdaset for WRF output files.
+    """Wrapper around xarray.open_mfdataset for WRF output files.
 
     Parameters
     ----------
     paths: str or nested sequence of paths
         The path(s) to the file(s).
     **kwargs
-        Any keyword parameter accepted by xarray.open_mfdaset, except
+        Any keyword parameter accepted by xarray.open_mfdataset, except
         "combine" and "concat_dim", which values are forced here.
 
     Returns
