@@ -106,42 +106,6 @@ def _units_mpl(units):
     return " ".join(split)
 
 
-def wrfdate_to_datetime(date):
-    """Convert single WRF date to datetime instance.
-
-    Parameters
-    ----------
-    date: numpy.bytes_
-        The date in the native WRF format.
-
-    Returns
-    -------
-    datetime.datetime
-        The date in a more suitable format.
-
-    """
-    return datetime.datetime.strptime(
-        date.decode("UTF-8"), "%Y-%m-%d_%H:%M:%S"
-    )
-
-
-def wrfdates_to_datetimes(dates):
-    """Convert WRF dates to array of datetime instances.
-
-    Parameters
-    ----------
-    dates: single numpy.bytes_ or iterable or array of these
-        The dates in their native WRF format.
-
-    Returns
-    -------
-    numpy array of datetime.datetime
-        The dates in a more suitable format.
-
-    """
-    return np.vectorize(wrfdate_to_datetime)(dates)
-
-
 class GenericDatasetAccessor(ABC):
     """Template for xarray dataset accessors.
 
@@ -460,18 +424,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
     # Coordinates
 
     @property
-    def times(self):
-        """The file's timestamps.
-
-        Returns
-        -------
-        numpy array of datetime instances
-            The file's timestamps.
-
-        """
-        return wrfdates_to_datetimes(self["Times"])
-
-    @property
     def dt(self):
         """The file's time step.
 
@@ -483,7 +435,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """
         if self.sizes["Time"] < 2:
             return None
-        times = self.times
+        times = self["XTIME"].values
         dt = set(times[1:] - times[:-1])
         if len(dt) != 1:
             msg = "The file's timestep is not constant."
