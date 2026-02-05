@@ -420,6 +420,27 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError("Unsupported projection: %s." % proj["proj"])
         return crs
 
+    # Coordinates
+
+    @property
+    def dt(self):
+        """The file's time step.
+
+        Returns
+        -------
+        timedelta | None
+            The file's time step (None if the file has fewer than 2 time steps).
+
+        """
+        if self.sizes["Time"] < 2:
+            return None
+        times = self["XTIME"].values
+        dt = set(times[1:] - times[:-1])
+        if len(dt) != 1:
+            msg = "The file's timestep is not constant."
+            raise ValueError(msg)
+        return list(dt)[0]
+
     @property
     def lonlat(self):
         """Return the longitude and latitude arrays from the WRF grid.
