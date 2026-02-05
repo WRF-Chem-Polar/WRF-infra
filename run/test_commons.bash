@@ -20,6 +20,7 @@ valid_path_2=another/valid/path
 valid_path_3=.
 invalid_path_1="dirname with spaces/subdir"
 invalid_path_2=
+invalid_path_3="I/have/a/@-character"
 
 if ! check_paths "$valid_path_1"; then
     echo A unit test has failed: check_paths "valid_path_1"
@@ -39,6 +40,10 @@ if check_paths "$invalid_path_1"; then
 fi
 if check_paths "$invalid_path_2"; then
     echo A unit test has failed: "!" check_paths "$invalid_path_2"
+    ((n_failed++))
+fi
+if check_paths "$invalid_path_3"; then
+    echo A unit test has failed: "!" check_paths "$invalid_path_3"
     ((n_failed++))
 fi
 if check_paths "$valid_path_1" "$invalid_path_1"; then
