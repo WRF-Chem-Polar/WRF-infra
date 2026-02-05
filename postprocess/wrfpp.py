@@ -52,6 +52,52 @@ constants = dict(
     grav_accel=9.81,  # Gravitational constant in (m s-2)
 )
 
+# Wrappers to xarray functionality
+
+
+def open_dataset(*args, **kwargs):
+    """Wrapper around xarray.open_mfdaset for WRF output files.
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Any parameter accepted by xarray.open_daset.
+
+    Returns
+    -------
+    WRFDatasetAccessor
+        The WRF accessor of the open dataset.
+
+    """
+    return xr.open_dataset(*args, **kwargs).wrf
+
+
+def open_mfdataset(paths, **kwargs):
+    """Wrapper around xarray.open_mfdaset for WRF output files.
+
+    Parameters
+    ----------
+    paths: str or nested sequence of paths
+        The path(s) to the file(s).
+    **kwargs
+        Any keyword parameter accepted by xarray.open_mfdaset, except
+        "combine" and "concat_dim", which values are forced here.
+
+    Returns
+    -------
+    WRFDatasetAccessor
+        The WRF accessor of the open multiple-file dataset.
+
+    """
+    nope_list = ("combine", "concat_dim")
+    for arg in nope_list:
+        if arg in kwargs:
+            msg = f'You may not use "{arg}" as an argument.'
+            raise ValueError(msg)
+    return xr.open_mfdataset(
+        paths, combine="nested", concat_dim="Time", **kwargs
+    ).wrf
+
 
 def _transformer_from_crs(crs, reverse=False):
     """Return the pyproj Transformer corresponding to given CRS.
