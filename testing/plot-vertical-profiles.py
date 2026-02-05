@@ -138,6 +138,7 @@ if not args.output.endswith(".pdf"):
 
 colors = ("r", "b", "k", "y", "m")
 linestyles = ("-", "--", ":")
+markers = ("o", "^", "v", "*", "+", "s")
 
 # Other hard-coded parameters
 
@@ -200,15 +201,20 @@ with PdfPages(args.output) as pdf:
             array_y = getattr(ds, variable_z_axis)
 
             # Plot the profiles
+            x = array_x.isel(Time=run["time_idx"]).mean(axis=0)
+            y = array_y.isel(Time=run["time_idx"]).mean(axis=0)
             ax.plot(
-                array_x.isel(Time=run["time_idx"]).mean(axis=0),
-                array_y.isel(Time=run["time_idx"]).mean(axis=0),
-                linestyles[i_run % len(linestyles)],
+                x,
+                y,
+                markers[i_run % len(markers)]
+                + linestyles[i_run % len(linestyles)],
                 color=colors[i_run % len(colors)],
+                markersize=3,
                 label=f"Run {i_run + 1}",
             )
 
             # Format the plot
+            ax.set_ylim(y.min(), y.max())
             ax.legend()
             ax.set_xlabel(f"{variable} ({ds.units_mpl(variable)})")
             ax.set_ylabel(f"{array_y.name} ({ds.units_mpl(variable_z_axis)})")
