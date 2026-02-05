@@ -379,9 +379,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError("Invalid value for MAP_PROJ_CHAR.")
         if self.attrs["STAND_LON"] != self.attrs["CEN_LON"]:
             raise ValueError("Inconsistency in central longitude values.")
-        for which in ("TRUELAT1", "TRUELAT2", "MOAD_CEN_LAT"):
-            if round(self.attrs[which], 4) != round(self.attrs["CEN_LAT"], 4):
-                raise ValueError("Inconsistency in true latitude values.")
         proj = dict(
             proj="stere",
             lat_0=self.attrs["POLE_LAT"],
