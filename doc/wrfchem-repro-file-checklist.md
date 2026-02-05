@@ -2,9 +2,11 @@
 
 Saving model configuration files is one key component of making sure WRF-Chem runs are fully reproducable (along with saving the exact model version, compile procedure, and input data).
 
-The jobscripts provided in this repo are set up so that the files the user edits to define their run (jobscripts, namelists). This file provides a checklist for users to ensure that everything has been saved correctly.
+This file provides a checklist for users to ensure that everything has been saved correctly.
 
 ## Checklist
+
+- [ ] simulation.conf
 - [ ] jobscript_wps.sh
 - [ ] jobscript_real.sh
 - [ ] jobscript_wrfchem.sh
