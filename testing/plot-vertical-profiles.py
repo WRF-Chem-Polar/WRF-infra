@@ -118,7 +118,7 @@ parser.add_argument(
 parser.add_argument(
     "--output",
     help="Path to output file. It must have the .pdf extension.",
-    default="output.pdf",
+    default="vertical-profiles.pdf",
 )
 args = parser.parse_args()
 
