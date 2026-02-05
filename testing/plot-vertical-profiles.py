@@ -19,8 +19,8 @@ import wrfpp
 Location = namedtuple("Location", "name lon lat")
 
 
-def process_location(location):
-    """Process location (typically obtained from command-line arguments).
+def parse_location(location):
+    """Parse location (typically obtained from command-line arguments).
 
     Parameters
     ----------
@@ -125,7 +125,7 @@ args = parser.parse_args()
 # Pre-process command-line arguments and run quality controls
 
 variables = [var.strip() for var in args.variables.split(",")]
-locations = [process_location(loc) for loc in args.locations.split(",")]
+locations = [parse_location(loc) for loc in args.locations.split(",")]
 if args.start is not None:
     args.start = datetime.datetime.strptime(args.start, "%Y-%m-%d")
 if args.end is not None:
@@ -149,7 +149,7 @@ variable_z_axis = "altitude_agl_c"
 runs = []
 for i_run, path in enumerate(args.wrfouts.split(",")):
     run = {"ds": xr.open_dataset(generic.process_path(path.strip())).wrf}
-    times = list(run["ds"].times)
+    times = list(run["ds"]["XTIME"].values)
     dt = run["ds"].dt
 
     # Process start date
@@ -189,6 +189,7 @@ with PdfPages(args.output) as pdf:
     for variable, location in product(variables, locations):
         print(f"Plotting {variable} at {location.name}...")
 
+        lon, lat = location.lon, location.lat
         fig = new_page()
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.6])
 
@@ -196,7 +197,7 @@ with PdfPages(args.output) as pdf:
             print(f"    Processing run {i_run + 1}...")
 
             # Prepare dataset and arrays
-            ds = run["ds"].value_around_point(location.lon, location.lat).wrf
+            ds = run["ds"].value_around_point(lon, lat).wrf
             array_x = getattr(ds, variable)
             array_y = getattr(ds, variable_z_axis)
 
@@ -218,8 +219,10 @@ with PdfPages(args.output) as pdf:
             ax.legend()
             ax.set_xlabel(f"{variable} ({ds.units_mpl(variable)})")
             ax.set_ylabel(f"{array_y.name} ({ds.units_mpl(variable_z_axis)})")
-            title = f"Vertical profile of {variable} at {location.name}"
-            ax.set_title(title)
+            lon_formatted = f"{abs(lon)}{'E' if lon > 0 else 'W'}"
+            lat_formatted = f"{abs(lat)}{'N' if lat > 0 else 'S'}"
+            loclonlat = f"{location.name} ({lon_formatted}, {lat_formatted})"
+            ax.set_title(f"Vertical profile of {variable} at {loclonlat}")
 
         # Finalize the page
         pdf.savefig()
