@@ -16,6 +16,7 @@ import wrfpp
 # Types and functions
 
 Location = namedtuple("Location", "name lon lat")
+Variable = namedtuple("Variable", "name window")
 
 
 def parse_location(location):
@@ -34,6 +35,31 @@ def parse_location(location):
     """
     split = location.split(":")
     return Location(split[0].strip(), float(split[1]), float(split[2]))
+
+
+def parse_variable(variable):
+    """Parse variable (typically obtained from command-line arguments).
+
+    Parameters
+    ----------
+    variable: str
+        Variable specified as "name" or "name:window".
+
+    Returns
+    -------
+    Variable
+        The given variable parsed as a named tuple.
+
+    """
+    split = variable.split(":")
+    name = split[0].strip()
+    try:
+        window = split[1]
+    except IndexError:
+        window = 1
+    else:
+        window = int(window)
+    return Variable(name, window)
 
 
 def new_page():
@@ -123,7 +149,7 @@ args = parser.parse_args()
 
 # Pre-process command-line arguments and run quality controls
 
-variables = [var.strip() for var in args.variables.split(",")]
+variables = [parse_variable(var) for var in args.variables.split(",")]
 locations = [parse_location(loc) for loc in args.locations.split(",")]
 if args.start is not None:
     args.start = datetime.datetime.strptime(args.start, "%Y-%m-%d")
@@ -142,6 +168,26 @@ markers = ("o", "^", "v", "*", "+", "s")
 # Other hard-coded parameters
 
 variable_z_axis = "altitude_agl_c"
+dont_drop_these_variables = (
+    "XLONG",
+    "XLAT",
+    "XLONG_U",
+    "XLAT_U",
+    "XLONG_V",
+    "XLAT_V",
+    # Variables listed below are used in the calculation of derived variables
+    "HGT",
+    "MAPFAC_M",
+    "P",
+    "PB",
+    "PH",
+    "PHB",
+    "QCLOUD",
+    "QVAPOR",
+    "RAINC",
+    "RAINNC",
+    "T",
+)
 
 # Open and prepare datasets
 
@@ -178,6 +224,13 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
         times.index(run["start"]), times.index(run["end"] - dt) + 1
     )
 
+    # Drop needless variables (the use of value_around_point later on can lead
+    # to memory errors if performed on large numbers of variables at once)
+    drop_variables = set(run["ds"].variables.keys())
+    drop_variables -= set([var.name for var in variables])
+    drop_variables -= set(dont_drop_these_variables)
+    run["ds"] = run["ds"].drop_vars(drop_variables).wrf
+
     runs.append(run)
 
 # Create the PDF with the plots
@@ -186,7 +239,7 @@ with PdfPages(args.output) as pdf:
     add_title_page(pdf, runs)
 
     for variable, location in product(variables, locations):
-        print(f"Plotting {variable} at {location.name}...")
+        print(f"Plotting {variable.name} at {location.name}...")
 
         lon, lat = location.lon, location.lat
         fig = new_page()
@@ -196,8 +249,11 @@ with PdfPages(args.output) as pdf:
             print(f"    Processing run {i_run + 1}...")
 
             # Prepare dataset and arrays
-            ds = run["ds"].value_around_point(lon, lat).wrf
-            array_x = getattr(ds, variable)
+            ds = run["ds"].value_around_point(
+                lon, lat, method="mean", window=variable.window
+            )
+            ds = ds.wrf
+            array_x = getattr(ds, variable.name)
             array_y = getattr(ds, variable_z_axis)
 
             # Plot the profiles
@@ -216,12 +272,15 @@ with PdfPages(args.output) as pdf:
             # Format the plot
             ax.set_ylim(y.min(), y.max())
             ax.legend()
-            ax.set_xlabel(f"{variable} ({ds.units_mpl(variable)})")
+            ax.set_xlabel(f"{variable.name} ({ds.units_mpl(variable.name)})")
             ax.set_ylabel(f"{array_y.name} ({ds.units_mpl(variable_z_axis)})")
             lon_formatted = f"{abs(lon)}{'E' if lon > 0 else 'W'}"
             lat_formatted = f"{abs(lat)}{'N' if lat > 0 else 'S'}"
             loclonlat = f"{location.name} ({lon_formatted}, {lat_formatted})"
-            ax.set_title(f"Vertical profile of {variable} at {loclonlat}")
+            ax.set_title(
+                f"Vertical profile of {variable.name} at {loclonlat}"
+                f"\n(window = {variable.window})"
+            )
 
         # Finalize the page
         pdf.savefig()
