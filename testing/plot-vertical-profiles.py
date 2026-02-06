@@ -8,7 +8,6 @@ import argparse
 from itertools import product
 from collections import namedtuple
 import datetime
-import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
@@ -148,7 +147,7 @@ variable_z_axis = "altitude_agl_c"
 
 runs = []
 for i_run, path in enumerate(args.wrfouts.split(",")):
-    run = {"ds": xr.open_dataset(generic.process_path(path.strip())).wrf}
+    run = {"ds": wrfpp.open_dataset(generic.process_path(path.strip())).wrf}
     times = list(run["ds"]["XTIME"].values)
     dt = run["ds"].dt
 

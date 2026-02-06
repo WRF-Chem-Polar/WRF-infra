@@ -22,7 +22,7 @@
  ref_lon   = -25.,
  truelat1  = 70.,
  stand_lon = -25.,
- geog_data_path = '/proju/wrf-chem/input-data/wps_static/wps_v4'
+ geog_data_path = '<geog_data_path>'
 /
 
 &ungrib
