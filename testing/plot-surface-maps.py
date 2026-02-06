@@ -51,7 +51,7 @@ def add_title_page(pdf, runs):
 
     """
     ax = new_page().add_axes([0, 0, 1, 1])
-    ax.text(0.5, 0.8, "Vertical profiles", ha="center", va="center")
+    ax.text(0.5, 0.8, "Surface maps", ha="center", va="center")
     y = 0.6
     for i, run in enumerate(runs):
         ax.text(0.1, y, f"Run {i + 1}: {run['ds'].encoding['source']}")
@@ -212,6 +212,7 @@ with PdfPages(args.output) as pdf:
                 transform=ccrs.PlateCarree(),
                 vmin=vmin,
                 vmax=vmax,
+                rasterized=True,
             )
             ax.set_title(f"Run {i_run + 1}")
             axes.append(ax)
