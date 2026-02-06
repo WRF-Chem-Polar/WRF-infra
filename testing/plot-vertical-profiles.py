@@ -278,7 +278,7 @@ with PdfPages(args.output) as pdf:
             lat_formatted = f"{abs(lat)}{'N' if lat > 0 else 'S'}"
             loclonlat = f"{location.name} ({lon_formatted}, {lat_formatted})"
             ax.set_title(
-                f"Vertical profile of {variable} at {loclonlat}"
+                f"Vertical profile of {variable.name} at {loclonlat}"
                 f"\n(window = {variable.window})"
             )
 
