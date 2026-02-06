@@ -5,9 +5,12 @@
 """Plot surface (or near-surface) maps of variables from WRF run(s)."""
 
 # TODO:
-# - fix aesthetics of plots, eg plots are overlapping colourbars
 # - check for identical domains between runs...
 # - ..and plot diffs if domains are the same
+# - improve options for colourmap, eg
+#    * command line option per variable
+#    * create diverging cmap around a specific value
+#      (eg around 0 for temperature in C)
 
 import argparse
 import datetime
@@ -16,8 +19,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.axes import Axes
 from wrfinfra import generic
 import wrfpp
 
@@ -178,6 +179,7 @@ with PdfPages(args.output) as pdf:
         fig_width = 0.7
         fig_left = 0.15
         ax_width = fig_width / len(runs)
+        axes = []
         for i_run, run in enumerate(runs):
             print(f"    Processing run {i_run + 1}...")
 
@@ -195,12 +197,8 @@ with PdfPages(args.output) as pdf:
             # Prepare axes and plot
             left = fig_left + ax_width * i_run
             ax = fig.add_axes(
-                [left, 0.2, ax_width, 0.6],
+                [left, 0.2, 0.95 * ax_width, 0.6],
                 projection=ds.wrf.crs,
-            )
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes(
-                "right", size="5%", pad=0.05, axes_class=Axes
             )
             ax.coastlines()
             C = ax.pcolormesh(
@@ -211,12 +209,15 @@ with PdfPages(args.output) as pdf:
                 vmin=vmin,
                 vmax=vmax,
             )
-            plt.colorbar(
-                C,
-                cax=cax,
-                label=f"{variable} ({ds.wrf.units_mpl(variable)})",
-            )
             ax.set_title(f"Run {i_run + 1}")
+            axes.append(ax)
+
+        plt.colorbar(
+            C,
+            ax=axes,
+            label=f"{variable} ({ds.wrf.units_mpl(variable)})",
+            orientation="horizontal",
+        )
 
         # Finalize the page
         pdf.savefig()
