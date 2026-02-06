@@ -101,7 +101,7 @@ fi
 #-----------------------------------#
 
 # Directory containing WPS output (i.e. met_em files)
-OUTDIR="$dir_outputs/met_em_${runid_wps}_$(date -d "$date_s" "+%Y")"
+OUTDIR="$dir_outputs/wps_${runid_wps}
 if [ -d "$OUTDIR" ]
 then
   echo "Warning: directory $OUTDIR already exists, overwriting"
