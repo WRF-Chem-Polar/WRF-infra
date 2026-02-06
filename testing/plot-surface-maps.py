@@ -6,22 +6,24 @@
 
 # TODO:
 # - fix aesthetics of plots, eg plots are overlapping colourbars
-# - add colourbar labels with varname, units
 # - check for identical domains between runs...
 # - ..and plot diffs if domains are the same
-# - take projection from wrf instead of hard coding NorthPolarStereo
 
 import argparse
 import datetime
 import xarray as xr
+import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.axes import Axes
 from wrfinfra import generic
 import wrfpp
 
 
 # Functions
+
 
 def new_page():
     """Create a new A4 page in current document.
@@ -159,17 +161,24 @@ with PdfPages(args.output) as pdf:
     for variable in variables:
         print(f"Plotting {variable} map...")
 
+        # Hard code the colourbar min and max
+        minvals, maxvals = [], []
+        for irun, run in enumerate(runs):
+            ds = run["ds"].wrf
+            if "bottom_top" in getattr(ds, variable).dims:
+                ds = ds.isel(bottom_top=0)
+            elif "bottom_top_stag" in getattr(ds, variable).dims:
+                ds = ds.isel(bottom_top_stag=0)
+            minvals.append(np.ma.amin(getattr(ds.wrf, variable)))
+            maxvals.append(np.ma.amax(getattr(ds.wrf, variable)))
+        vmin = np.amin(minvals)
+        vmax = np.amax(maxvals)
+
         fig = new_page()
         fig_width = 0.7
-        fig_left = 0.2
-        ax_width = 0.8*fig_width/len(runs)
+        fig_left = 0.15
+        ax_width = fig_width / len(runs)
         for i_run, run in enumerate(runs):
-            left = fig_left + ax_width*i_run
-            ax = fig.add_axes(
-                [left, 0.2, ax_width, 0.6],
-                projection=ccrs.NorthPolarStereo(),
-            )
-
             print(f"    Processing run {i_run + 1}...")
 
             # Prepare dataset and arrays
@@ -181,19 +190,35 @@ with PdfPages(args.output) as pdf:
 
             array = getattr(ds, variable)
             data = array.isel(Time=run["time_idx"]).mean(axis=0)
-
             lon, lat = ds.wrf.lonlat_var(variable)
+
+            # Prepare axes and plot
+            left = fig_left + ax_width * i_run
+            ax = fig.add_axes(
+                [left, 0.2, ax_width, 0.6],
+                projection=ds.wrf.crs,
+            )
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes(
+                "right", size="5%", pad=0.05, axes_class=Axes
+            )
+            ax.coastlines()
             C = ax.pcolormesh(
                 lon,
                 lat,
                 data,
-                transform=ccrs.PlateCarree()
+                transform=ccrs.PlateCarree(),
+                vmin=vmin,
+                vmax=vmax,
             )
-            plt.colorbar(C, ax=ax, shrink=0.4)
-            ax.set_title(f"Run {i_run+1}")
+            plt.colorbar(
+                C,
+                cax=cax,
+                label=f"{variable} ({ds.wrf.units_mpl(variable)})",
+            )
+            ax.set_title(f"Run {i_run + 1}")
 
         # Finalize the page
-        fig.subplots_adjust(wspace=0.06)
         pdf.savefig()
         plt.close()
 
