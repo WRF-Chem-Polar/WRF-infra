@@ -166,12 +166,17 @@ with PdfPages(args.output) as pdf:
         minvals, maxvals = [], []
         for irun, run in enumerate(runs):
             ds = run["ds"].wrf
+            array = getattr(ds.wrf, variable)
             if "bottom_top" in getattr(ds, variable).dims:
-                ds = ds.isel(bottom_top=0)
+                array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in getattr(ds, variable).dims:
-                ds = ds.isel(bottom_top_stag=0)
-            minvals.append(np.ma.amin(getattr(ds.wrf, variable)))
-            maxvals.append(np.ma.amax(getattr(ds.wrf, variable)))
+                array = array.isel(bottom_top_stag=0)
+            minvals.append(
+                np.ma.amin(array.isel(Time=run["time_idx"]).mean(axis=0))
+            )
+            maxvals.append(
+                np.ma.amax(array.isel(Time=run["time_idx"]).mean(axis=0))
+            )
         vmin = np.amin(minvals)
         vmax = np.amax(maxvals)
 
@@ -185,12 +190,11 @@ with PdfPages(args.output) as pdf:
 
             # Prepare dataset and arrays
             ds = run["ds"].wrf
+            array = getattr(ds.wrf, variable)
             if "bottom_top" in getattr(ds, variable).dims:
-                ds = ds.isel(bottom_top=0)
+                array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in getattr(ds, variable).dims:
-                ds = ds.isel(bottom_top_stag=0)
-
-            array = getattr(ds, variable)
+                array = array.isel(bottom_top_stag=0)
             data = array.isel(Time=run["time_idx"]).mean(axis=0)
             lon, lat = ds.wrf.lonlat_var(variable)
 
