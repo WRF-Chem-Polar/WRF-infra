@@ -630,7 +630,13 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Return
         ------
         xr.DataArray
-            Interpolated values.
+            Interpolated values. This function always returns an array with
+            the same dimensionality as the variable being interpolated (even
+            if only one time step and/or one vertical layer is specified). A
+            consequence of this choice is that this function always meshgrids
+            the given longitude and latitude values together. For example,
+            if you give it 3 longitudes and 4 latitudes, it will interpolate
+            the variables at 12 locations.
 
         Notes
         -----
