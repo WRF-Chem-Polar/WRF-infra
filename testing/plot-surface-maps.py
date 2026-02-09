@@ -2,15 +2,15 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-"""Plot surface (or near-surface) maps of variables from WRF run(s)."""
+"""
+Plot surface (or otherwise single-level) maps of variables from WRF run(s).
 
-# TODO:
-# - check for identical domains between runs...
-# - ..and plot diffs if domains are the same
-# - improve options for colourmap, eg
-#    * command line option per variable
-#    * create diverging cmap around a specific value
-#      (eg around 0 for temperature in C)
+TODO:
+- move functions duplicated in plot-vertical-profiles.py somewhere else
+- check for identical domains between runs...
+- ..and plot map of difference between runs if domains are the same
+- improve options for colourmap, eg command line option per variable
+"""
 
 import argparse
 import datetime
@@ -154,6 +154,13 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
     runs.append(run)
 
 
+# Format parameters
+fig_width = 0.7
+fig_height = 0.6
+fig_left = 0.15
+fig_bottom = 0.2
+
+
 # Create the PDF with the plots
 
 with PdfPages(args.output) as pdf:
@@ -162,7 +169,7 @@ with PdfPages(args.output) as pdf:
     for variable in variables:
         print(f"Plotting {variable} map...")
 
-        # Hard code the colourbar min and max
+        # Select values for the colourbar min and max
         minvals, maxvals = [], []
         for irun, run in enumerate(runs):
             ds = run["ds"].wrf
@@ -181,8 +188,6 @@ with PdfPages(args.output) as pdf:
         vmax = np.amax(maxvals)
 
         fig = new_page()
-        fig_width = 0.7
-        fig_left = 0.15
         ax_width = fig_width / len(runs)
         axes = []
         for i_run, run in enumerate(runs):
@@ -201,7 +206,7 @@ with PdfPages(args.output) as pdf:
             # Prepare axes and plot
             left = fig_left + ax_width * i_run
             ax = fig.add_axes(
-                [left, 0.2, 0.95 * ax_width, 0.6],
+                [left, fig_bottom, 0.95 * ax_width, fig_height],
                 projection=ds.wrf.crs,
             )
             ax.coastlines()
