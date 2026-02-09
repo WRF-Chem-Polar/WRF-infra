@@ -53,6 +53,52 @@ constants = dict(
     grav_accel=9.81,  # Gravitational constant in (m s-2)
 )
 
+# Wrappers to xarray functionality
+
+
+def open_dataset(*args, **kwargs):
+    """Wrapper around xarray.open_mfdataset for WRF output files.
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Any parameter accepted by xarray.open_dataset.
+
+    Returns
+    -------
+    WRFDatasetAccessor
+        The WRF accessor of the open dataset.
+
+    """
+    return xr.open_dataset(*args, **kwargs).wrf
+
+
+def open_mfdataset(paths, **kwargs):
+    """Wrapper around xarray.open_mfdataset for WRF output files.
+
+    Parameters
+    ----------
+    paths: str or nested sequence of paths
+        The path(s) to the file(s).
+    **kwargs
+        Any keyword parameter accepted by xarray.open_mfdataset, except
+        "combine" and "concat_dim", which values are forced here.
+
+    Returns
+    -------
+    WRFDatasetAccessor
+        The WRF accessor of the open multiple-file dataset.
+
+    """
+    nope_list = ("combine", "concat_dim")
+    for arg in nope_list:
+        if arg in kwargs:
+            msg = f'You may not use "{arg}" as an argument.'
+            raise ValueError(msg)
+    return xr.open_mfdataset(
+        paths, combine="nested", concat_dim="Time", **kwargs
+    ).wrf
+
 
 def _is_iterable(obj):
     """Check whether object is iterable.
@@ -164,7 +210,7 @@ class GenericDatasetAccessor(ABC):
             The units of this variable as defined in the NetCDF file.
 
         """
-        attrs = self[varname].attrs
+        attrs = getattr(self, varname).attrs
         try:
             units = attrs["units"]
         except KeyError:
@@ -389,9 +435,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             raise ValueError("Invalid value for MAP_PROJ_CHAR.")
         if self.attrs["STAND_LON"] != self.attrs["CEN_LON"]:
             raise ValueError("Inconsistency in central longitude values.")
-        for which in ("TRUELAT1", "TRUELAT2", "MOAD_CEN_LAT"):
-            if round(self.attrs[which], 4) != round(self.attrs["CEN_LAT"], 4):
-                raise ValueError("Inconsistency in true latitude values.")
         proj = dict(
             proj="stere",
             lat_0=self.attrs["POLE_LAT"],
@@ -465,6 +508,41 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 msg = f"Unknown dimension: {dim}."
                 raise ValueError(msg)
         return out
+
+    @property
+    def dt(self):
+        """The file's time step.
+
+        Returns
+        -------
+        timedelta | None
+            The file's time step (None if the file has fewer than 2 time steps).
+
+        """
+        if self.sizes["Time"] < 2:
+            return None
+        times = self["XTIME"].values
+        dt = set(times[1:] - times[:-1])
+        if len(dt) != 1:
+            msg = "The file's timestep is not constant."
+            raise ValueError(msg)
+        return list(dt)[0]
+
+    @property
+    def lonlat(self):
+        """Return the longitude and latitude arrays from the WRF grid.
+
+        Returns
+        -------
+        tuple of np.ndarray
+            The (lon, lat) arrays, with time dimension removed if present.
+        """
+        wrf = self._dataset
+        lons, lats = wrf["XLONG"].values, wrf["XLAT"].values
+        if "Time" in wrf.dims:
+            lons = lons[0]
+            lats = lats[0]
+        return lons, lats
 
     def lonlat_var(self, varname):
         """Return the longitude and latitude arrays for given variable.
@@ -643,22 +721,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             },
             attrs=data.attrs,
         )
-
-    @property
-    def lonlat(self):
-        """Return the longitude and latitude arrays from the WRF grid.
-
-        Returns
-        -------
-        tuple of np.ndarray
-            The (lon, lat) arrays, with time dimension removed if present.
-        """
-        wrf = self._dataset
-        lons, lats = wrf["XLONG"].values, wrf["XLAT"].values
-        if "Time" in wrf.dims:
-            lons = lons[0]
-            lats = lats[0]
-        return lons, lats
 
     def value_around_point(self, lon, lat, method="centre", window=3):
         """Return dataset around given location.
