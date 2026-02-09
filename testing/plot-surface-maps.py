@@ -14,7 +14,6 @@ TODO:
 
 import argparse
 import datetime
-import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -120,7 +119,7 @@ if not args.output.endswith(".pdf"):
 
 runs = []
 for i_run, path in enumerate(args.wrfouts.split(",")):
-    run = {"ds": xr.open_dataset(generic.process_path(path.strip())).wrf}
+    run = {"ds": wrfpp.open_dataset(generic.process_path(path.strip()))}
     times = list(run["ds"]["XTIME"].values)
     dt = run["ds"].dt
 
@@ -172,8 +171,8 @@ with PdfPages(args.output) as pdf:
         # Select values for the colourbar min and max
         minvals, maxvals = [], []
         for irun, run in enumerate(runs):
-            ds = run["ds"].wrf
-            array = getattr(ds.wrf, variable)
+            ds = run["ds"]
+            array = getattr(ds, variable)
             if "bottom_top" in getattr(ds, variable).dims:
                 array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in getattr(ds, variable).dims:
@@ -194,20 +193,20 @@ with PdfPages(args.output) as pdf:
             print(f"    Processing run {i_run + 1}...")
 
             # Prepare dataset and arrays
-            ds = run["ds"].wrf
-            array = getattr(ds.wrf, variable)
+            ds = run["ds"]
+            array = getattr(ds, variable)
             if "bottom_top" in getattr(ds, variable).dims:
                 array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in getattr(ds, variable).dims:
                 array = array.isel(bottom_top_stag=0)
             data = array.isel(Time=run["time_idx"]).mean(axis=0)
-            lon, lat = ds.wrf.lonlat_var(variable)
+            lon, lat = ds.lonlat_var(variable)
 
             # Prepare axes and plot
             left = fig_left + ax_width * i_run
             ax = fig.add_axes(
                 [left, fig_bottom, 0.95 * ax_width, fig_height],
-                projection=ds.wrf.crs,
+                projection=ds.crs,
             )
             ax.coastlines()
             C = ax.pcolormesh(
@@ -225,7 +224,7 @@ with PdfPages(args.output) as pdf:
         plt.colorbar(
             C,
             ax=axes,
-            label=f"{variable} ({ds.wrf.units_mpl(variable)})",
+            label=f"{variable} ({ds.units_mpl(variable)})",
             orientation="horizontal",
         )
 
