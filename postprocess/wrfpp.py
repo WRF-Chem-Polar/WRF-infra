@@ -94,9 +94,7 @@ def open_mfdataset(paths, **kwargs):
         if arg in kwargs:
             msg = f'You may not use "{arg}" as an argument.'
             raise ValueError(msg)
-    return xr.open_mfdataset(
-        paths, combine="nested", concat_dim="Time", **kwargs
-    ).wrf
+    return xr.open_mfdataset(paths, combine="nested", concat_dim="Time", **kwargs).wrf
 
 
 def _transformer_from_crs(crs, reverse=False):
@@ -493,7 +491,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 msg = "Longitude and/or latitude not constant with time."
                 raise ValueError(msg)
         return lon[0, :, :], lat[0, :, :]
-
 
     # Coordinates
 
@@ -941,9 +938,7 @@ class WRFAccumulatedPrecipitation(DerivedVariable):
         return xr.DataArray(
             precip,
             name="accumulated total precipitation",
-            attrs=dict(
-                long_name="Accumulated total precipitation", units="mm"
-            ),
+            attrs=dict(long_name="Accumulated total precipitation", units="mm"),
         )
 
 
