@@ -65,10 +65,10 @@ date_e="$yye-$mme-$dde"
 
 ID="$(date +"%Y%m%d").$SLURM_JOBID"
 
-WPSDIR="$dir_outputs/wps_${runid_wps}"
+WPSDIR="$dir_outputs/wps_${runid_wps}_$(date -d ${date_s} +%Y-%m-%d)"
 
 # Directory containing real.exe output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="$dir_outputs/real_${runid_wps}_${runid_real}"
+REALDIR="$dir_outputs/real_${runid_wps}_${runid_real}_$(date -d ${date_s} +%Y-%m-%d)"
 if [ -d "$REALDIR" ]; then
   rm -f "$REALDIR/"*
 else
