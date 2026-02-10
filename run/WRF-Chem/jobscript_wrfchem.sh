@@ -47,7 +47,7 @@ OUTDIR="${dir_outputs}/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(utc -d ${da
 mkdir -pv "$OUTDIR"
 
 # Also create a temporary run directory
-SCRATCH="$dir_work/wrf_${runid_wps}_${runid_real}_${runid_wrf}.${SLURM_JOBID}"
+SCRATCH="$dir_work/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(utc -d ${date_start} +%Y-%m-%d).${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
