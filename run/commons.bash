@@ -25,13 +25,20 @@ function check_paths {
     # List of quality checks:
     # - The path is not empty.
     # - The path contains no spaces.
+    # - The path does not contain the character @
+    #   (we use it as a separator in sed commands that deal with paths).
     #
     for arg in "$@"; do
         echo "commons.bash: check_paths: checking path: $arg"
-        if [[ $(echo $arg | grep -cE "[[:space:]]") -ne 0 ]]; then
+        if [[ $(echo "${arg}" | grep -cE "[[:space:]]") -ne 0 ]]; then
+            echo "commons.bash: check_paths: path has spaces." >&2
             return 1
-        elif [[ -z $arg ]]; then
+        elif [[ -z "${arg}" ]]; then
+            echo "commons.bash: check_paths: path is empty." >&2
             return 2
+        elif [[ "${arg}" == *@* ]]; then
+            echo "commons.bash: check_paths: path contains @." >&2
+            return 3
         fi
     done
     return 0
