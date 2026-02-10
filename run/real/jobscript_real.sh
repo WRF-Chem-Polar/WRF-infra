@@ -43,10 +43,10 @@ PATH=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Preprocessing-Tools/bin:$PAT
 # Prepare REAL files and directories #
 #------------------------------------#
 
-WPSDIR="$dir_outputs/wps_${runid_wps}_$(utc -d ${date_s} +%Y-%m-%d)"
+WPSDIR="$dir_outputs/wps_${runid_wps}_$(utc -d ${date_start} +%Y-%m-%d)"
 
 # Directory containing real.exe output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="$dir_outputs/real_${runid_wps}_${runid_real}_$(utc -d ${date_s} +%Y-%m-%d)"
+REALDIR="$dir_outputs/real_${runid_wps}_${runid_real}_$(utc -d ${date_start} +%Y-%m-%d)"
 if [ -d "$REALDIR" ]; then
   rm -f "$REALDIR/"*
 else

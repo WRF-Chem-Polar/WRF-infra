@@ -71,7 +71,7 @@ fi
 #-----------------------------------#
 
 # Directory containing WPS output (i.e. met_em files)
-OUTDIR="$dir_outputs/wps_${runid_wps}_$(utc -d ${date_s} +%Y-%m-%d)"
+OUTDIR="$dir_outputs/wps_${runid_wps}_$(utc -d ${date_start} +%Y-%m-%d)"
 if [ -d "$OUTDIR" ]
 then
   echo "Warning: directory $OUTDIR already exists, overwriting"
@@ -99,6 +99,7 @@ cp $namelist_wps namelist.wps
 sed -i \
     -e "s/<start_date>/$(utc -d ${date_start} +%Y-%m-%d_%H:%M:%S)/g" \
     -e "s/<end_date>/$(utc -d ${date_end} +%Y-%m-%d_%H:%M:%S)/g" \
+    -e "s@<geog_data_path>@${dir_geog_data}@g" \
     namelist.wps
 
 #-------------#
@@ -197,7 +198,8 @@ while (( $(utc -d "${date_s_met} +1 day" "+%s") <= $(utc -d "${date_end}" "+%s")
   sed -i \
       -e "s/<start_date>/$(utc -d ${date_s_met} +%Y-%m-%d_00:00:00)/g" \
       -e "s/<end_date>/$(utc -d ${date_e_met} +%Y-%m-%d_00:00:00)/g" \
-      -e "s/<FILE_metgrid>/FILE/" \
+      -e "s@<geog_data_path>@${dir_geog_data}@g" \
+      -e "s/<FILE_metgrid>/FILE/g" \
       namelist.wps
   # Run avg_tsfc and metgrid
   ./avg_tsfc.exe

@@ -41,9 +41,9 @@ module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2
 #---------#
 
 # Directory containing real output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="${dir_outputs}/real_${runid_wps}_${runid_real}_$(utc -d ${date_s} +%Y-%m-%d)"
+REALDIR="${dir_outputs}/real_${runid_wps}_${runid_real}_$(utc -d ${date_start} +%Y-%m-%d)"
 # Directory containing WRF-Chem output
-OUTDIR="${dir_outputs}/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(utc -d ${date_s} +%Y-%m-%d)_${SLURM_JOBID}"
+OUTDIR="${dir_outputs}/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(utc -d ${date_start} +%Y-%m-%d)_${SLURM_JOBID}"
 mkdir -pv "$OUTDIR"
 
 # Also create a temporary run directory
