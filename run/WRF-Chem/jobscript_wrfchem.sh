@@ -63,9 +63,9 @@ date_e="$yye-$mme-$dde"
 ID="$(date +"%Y%m%d").$SLURM_JOBID"
 
 # Directory containing real output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="${dir_outputs}/real_${runid_real}_$(date -d "$date_s" "+%Y")"
+REALDIR="${dir_outputs}/real_${runid_wps}_${runid_real}_$(date -d ${date_s} +%Y-%m-%d)"
 # Directory containing WRF-Chem output
-OUTDIR="${dir_outputs}/DONE.${runid_wrf}.$ID"
+OUTDIR="${dir_outputs}/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(date -d ${date_s} +%Y-%m-%d)_${SLURM_JOBID}"
 mkdir -pv "$OUTDIR"
 
 # Also create a temporary run directory
