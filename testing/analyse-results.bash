@@ -82,7 +82,7 @@ re_dir_outputs="outputs_[0-9]+"
 re_dir_wrfout="wrf_.+_.+_.+_$d$d$d$d-$d$d-$d$d\\.$d+"
 
 # Variables that should be kept when concatenating wrfout files
-essential_variables=(
+essential_vars=(
     XLONG
     XLAT
     XLONG_U
@@ -90,7 +90,7 @@ essential_variables=(
     XLONG_V
     XLAT_V
 )
-used_in_derived_variables=(
+used_in_derived_vars=(
     HGT
     MAPFAC_M
     P
@@ -103,11 +103,19 @@ used_in_derived_variables=(
     RAINNC
     T
 )
+plotted_vars=(
+    o3
+    PM2_5_DRY
+    PM10
+    QCLOUD
+)
+
 
 # Process hard-coded parameters
-essential_variables=$(IFS=, ; echo "${essential_variables[*]}")
-used_in_derived_variables=$(IFS=, ; echo "${used_in_derived_variables[*]}")
-keep_variables="${essential_variables},${used_in_derived_variables}"
+essential_vars=$(IFS=, ; echo "${essential_vars[*]}")
+used_in_derived_vars=$(IFS=, ; echo "${used_in_derived_vars[*]}")
+plotted_vars=$(IFS=, ; echo "${plotted_vars[*]}")
+keep_variables="${essential_vars},${used_in_derived_vars},${plotted_vars}"
 
 #--------------------------#
 # Concatenate wrfout files #
@@ -151,3 +159,46 @@ for ((i = 0; i <= imax; i++)); do
     cd "${dir_work}"
 
 done
+
+#--------------------------#
+# Run the plotting scripts #
+#--------------------------#
+
+dir_infra="${dir_work}/WRF-infra_1"
+source "${dir_infra}/run/simulation.conf"
+
+# Plot a first series of vertical profiles for non-cloud variables,
+# using a one-cell window
+variables=(
+    "air_temperature:1"
+    "relative_humidity:1"
+    "o3:1"
+    "PM2_5_DRY:1"
+    "PM10:1"
+)
+locations=(
+    "NorthPole:0:90"
+)
+${conda_run} python \
+             "${dir_infra}/testing/plot-vertical-profiles.py" \
+             --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+             --variables=$(IFS=, ; echo "${variables[*]}") \
+             --locations=$(IFS=, ; echo "${locations[*]}") \
+             --output="${dir_work}/vertical-profiles_non-clouds.pdf"
+
+# Plot a second series of vertical profiles for cloud variables,
+# using a larger window
+variables=(
+    "QCLOUD:9"
+)
+locations=(
+    "SeaIce:170:84"
+    "OpenOcean:-29:55"
+    "Siberia:108:60"
+)
+${conda_run} python \
+             "${dir_infra}/testing/plot-vertical-profiles.py" \
+             --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+             --variables=$(IFS=, ; echo "${variables[*]}") \
+             --locations=$(IFS=, ; echo "${locations[*]}") \
+             --output="${dir_work}/vertical-profiles_clouds.pdf"
