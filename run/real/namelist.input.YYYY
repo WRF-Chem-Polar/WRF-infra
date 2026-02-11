@@ -1,14 +1,14 @@
  &time_control
- start_year                          = __STARTYEAR__, __STARTYEAR__, __STARTYEAR__,
- start_month                         = __STARTMONTH__,   __STARTMONTH__,   __STARTMONTH__,
- start_day                           = __STARTDAY__,   __STARTDAY__,   __STARTDAY__,
- start_hour                          = __STARTHOUR__,   __STARTHOUR__,   __STARTHOUR__,
+ start_year                          = <start_year>, <start_year>, <start_year>,
+ start_month                         = <start_month>, <start_month>, <start_month>,
+ start_day                           = <start_day>, <start_day>, <start_day>,
+ start_hour                          = <start_hour>, <start_hour>, <start_hour>,
  start_minute                        = 00,   00,   00,
  start_second                        = 00,   00,   00,
- end_year                            = __ENDYEAR__, __ENDYEAR__, __ENDYEAR__,
- end_month                           = __ENDMONTH__,   __ENDMONTH__,   __ENDMONTH__,
- end_day                             = __ENDDAY__,   __ENDDAY__,   __ENDDAY__,
- end_hour                            = __ENDHOUR__,   __ENDHOUR__,   __ENDHOUR__,
+ end_year                            = <end_year>, <end_year>, <end_year>,
+ end_month                           = <end_month>, <end_month>, <end_month>,
+ end_day                             = <end_day>, <end_day>, <end_day>,
+ end_hour                            = <end_hour>, <end_hour>, <end_hour>,
  end_minute                          = 00,   00,   00,
  end_second                          = 00,   00,   00,
  interval_seconds                    = 21600
@@ -33,7 +33,7 @@
  io_form_auxinput6                   = 2
  auxinput7_inname                    = 'wrffirechemi_d<domain>_<date>'
  auxinput7_interval_m                = 60, 60, 60, 60,
- frames_per_auxinput7                = 1, 1, 1, 1, 
+ frames_per_auxinput7                = 1, 1, 1, 1,
  io_form_auxinput7                   = 2
  debug_level                         = 0
  /
@@ -96,7 +96,7 @@
  icloud                              = 4
 ! aer_opt                             = 1
 ! Boundary layer options
-! 5 for MYNN2 (sfclay 5, 2 or 1), 1 for YSU (sfclay 1), 2 for MYJ (sfclay 2) 
+! 5 for MYNN2 (sfclay 5, 2 or 1), 1 for YSU (sfclay 1), 2 for MYJ (sfclay 2)
  bl_pbl_physics                      = 5, 5, 5,
  bldt                                = 0,     0,     0,
 ! Surface layer options
@@ -201,8 +201,8 @@
  dtramp_min                          = 60.0
  !WARNING this should be changed if the driving model (FNL, ERA5) is changed,
  ! or if the domain size is changed (e_sn, e_we, dx, or dy).
- xwavenum                            = __XWAVENUM__,
- ywavenum                            = __YWAVENUM__,
+ xwavenum                            = <xwavenum>
+ ywavenum                            = <ywavenum>
  /
 
  &grib2
@@ -243,7 +243,7 @@
  io_style_emissions                  = 2
  biomass_burn_opt                    = 2,          2,  2,
  plumerisefire_frq                   = 30,         30,  30,
- bio_emiss_opt                       = __BIO_EMISS_OPT__, __BIO_EMISS_OPT__, __BIO_EMISS_OPT__,
+ bio_emiss_opt                       = <bio_emiss_opt>, <bio_emiss_opt>, <bio_emiss_opt>,
  ne_area                             = 432
  bioemdt                             = 0, 0, 0,
  dust_opt                            = 13

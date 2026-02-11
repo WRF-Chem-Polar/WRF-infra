@@ -1,8 +1,8 @@
 &share
  wrf_core = 'ARW',
  max_dom = 1,
- start_date = 'YYYY-MM-DD_HH:00:00', 'YYYY-MM-DD_HH:00:00', 'YYYY-MM-DD_HH:00:00',
- end_date   = 'YYYY-MM-DD_HH:00:00', 'YYYY-MM-DD_HH:00:00', 'YYYY-MM-DD_HH:00:00',
+ start_date = '<start_date>', '<start_date>', '<start_date>',
+ end_date   = '<end_date>', '<end_date>', '<end_date>',
  interval_seconds = 21600
  io_form_geogrid = 2,
 /
@@ -31,7 +31,7 @@
 /
 
 &metgrid
- fg_name = '_FILE_metgrid_',
+ fg_name = '<FILE_metgrid>',
  io_form_metgrid = 2,
  constants_name = 'TAVGSFC',
 /
