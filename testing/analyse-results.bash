@@ -39,14 +39,18 @@ Options:
 EOF
 )
 
-# Functions
+#-------------#
+# Function(s) #
+#-------------#
 
 function log {
     # Echoes given arguments as logged message.
     echo -e "analyse-results.bash: ${@%$'\n'}"
 }
 
-# Process command-line arguments
+#------------------------#
+# Command-line arguments #
+#------------------------#
 
 dir_work="$(pwd)"
 for ((i = 1; i <= $#; i++)); do
@@ -68,7 +72,9 @@ if [[ ! -d ${dir_work} ]]; then
    exit 1
 fi
 
-# Hard-coded parameters
+#-----------------------#
+# Hard-coded parameters #
+#-----------------------#
 
 # Regular expression(s) for files and directories
 d="[0-9]"
@@ -99,28 +105,38 @@ used_in_derived_variables=(
 )
 
 # Process hard-coded parameters
-
 essential_variables=$(IFS=, ; echo "${essential_variables[*]}")
 used_in_derived_variables=$(IFS=, ; echo "${used_in_derived_variables[*]}")
 keep_variables="${essential_variables},${used_in_derived_variables}"
 
-# Create the concatenated wrfout files that the Python scripts will work on
+#--------------------------#
+# Concatenate wrfout files #
+#--------------------------#
 
+# Note: the outputs_$i directories must be processed in the correct order, and
+# outputs_11 must be processed after outputs_2 (alphabetical order will not do)
+
+# Get the list of "outputs_$i" directories and the highest such i value
+dirs_outputs=($(find . -maxdepth 1 -regex "^./${re_dir_outputs}\$"))
+imax=-1
+for dir_outputs in ${dirs_outputs[*]}; do
+    i=$(echo "${dir_outputs}" | cut -d_ -f2)
+    [[ i -gt ${imax} ]] && imax=$i
+done
+
+# For each of these directories, concatenate the wrfout files
 wrfout_files=()
-dirs_output=$(find . -maxdepth 1 -regex "^./${re_dir_outputs}\$")
+for ((i = 0; i <= imax; i++)); do
 
-# TODO: make sure that outputs directories are treated in order.
-#       Watch out: outputs_11 should be after outputs_2!
-
-for dir_output in ${dirs_output}; do
-
-    log "processing directory ${dir_output}"
+    dir_outputs="./outputs_${i}"
+    [[ ! " ${dirs_outputs[@]} " =~ " ${dir_outputs} " ]] && continue
+    log "processing directory ${dir_outputs}"
 
     # Find the name of the directory that contains the wrfout files
-    cd "${dir_output}"
+    cd "${dir_outputs}"
     dir_wrf=$(find . -maxdepth 1 -regex "^./${re_dir_wrfout}\$")
     if [[ -z "${dir_wrf}" || $(echo "${dir_wrf}" | grep -c "") != 1 ]]; then
-        log "error: could not find wrf output directory in ${dir_output}."
+        log "error: could not find wrf output directory in ${dir_outputs}."
         exit 1
     fi
 
