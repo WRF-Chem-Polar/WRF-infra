@@ -79,7 +79,7 @@ fi
 # Regular expression(s) for files and directories
 d="[0-9]"
 re_dir_outputs="outputs_[0-9]+"
-re_dir_wrfout="wrf_.+_.+_.+_$d$d$d$d-$d$d-$d$d\\.$d+"
+re_dir_wrfout="wrf\\..+\\..+\\..+\\.$d$d$d$d-$d$d-$d${d}Z\\.$d+"
 
 # Variables that should be kept when concatenating wrfout files
 essential_vars=(
