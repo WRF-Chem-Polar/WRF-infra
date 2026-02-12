@@ -41,13 +41,13 @@ module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2
 #---------#
 
 # Directory containing real output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="${dir_outputs}/real_${runid_wps}_${runid_real}_$(utc -d ${date_start} +%Y-%m-%d)"
+REALDIR="${dir_outputs}/real.${runid_wps}.${runid_real}.$(utc -d ${date_start} +%Y-%m-%dZ)"
 # Directory containing WRF-Chem output
-OUTDIR="${dir_outputs}/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(utc -d ${date_start} +%Y-%m-%d)_${SLURM_JOBID}"
+OUTDIR="${dir_outputs}/wrf.${runid_wps}.${runid_real}.${runid_wrf}.$(utc -d ${date_start} +%Y-%m-%dZ).${SLURM_JOBID}"
 mkdir -pv "$OUTDIR"
 
 # Also create a temporary run directory
-SCRATCH="$dir_work/wrf_${runid_wps}_${runid_real}_${runid_wrf}_$(utc -d ${date_start} +%Y-%m-%d).${SLURM_JOBID}"
+SCRATCH="$dir_work/wrf.${runid_wps}.${runid_real}.${runid_wrf}.$(utc -d ${date_start} +%Y-%m-%dZ).${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
