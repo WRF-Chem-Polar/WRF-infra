@@ -741,9 +741,9 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             The target latitude value
         lon : numeric
             The target longitude value, in [-180,180] or in [0, 360].
-        method : {"centre", "mean", "min", "max"}, default="centre"
+        method : {"centre" or "center", "mean", "min", "max"}, default="centre"
             Determines which value to return:
-            - "centre": the gridpoint containing the target coordinate.
+            - "centre" or "center": the gridpoint containing target coordinate.
             - "mean": mean value over window*window points around target.
             - "min": minimum value over window*window points
             - "max": maximum value over window*window points
@@ -760,7 +760,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             The data from the extracted gridpoint(s).
 
         """
-        allowed = {"centre", "mean", "min", "max"}
+        allowed = {"centre", "center", "mean", "min", "max"}
         if method not in allowed:
             msg = f"Invalid mode: {method!r}. Expected one of {allowed}."
             raise ValueError(msg)
@@ -773,7 +773,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         i, j = self.nearest_indices(lon, lat)
 
         # Extract from model output
-        if method == "centre":
+        if method == "centre" or method == "center":
             extracted = self._dataset.isel(south_north=j, west_east=i)
         else:
             # make index arrays for window**2 nearest points, making sure 0 < i < nx
@@ -905,12 +905,12 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
     @property
     def altitude_asl_c(self):
-        """The DerivedVariable object to calculate grid cell height center above sea level."""
+        """The DerivedVariable object to calculate grid cell height centre above sea level."""
         return WRFAltitudeASL_C(self._dataset)
 
     @property
     def altitude_agl_c(self):
-        """The DerivedVariable object to calculate grid cell height center above ground level."""
+        """The DerivedVariable object to calculate grid cell height centre above ground level."""
         return WRFAltitudeAGL_C(self._dataset)
 
     @property
@@ -1084,21 +1084,21 @@ class WRFRelativeHumidity(DerivedVariable):
 
         Notes
         -----
-        We use the same equation to calculate the saturation vapor pressure as
+        We use the same equation to calculate the saturation vapour pressure as
         in the WRF model (eg. WRF/main/tc_em.F, subroutine qvtorh).
 
         """
-        # Get the water vapor mixing ratio
+        # Get the water vapour mixing ratio
         wrf = self._dataset.wrf
         varname, expected_units = "QVAPOR", "kg kg-1"
         wrf.check_units(varname, expected_units)
         q = wrf[varname].__getitem__(*args)
 
-        # Calculate the saturation water vapor pressure (in Pa)
+        # Calculate the saturation water vapour pressure (in Pa)
         temperature = wrf.air_temperature.__getitem__(*args) - 273.15
         psat = 611.2 * np.exp(17.67 * temperature / (temperature + 243.5))
 
-        # Calculate the saturation water vapor mixing ratio
+        # Calculate the saturation water vapour mixing ratio
         pressure = wrf.atm_pressure.__getitem__(*args)
         r = constants["mm_water"] / constants["mm_dryair"]
         qsat = r * psat / (pressure - psat)
@@ -1186,7 +1186,7 @@ class WRFAltitudeASL(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The grid cell altitude above sea level in meters.
+            The grid cell altitude above sea level in metres.
 
         """
         wrf = self._dataset.wrf
@@ -1216,7 +1216,7 @@ class WRFAltitudeAGL(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The grid cell altitude above ground level in meters.
+            The grid cell altitude above ground level in metres.
 
         """
         wrf = self._dataset.wrf
@@ -1256,10 +1256,10 @@ class WRFCloudLiquidWaterPath(DerivedVariable):
 
 
 class WRFAltitudeASL_C(DerivedVariable):
-    """The DerivedVariable object to calculate grid centerpoint altitude above sea level."""
+    """The DerivedVariable object to calculate grid centrepoint altitude above sea level."""
 
     def __getitem__(self, *args):
-        """Return the the grid cell centerpoint altitude above sea level
+        """Return the the grid cell centrepoint altitude above sea level.
 
         Parameters
         ----------
@@ -1270,31 +1270,31 @@ class WRFAltitudeASL_C(DerivedVariable):
         ------
         xarray.DataArray
 
-            The grid cell centerpoint altitude above sea level in meters.
+            The grid cell centrepoint altitude above sea level in metres.
 
         """
         wrf = self._dataset.wrf
         alt = wrf.altitude_asl.__getitem__(*args)
-        alt_center = (
+        alt_centre = (
             alt[:].isel(bottom_top_stag=slice(None, -1))
             + alt[:].isel(bottom_top_stag=slice(1, None))
         ) / 2.0
-        alt_center = alt_center.rename({"bottom_top_stag": "bottom_top"})
+        alt_centre = alt_centre.rename({"bottom_top_stag": "bottom_top"})
         return xr.DataArray(
-            alt_center,
-            name="Altitude grid box centerpoint above sea level",
+            alt_centre,
+            name="Altitude grid box centrepoint above sea level",
             attrs=dict(
-                long_name="Altitude grid box centerpoint above sea level",
+                long_name="Altitude grid box centrepoint above sea level",
                 units="m",
             ),
         )
 
 
 class WRFAltitudeAGL_C(DerivedVariable):
-    """The DerivedVariable object to calculate grid centerpoint altitude above ground level."""
+    """The DerivedVariable object to calculate grid centrepoint altitude above ground level."""
 
     def __getitem__(self, *args):
-        """Return the the grid cell centerpoint altitude ground sea level
+        """Return the the grid cell centrepoint altitude ground sea level.
 
         Parameters
         ----------
@@ -1304,21 +1304,21 @@ class WRFAltitudeAGL_C(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The grid cell centerpoint altitude above ground level in meters.
+            The grid cell centrepoint altitude above ground level in metres.
 
         """
         wrf = self._dataset.wrf
         alt = wrf.altitude_agl.__getitem__(*args)
-        alt_center = (
+        alt_centre = (
             alt[:].isel(bottom_top_stag=slice(None, -1))
             + alt[:].isel(bottom_top_stag=slice(1, None))
         ) / 2.0
-        alt_center = alt_center.rename({"bottom_top_stag": "bottom_top"})
+        alt_centre = alt_centre.rename({"bottom_top_stag": "bottom_top"})
         return xr.DataArray(
-            alt_center,
-            name="Altitude grid box centerpoint above ground level",
+            alt_centre,
+            name="Altitude grid box centrepoint above ground level",
             attrs=dict(
-                long_name="Altitude grid box centerpoint above ground level",
+                long_name="Altitude grid box centrepoint above ground level",
                 units="m",
             ),
         )
