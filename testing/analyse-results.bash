@@ -166,7 +166,7 @@ done
 #--------------------------#
 
 dir_infra="${dir_work}/WRF-infra_1"
-source "${dir_infra}/run/simulation.conf"
+conda_run=$(/bin/bash --norc -c "source \"${dir_infra}/run/simulation.conf\" ; echo \"\${conda_run}\"")
 
 # Plot a first series of vertical profiles for non-cloud variables,
 # using a one-cell window
