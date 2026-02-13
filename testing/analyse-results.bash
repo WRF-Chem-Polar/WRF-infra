@@ -67,10 +67,11 @@ for ((i = 1; i <= $#; i++)); do
     fi
 done
 
-if [[ ! -d ${dir_work} ]]; then
+if [[ ! -d "${dir_work}" ]]; then
    log "error: work dir (${dir_work}) does not exists."
    exit 1
 fi
+cd "${dir_work}"
 
 #-----------------------#
 # Hard-coded parameters #
