@@ -33,8 +33,8 @@ Options:
     The directory where the outputs of the simulations are. This directory must
     contain sub-directories such as:
 
-     - outputs_1/wrf_...
-     - outputs_2/wrf_...
+     - outputs_1/wrf.blablabla
+     - outputs_2/wrf.blablabla
 
 EOF
 )
