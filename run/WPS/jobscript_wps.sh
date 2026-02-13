@@ -71,7 +71,7 @@ fi
 #-----------------------------------#
 
 # Directory containing WPS output (i.e. met_em files)
-OUTDIR="$dir_outputs/wps_${runid_wps}_$(utc -d ${date_start} +%Y-%m-%d)"
+OUTDIR="$dir_outputs/wps.${runid_wps}.$(utc -d ${date_start} +%Y-%m-%dZ)"
 if [ -d "$OUTDIR" ]
 then
   echo "Warning: directory $OUTDIR already exists, overwriting"
@@ -81,7 +81,7 @@ else
 fi
 
 # Also create a temporary run directory
-SCRATCH="$dir_work/wps_${runid_wps}_$(utc -d ${date_start} +%Y-%m-%d).${SLURM_JOBID}"
+SCRATCH="$dir_work/wps.${runid_wps}.$(utc -d ${date_start} +%Y-%m-%dZ).${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit

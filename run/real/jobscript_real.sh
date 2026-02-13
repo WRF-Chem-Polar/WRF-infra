@@ -43,10 +43,10 @@ PATH=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Preprocessing-Tools/bin:$PAT
 # Prepare REAL files and directories #
 #------------------------------------#
 
-WPSDIR="$dir_outputs/wps_${runid_wps}_$(utc -d ${date_start} +%Y-%m-%d)"
+WPSDIR="$dir_outputs/wps.${runid_wps}.$(utc -d ${date_start} +%Y-%m-%dZ)"
 
 # Directory containing real.exe output (e.g. wrfinput_d01, wrfbdy_d01 files)
-REALDIR="$dir_outputs/real_${runid_wps}_${runid_real}_$(utc -d ${date_start} +%Y-%m-%d)"
+REALDIR="$dir_outputs/real.${runid_wps}.${runid_real}.$(utc -d ${date_start} +%Y-%m-%dZ)"
 if [ -d "$REALDIR" ]; then
   rm -f "$REALDIR/"*
 else
@@ -54,7 +54,7 @@ else
 fi
 
 # Also create a temporary work directory
-SCRATCH="$dir_work/real_${runid_wps}_${runid_real}_$(utc -d ${date_start} +%Y-%m-%d).${SLURM_JOBID}"
+SCRATCH="$dir_work/real.${runid_wps}.${runid_real}.$(utc -d ${date_start} +%Y-%m-%dZ).${SLURM_JOBID}"
 rm -rf "$SCRATCH"
 mkdir -pv "$SCRATCH"
 cd "$SCRATCH" || exit
