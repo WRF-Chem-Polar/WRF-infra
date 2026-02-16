@@ -210,7 +210,7 @@
 
  &chem
 ! Chemistry options
- chem_opt                            = 202, 202, 202,
+ chem_opt                            = 212, 212, 212,
  chemdt                              = 0, 0, 0,
  phot_opt                            = 4, 4, 4,
  has_o3_exo_coldens                  = .true.
