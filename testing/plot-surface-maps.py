@@ -2,8 +2,7 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-"""
-Plot surface (or otherwise single-level) maps of variables from WRF run(s).
+"""Plot surface (or otherwise single-level) maps of variables from WRF run(s).
 
 TODO:
 - move functions duplicated in plot-vertical-profiles.py somewhere else
@@ -16,8 +15,8 @@ import argparse
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
+import cartopy.crs as ccrs
 from wrfinfra import generic
 import wrfpp
 
@@ -92,7 +91,7 @@ parser.add_argument(
     help=(
         "Comma-separated list of paths to the wrfout files. "
         "There must be one single file per simulation. Use ncrcat to first "
-        "concatenate multiple files from a single simulation is nedded."
+        "concatenate multiple files from a single simulation is needed."
     ),
 )
 parser.add_argument(
@@ -173,9 +172,9 @@ with PdfPages(args.output) as pdf:
         for irun, run in enumerate(runs):
             ds = run["ds"]
             array = getattr(ds, variable)
-            if "bottom_top" in getattr(ds, variable).dims:
+            if "bottom_top" in array.dims:
                 array = array.isel(bottom_top=0)
-            elif "bottom_top_stag" in getattr(ds, variable).dims:
+            elif "bottom_top_stag" in array.dims:
                 array = array.isel(bottom_top_stag=0)
             minvals.append(
                 np.ma.amin(array.isel(Time=run["time_idx"]).mean(axis=0))
@@ -195,9 +194,9 @@ with PdfPages(args.output) as pdf:
             # Prepare dataset and arrays
             ds = run["ds"]
             array = getattr(ds, variable)
-            if "bottom_top" in getattr(ds, variable).dims:
+            if "bottom_top" in array.dims:
                 array = array.isel(bottom_top=0)
-            elif "bottom_top_stag" in getattr(ds, variable).dims:
+            elif "bottom_top_stag" in array.dims:
                 array = array.isel(bottom_top_stag=0)
             data = array.isel(Time=run["time_idx"]).mean(axis=0)
             lon, lat = ds.lonlat_var(variable)
@@ -209,7 +208,7 @@ with PdfPages(args.output) as pdf:
                 projection=ds.crs,
             )
             ax.coastlines()
-            C = ax.pcolormesh(
+            plot = ax.pcolormesh(
                 lon,
                 lat,
                 data,
@@ -222,7 +221,7 @@ with PdfPages(args.output) as pdf:
             axes.append(ax)
 
         plt.colorbar(
-            C,
+            plot,
             ax=axes,
             label=f"{variable} ({ds.units_mpl(variable)})",
             orientation="horizontal",
