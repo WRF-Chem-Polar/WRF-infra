@@ -2,14 +2,7 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-"""Plot surface (or otherwise single-level) maps of variables from WRF run(s).
-
-TODO:
-- move functions duplicated in plot-vertical-profiles.py somewhere else
-- check for identical domains between runs...
-- ..and plot map of difference between runs if domains are the same
-- improve options for colourmap, eg command line option per variable
-"""
+"""Plot surface (or otherwise single-level) maps of variables from WRF run(s)."""
 
 import argparse
 import datetime
