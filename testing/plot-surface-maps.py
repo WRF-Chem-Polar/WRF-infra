@@ -5,6 +5,7 @@
 """Plot surface (or otherwise single-level) maps of variables from WRF run(s)."""
 
 import argparse
+import itertools
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -80,6 +81,11 @@ parser.add_argument(
     default=None,
 )
 parser.add_argument(
+    "--metrics",
+    help="Comma-separated list of metrics to plot.",
+    default="mean,min,max",
+)
+parser.add_argument(
     "--wrfouts",
     help=(
         "Comma-separated list of paths to the wrfout files. "
@@ -102,6 +108,7 @@ if args.start is not None:
     args.start = datetime.datetime.strptime(args.start, "%Y-%m-%d")
 if args.end is not None:
     args.end = datetime.datetime.strptime(args.end, "%Y-%m-%d")
+metrics = [metric.strip() for metric in args.metrics.split(",")]
 if not args.output.endswith(".pdf"):
     msg = "Parameter --output must have the .pdf extension."
     raise ValueError(msg)
@@ -157,10 +164,14 @@ fig_bottom = 0.2
 with PdfPages(args.output) as pdf:
     add_title_page(pdf, runs)
 
-    for variable in variables:
-        print(f"Plotting {variable} map...")
+    for metric, variable in itertools.product(metrics, variables):
+        print(f"Plotting map: {metric} of {variable}...")
+
+        npmetric = getattr(np, metric)
+        npnanmetric = getattr(np, f"nan{metric}")
 
         # Select values for the colourbar min and max
+        print("    Preparing colour scale...")
         minvals, maxvals = [], []
         for irun, run in enumerate(runs):
             ds = run["ds"]
@@ -169,12 +180,9 @@ with PdfPages(args.output) as pdf:
                 array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in array.dims:
                 array = array.isel(bottom_top_stag=0)
-            minvals.append(
-                np.ma.amin(array.isel(Time=run["time_idx"]).mean(axis=0))
-            )
-            maxvals.append(
-                np.ma.amax(array.isel(Time=run["time_idx"]).mean(axis=0))
-            )
+            data = npnanmetric(array.isel(Time=run["time_idx"]), axis=0)
+            minvals.append(np.ma.amin(data))
+            maxvals.append(np.ma.amax(data))
         vmin = np.amin(minvals)
         vmax = np.amax(maxvals)
 
@@ -191,7 +199,7 @@ with PdfPages(args.output) as pdf:
                 array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in array.dims:
                 array = array.isel(bottom_top_stag=0)
-            data = array.isel(Time=run["time_idx"]).mean(axis=0)
+            data = npmetric(array.isel(Time=run["time_idx"]), axis=0)
             lon, lat = ds.lonlat_var(variable)
 
             # Prepare axes and plot
