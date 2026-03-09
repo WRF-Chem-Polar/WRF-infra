@@ -224,7 +224,7 @@ with PdfPages(args.output) as pdf:
         plt.colorbar(
             plot,
             ax=axes,
-            label=f"{variable} ({ds.units_mpl(variable)})",
+            label=f"{metric} of {variable} ({ds.units_mpl(variable)})",
             orientation="horizontal",
         )
 
