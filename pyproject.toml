@@ -9,6 +9,8 @@ preprocess = [
     "netcdf4",
     "xarray",
     "shapely",
+    "nco",
+    "cdo",
 ]
 wrfpp = [
     "pyproj",
