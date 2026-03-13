@@ -109,6 +109,7 @@ plotted_vars=(
     PM2_5_DRY
     PM10
     QCLOUD
+    T2
 )
 
 
@@ -203,3 +204,20 @@ ${conda_run} python \
              --variables=$(IFS=, ; echo "${variables[*]}") \
              --locations=$(IFS=, ; echo "${locations[*]}") \
              --output="${dir_work}/vertical-profiles_clouds.pdf"
+
+# Plot surface maps
+variables=(
+    "T2"
+    "PM2_5_DRY"
+)
+metrics=(
+    "mean"
+    "min"
+    "max"
+)
+${conda_run} python \
+             "${dir_infra}/testing/plot-surface-maps.py" \
+             --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+             --variables=$(IFS=, ; echo "${variables[*]}") \
+             --metrics=$(IFS=, ; echo "${metrics[*]}") \
+             --output="${dir_work}/surface-maps.pdf"
