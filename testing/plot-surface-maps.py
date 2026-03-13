@@ -167,7 +167,6 @@ with PdfPages(args.output) as pdf:
     for metric, variable in itertools.product(metrics, variables):
         print(f"Plotting map: {metric} of {variable}...")
 
-        npmetric = getattr(np, metric)
         npnanmetric = getattr(np, f"nan{metric}")
 
         # Select values for the colourbar min and max
@@ -199,7 +198,7 @@ with PdfPages(args.output) as pdf:
                 array = array.isel(bottom_top=0)
             elif "bottom_top_stag" in array.dims:
                 array = array.isel(bottom_top_stag=0)
-            data = npmetric(array.isel(Time=run["time_idx"]), axis=0)
+            data = npnanmetric(array.isel(Time=run["time_idx"]), axis=0)
             lon, lat = ds.lonlat_var(variable)
 
             # Prepare axes and plot
