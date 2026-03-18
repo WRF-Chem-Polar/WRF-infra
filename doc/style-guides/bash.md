@@ -10,8 +10,8 @@ When reasonably achievable, try to make line lengths < 80 characters.
 
 Rationale:
 
-- it is admittedly easier to work on code if the line length is not too long (easier to read, to look at files side-by-side, etc).
-- the same limit is enforced (by Ruff) for Python code in this repository, so things will look consistent.
+- It is admittedly easier to work on code if the line length is not too long (easier to read, to look at files side-by-side, etc).
+- The same limit is enforced (by Ruff) for Python code in this repository, so things will look consistent.
 
 ## Indentation
 
@@ -25,8 +25,8 @@ Use lower case names for variables, and use underscores as needed to improve rea
 
 Rationale:
 
-- save our pinkie fingers some needless strain.
-- use the same convention we use for Python code.
+- Save our pinkie fingers some needless strain.
+- The same convention is used for Python code in this repository, so things will look consistent.
 
 ## Quotes
 
@@ -107,8 +107,8 @@ dir_simulation="$dir_model/simulations"
 
 Rationale:
 
-- always using curly braces around variable names helps to prevent errors such as `concat_with_underscore="$myvar_$myothervar"`.
-- in the case of one-letter variable names (eg `$i`, `$?`, `$#`), curly braces may actually increase confusion, so we avoid them if we can.
+- Always using curly braces around variable names helps to prevent errors such as `concat_with_underscore="$myvar_$myothervar"`.
+- In the case of one-letter variable names (eg `$i`, `$?`, `$#`), curly braces may actually increase confusion, so we avoid them if we can.
 
 # Double square brackets versus double parentheses
 
