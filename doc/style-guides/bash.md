@@ -14,6 +14,14 @@ Rationale:
 - `#!/bin/bash` works on virtually all GNU/Linux distributions. It does not work on some of the BSDs, but for now we have no plan to support BSD systems (besides, the admins of such systems can simply sim-link the actual Bash executable to `/bin/bash`).
 - For licensing reasons, `/bin/bash` on MacOS is stuck at version 3.2.57 (the last GPL2 version before transitionning to GPL3). We may use some Bash v4+ features in our scripts but we do not intend to support MacOS for running WRF-Chem-Polar at this time.
 
+## File extensions
+
+Use the `.bash` extension for Bash scripts.
+
+Rationale:
+
+ - It gives more information than `.sh`: it says: _"this script might use features that are specific to Bash"_.
+
 ## Max column width
 
 When reasonably achievable, try to make line lengths < 80 characters.
