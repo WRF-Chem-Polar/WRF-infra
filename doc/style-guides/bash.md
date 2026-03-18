@@ -84,6 +84,15 @@ fi
 
 Rationale: the double brackets syntax is a Bash-specific feature that is more powerful than the POSIX-compliant single bracket. Double brackets are also safer to use when variables are undefined. In the example above, if `$myvar` is undefined, the single bracket syntax will result in a syntax-like error while the double bracket syntax will work as expected.
 
+# Use of curly braces around variable names
+
+Always use curly braces around variable names, except for one-letter variable names when it can be avoided.
+
+Rationale:
+
+- always using curly braces around variable names helps to prevent errors such as `concat_with_underscore="$myvar_$myothervar"`.
+- in the case of one-letter variable names (eg `$i`, `$?`, `$#`), curly braces may actually increase confusion, so we avoid them if we can.
+
 # Double square brackets versus double parentheses
 
 Use double square brackets everywhere you can. Use double parentheses when you actually need arithmetics.
@@ -112,4 +121,26 @@ The following operators are used to compare strings inside double square braquet
 
 # Function docstrings
 
-# Use of curly braces around variable names
+Write docstring using the Numpy/Scipy conventions, for example:
+
+```sh
+function check_dates {
+    # Run quality checks on given dates.
+    #
+    # Parameters
+    # ----------
+    # date_1, date_2, ...: str
+    #     Dates to check. Accepted formats are anything parsable by the shell
+    #     function `date` as long as the timezone is explicitly specified.
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if all the dates are parsable and valid, non-zero otherwise.
+    #
+    ...
+}
+```
+
+Rationale: things will look consistent with the Python code of this repository.
+
