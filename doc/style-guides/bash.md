@@ -4,6 +4,15 @@ There is a lot of debate out there about using POSIX-compliant versus Bash-speci
 
 Here we do not write system-level code; we write user-level code. We do not need portabaly outside of Bash because any self-respecting user-oriented Unix-like system has a Bash interpreter. We prefer cleaner, less error-prone code. We therefore do not restrain ourselves from using Bash-specific syntax.
 
+## Max column width
+
+When reasonably achievable, try to make line lengths < 80 characters.
+
+Rationale:
+
+- it is admittedly easier to work on code if the line length is not too long (easier to read, to look at files side-by-side, etc).
+- the same limit is enforced (by Ruff) for Python code in this repository, so things will look consistent.
+
 ## Indentation
 
 Use 4 spaces (no tabs) for each level of indentation.
