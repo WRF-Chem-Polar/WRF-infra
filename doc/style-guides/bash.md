@@ -21,8 +21,9 @@ Rationale:
 
 ## Quotes
 
-Do not use unnecessary quotes:
+### String literals
 
+Dot not use quotes around string literals that do not need them:
 
 ```sh
 # Not OK
@@ -34,12 +35,36 @@ my_variable=/home/myself
 
 Rationale: this is simpler and more readable.
 
-Where quotes are needed, use double-quotes by default, and single quotes where needed, for example:
+### When using variables
+
+Always use double quotes in strings that involve the value of a variable.
+
+```sh
+# Not OK
+dir_model=/home/myself/model
+dir_parameters=${dir_models}/parameters
+
+# OK
+dir_model=/home/myself/model
+dir_parameters="${dir_models}"/parameters
+
+# OK
+dir_model=/home/myself/model
+dir_parameters="${dir_models}/parameters"
+```
+
+Rationale: this is safer when variable values contain spaces.
+
+### Single versus double quotes.
+
+Where quotes are needed, use double-quotes by default. Use single quotes only when you need things NOT to be expanded, for example:
 
 ```sh
 # OK
 echo 'I want to show you what the dollar sign looks like: $'
 ```
+
+Rationale: most often we want things to be expanded.
 
 ## Single versus double brackets
 
