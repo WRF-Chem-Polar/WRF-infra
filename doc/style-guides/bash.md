@@ -4,6 +4,16 @@ There is a lot of debate out there about using POSIX-compliant versus Bash-speci
 
 Here we do not write system-level code; we write user-level code. We do not need portabaly outside of Bash because any self-respecting user-oriented Unix-like system has a Bash interpreter. We prefer cleaner, less error-prone code. We therefore do not restrain ourselves from using Bash-specific syntax.
 
+## Shebang
+
+Use `#!/bin/bash` (and not `#!/usr/bin/env bash`) for the shebang.
+
+Rationale:
+
+-  `#!/bin/bash` ensures that the script is run using the system-wide Bash whereas `#!/usr/bin/env bash` runs whichever Bash executable comes first in the search path. Here we prefer the predictability of enforcing the use of the system-wide Bash and we dislike to unpredictability of potentially using a custom Bash version installed by the user.
+- `#!/bin/bash` works on virtually all GNU/Linux distributions. It does not work on some of the BSDs, but for now we have no plan to support BSD systems (besides, the admins of such systems can simply sim-link the actual Bash executable to `/bin/bash`).
+- For licensing reasons, `/bin/bash` on MacOS is stuck at version 3.2.57 (the last GPL2 version before transitionning to GPL3). We may use some Bash v4+ features in our scripts but we do not intend to support MacOS for running WRF-Chem-Polar at this time.
+
 ## Max column width
 
 When reasonably achievable, try to make line lengths < 80 characters.
