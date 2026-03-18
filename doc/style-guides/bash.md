@@ -88,6 +88,14 @@ Rationale: the double brackets syntax is a Bash-specific feature that is more po
 
 Always use curly braces around variable names, except for one-letter variable names when it can be avoided.
 
+```sh
+# OK
+dir_simulation="${dir_model}/simulations"
+
+# NOT OK
+dir_simulation="$dir_model/simulations"
+```
+
 Rationale:
 
 - always using curly braces around variable names helps to prevent errors such as `concat_with_underscore="$myvar_$myothervar"`.
