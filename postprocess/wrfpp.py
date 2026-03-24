@@ -918,6 +918,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate grid box dz (vertical extent)."""
         return WRFBoxDz(self._dataset)
 
+    @property
+    def aod(self):
+        """The DerivedVariable object to calculate aerosol optical depth."""
+        return WRFAOD(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1353,5 +1358,35 @@ class WRFBoxDz(DerivedVariable):
             attrs=dict(
                 long_name="WRF grid box dz (vertical extent)",
                 units="m",
+            ),
+        )
+
+
+class WRFAOD(DerivedVariable):
+    """The DerivedVariable object to calculate aerosol optical depth"""
+
+    def __getitem__(self, *args):
+        """Return the WRF AOD
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The grid cell AOD.
+
+        """
+        wrf = self._dataset.wrf
+        dz = 1e-3 * wrf.box_dz[:]
+        aod = (wrf.EXTCOF55 * dz).sum(dim="bottom_top")
+        return xr.DataArray(
+            aod,
+            name="AOD",
+            attrs=dict(
+                long_name="WRF grid box aerosol optical depth",
+                units="1",
             ),
         )
