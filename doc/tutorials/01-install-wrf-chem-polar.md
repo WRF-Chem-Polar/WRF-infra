@@ -13,7 +13,13 @@ cd $wherever-you-cloned-this-repository/compile
 python compile_WRF.py
 ```
 
-This script will, by default, install WRF-Chem-Polar in a directory named "WRF". Use the option `--destination` to install it to a directory of your choice, for instance:
+Compilation of WRF-Chem-Polar in its default configuration takes roughly an hour and a half. You can check that compilation was successful by looking for the following message at the end of `compilation.log` in your installation directory:
+
+```
+--->                  Executables successfully built                  <---
+```
+
+Note that the script will, by default, install WRF-Chem-Polar in a directory named "WRF". Use the option `--destination` to install it to a directory of your choice, for instance:
 
 ```sh
 python compile_WRF.py --destination=~/WRF-tutorial
