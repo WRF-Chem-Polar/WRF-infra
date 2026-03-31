@@ -4,6 +4,15 @@ This tutorial explains the steps to download and compile the [WRF-Chem-Polar mod
 
 Consult the WRF and WPS user guides for more general information on the installation procedure. The instructions here rely on Python wrappers around the existing official WRF and WPS compilation scripts.
 
+## A clean environment
+
+It is quite likely that the installation process described below will **not** work if you are working in an environment where conda is activated. We therefore recommand to
+ 
+ - **not** automatically activate a conda environment in your `~/.bashrc` file
+ - deactivate any activated conda environment, if any, before proceeding further
+
+Before installing WRF-Chem-Polar and WPS, make sure that you environment is clean:
+
 ## Install WRF-Chem-Polar
 
 Use the [compile_WRF.py](../compile/compile_WRF.py) script provided in this repository to download and compile the latest WRF-Chem-Polar version:
