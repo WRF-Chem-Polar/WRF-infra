@@ -9,7 +9,8 @@ Consult the WRF and WPS user guides for more general information on the installa
 Use the [compile_WRF.py](../compile/compile_WRF.py) script provided in this repository to download and compile the latest WRF-Chem-Polar version:
 
 ```sh
-cd $wherever-you-cloned-this-repository/compile
+git clone git@github.com:WRF-Chem-Polar/WRF-infra.git ./WRF-infra
+cd WRF-infra/compile
 python compile_WRF.py
 ```
 
@@ -32,7 +33,6 @@ See [the compile scripts documentation](../compile/README.md) for a description 
 WPS is also needed to run WRF-Chem-Polar for real case studies. Use the [compile_WPS.py](../compile/compile_WPS.py) script provided in this repository to download and compile the latest WPS version:
 
 ```sh
-cd $wherever-you-cloned-this-repository/compile
 python compile_WPS.py
 ```
 
