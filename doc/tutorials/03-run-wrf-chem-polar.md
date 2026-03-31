@@ -2,6 +2,13 @@
 
 This tutorial explains the steps to run an example simulation of WRF-Chem-Polar using the scripts in this repository. It is assumed that users are working on Spirit, where all the input data to run the default test case have already been downloaded. Users can use their own WRF-Chem-Polar+WPS installation or use the shared installation that is readily available on Spirit.
 
+## A clean environment
+
+It is quite likely that the steps described below will **not** work if you are working in an environment where conda is activated. We therefore recommand to
+ 
+ - **not** automatically activate a conda environment in your `~/.bashrc` file
+ - deactivate any activated conda environment, if any, before proceeding further
+
 ## Clone this repository
 
 ```
