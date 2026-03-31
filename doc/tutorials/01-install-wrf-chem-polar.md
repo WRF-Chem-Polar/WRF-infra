@@ -36,6 +36,12 @@ WPS is also needed to run WRF-Chem-Polar for real case studies. Use the [compile
 python compile_WPS.py
 ```
 
+Compilation of WPS typically takes one or two minutes. You can verify that compilation was successful by checking for the presence of the following binaries in the installation directory (presence of the actual binaries in the `*/src` directories and of the simlinks at the root of the directory):
+
+- `geogrid.exe -> geogrid/src/geogrid.exe`
+- `metgrid.exe -> metgrid/src/metgrid.exe`
+- `ungrib.exe -> ungrib/src/ungrib.exe`
+
 If you installed WRF in a non-default location, you will have to use the option `--wrfdir` to point to where WRF is installed, for example:
 
 ```sh
