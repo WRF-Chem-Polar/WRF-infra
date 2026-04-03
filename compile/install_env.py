@@ -26,6 +26,9 @@ conda = "micromamba"
 if host == "spirit":
     env_root_prefix = "/proju/wrf-chem/software/conda-envs/shared"
     conda = "/proju/wrf-chem/software/micromamba/micromamba"
+elif host == "jed":
+    env_root_prefix = "/work/eerl/apdasilv/wrf-chem-polar/software/conda-envs/shared"
+    conda = "/work/eerl/apdasilv/wrf-chem-polar/software/micromamba/micromamba"
 
 parser = argparse.ArgumentParser(
     description="Install the environment to compile and run WRF-Chem-Polar.",

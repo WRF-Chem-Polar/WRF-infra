@@ -1,11 +1,40 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2025-2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
 # This file contains common resources for running WPS and WRF[-Chem].
 #
+
+function get_host_name {
+    # Echoes the name of the host, nicely formatted.
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if no error occured, non-zero otherwise (including if the host
+    #     is unknown).
+    #
+    # Echoes
+    # ------
+    # The name of the host, nicely formatted.
+    #
+    if [[ $# -ne 0 ]]; then
+        echo "commons.bash: get_host_name: does not accept any argument." >&2
+        return 1
+    fi
+    local full_name=$(hostname)
+    if [[ "${full_name}" == spirit* ]]; then
+        echo "spirit"
+    elif [[ "${full_name}" == jed* ]]; then
+        echo "jed"
+    else
+        echo "commons.bash: get_host_name: unknown host (${full_name})." >&2
+        return 2
+    fi
+    return 0
+}
 
 function check_paths {
     # Run quality checks on given path(s).

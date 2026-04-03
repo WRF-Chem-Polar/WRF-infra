@@ -165,8 +165,11 @@ done
 # Run the plotting scripts #
 #--------------------------#
 
+# Prepare the environment
 dir_infra="${dir_work}/WRF-infra_1"
-conda_run=$(/bin/bash --norc -c "source \"${dir_infra}/run/simulation.conf\" ; echo \"\${conda_run}\"")
+check_simulation_conf=no
+source "${dir_infra}/run/commons.bash"
+source "${dir_infra}/env/$(get_host_name).sh"
 
 # Plot a first series of vertical profiles for non-cloud variables,
 # using a one-cell window
