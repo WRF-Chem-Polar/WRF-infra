@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2025-2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
@@ -46,8 +46,7 @@ USE_CHLA_DMS_WPS=true
 # Environment #
 #-------------#
 
-module purge
-module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module
+source ../../env/$(get_host_name).sh
 
 #-------------------------#
 # Sanity checks on inputs #
