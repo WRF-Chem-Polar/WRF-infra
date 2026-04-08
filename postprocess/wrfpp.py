@@ -26,6 +26,7 @@ The WRF model:
 from abc import ABC, abstractmethod
 import warnings
 import functools
+import re
 import numpy as np
 import scipy
 import xarray as xr
@@ -287,7 +288,7 @@ class GenericDatasetAccessor(ABC):
             units = replacements[units]
         except KeyError:
             pass
-        return units
+        return units.strip()
 
     def check_units(self, varname, expected, nice=True):
         """Make sure that units of given variable are as expected.
@@ -951,6 +952,21 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate grid box dz (vertical extent)."""
         return WRFBoxDz(self._dataset)
 
+    @property
+    def aer_number_conc_nonact(self):
+        """The DerivedVariable object to calculate non-activated aer number conc."""
+        return WRFAerNumberConcNonact(self._dataset)
+
+    @property
+    def aer_number_conc_act(self):
+        """The DerivedVariable object to calculate activated aer number conc."""
+        return WRFAerNumberConcAct(self._dataset)
+
+    @property
+    def aer_number_conc_total(self):
+        """The DerivedVariable object to calculate total aer number conc."""
+        return WRFAerNumberConcTotal(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1387,4 +1403,108 @@ class WRFBoxDz(DerivedVariable):
                 long_name="WRF grid box dz (vertical extent)",
                 units="m",
             ),
+        )
+
+
+class WRFAerNumberConcNonact(DerivedVariable):
+    """WRF derived variable for non-activated aerosol number conc."""
+
+    def __getitem__(self, *args):
+        """Return the number concentration of non-activated aerosol (all bins).
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The number concentration of non-activated aerosol (all bins) for
+            given slice, in /kg-dryair.
+
+        """
+        ds = self._dataset
+        pattern = re.compile("num_a[0-9]+")
+        variables = [v for v in ds.variables if pattern.fullmatch(v)]
+
+        if len(variables) < 1:
+            msg = "Could not find any matching variable."
+            raise ValueError(msg)
+
+        expected_units = "/kg-dryair"
+        for v in variables:
+            ds.wrf.check_units(v, expected_units)
+
+        name = "Number concentration of non-activated aerosol (all bins)"
+        return xr.DataArray(
+            sum(ds[v].__getitem__(*args) for v in variables),
+            name=name,
+            attrs=dict(long_name=name, units=expected_units),
+        )
+
+
+class WRFAerNumberConcAct(DerivedVariable):
+    """WRF derived variable for activated aerosol number conc."""
+
+    def __getitem__(self, *args):
+        """Return the number concentration of activated aerosol (all bins).
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The number concentration of activated aerosol (all bins) for given
+            slice, in /kg-dryair.
+
+        """
+        ds = self._dataset
+        pattern = re.compile("num_cw[0-9]+")
+        variables = [v for v in ds.variables if pattern.fullmatch(v)]
+
+        if len(variables) < 1:
+            msg = "Could not find any matching variable."
+            raise ValueError(msg)
+
+        expected_units = "/kg-dryair"
+        for v in variables:
+            ds.wrf.check_units(v, expected_units)
+
+        name = "Number concentration of activated aerosol (all bins)"
+        return xr.DataArray(
+            sum(ds[v].__getitem__(*args) for v in variables),
+            name=name,
+            attrs=dict(long_name=name, units=expected_units),
+        )
+
+
+class WRFAerNumberConcTotal(DerivedVariable):
+    """WRF derived variable for total aerosol number concentration."""
+
+    def __getitem__(self, *args):
+        """Return the total number concentration of aerosol (all bins).
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The total aerosol number concentration (all bins, non-activated +
+            activated) for given slice, in /kg-dryair.
+
+        """
+        wrf = self._dataset.wrf
+        name = "Total number concentration of all aerosol (all bins)"
+        return xr.DataArray(
+            wrf.aer_number_conc_nonact.__getitem__(*args)
+            + wrf.aer_number_conc_act.__getitem__(*args),
+            name=name,
+            attrs=dict(long_name=name, units="/kg-dryair"),
         )
