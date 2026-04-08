@@ -1,4 +1,4 @@
-# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2025-2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
@@ -26,6 +26,9 @@ conda = "micromamba"
 if host == "spirit":
     env_root_prefix = "/proju/wrf-chem/software/conda-envs/shared"
     conda = "/proju/wrf-chem/software/micromamba/micromamba"
+elif host == "jed":
+    env_root_prefix = "/work/eerl/wrf-chem-polar/software/conda-envs/shared"
+    conda = "/work/eerl/wrf-chem-polar/software/micromamba/micromamba"
 
 parser = argparse.ArgumentParser(
     description="Install the environment to compile and run WRF-Chem-Polar.",
