@@ -957,6 +957,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate non-activated aer number conc."""
         return WRFAerNumberConcNonact(self._dataset)
 
+    @property
+    def aer_number_conc_act(self):
+        """The DerivedVariable object to calculate activated aer number conc."""
+        return WRFAerNumberConcAct(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1410,8 +1415,8 @@ class WRFAerNumberConcNonact(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The total number concentration of non-activated aerosol for given
-            slice, in /kg-dryair.
+            The number concentration of non-activated aerosol (all bins) for
+            given slice, in /kg-dryair.
 
         """
         ds = self._dataset
@@ -1426,8 +1431,45 @@ class WRFAerNumberConcNonact(DerivedVariable):
         for v in variables:
             ds.wrf.check_units(v, expected_units)
 
-        # Calculate and return the number concentration
         name = "Number concentration of non-activated aerosols (all bins)"
+        return xr.DataArray(
+            sum(ds[v] for v in variables),
+            name=name,
+            attrs=dict(long_name=name, units=expected_units),
+        )
+
+
+class WRFAerNumberConcAct(DerivedVariable):
+    """WRF derived variable for activated aerosol number conc."""
+
+    def __getitem__(self, *args):
+        """Return the number concentration of activated aerosol (all bins).
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The number concentration of activated aerosol (all bins) for given
+            slice, in /kg-dryair.
+
+        """
+        ds = self._dataset
+        pattern = re.compile("num_cw[0-9]+")
+        variables = [v for v in ds.variables if pattern.fullmatch(v)]
+
+        if len(variables) < 1:
+            msg = "Could not find any matching variable."
+            raise ValueError(msg)
+
+        expected_units = "/kg-dryair"
+        for v in variables:
+            ds.wrf.check_units(v, expected_units)
+
+        name = "Number concentration of activated aerosols (all bins)"
         return xr.DataArray(
             sum(ds[v] for v in variables),
             name=name,
