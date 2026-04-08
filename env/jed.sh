@@ -12,7 +12,7 @@
 module purge
 
 module load flex/2.6.1-y4a5vd2
-export FLEX_LIB_DIR="/ssoft/spack/pinot-noir/jed/v2/spack/opt/spack/linux-rhel9-x86_64_v3/gcc-11.4.1/flex-2.6.1-y4a5vd2zgmnkdott7mvp6ogiv56khlw3/lib/"
+export FLEX_LIB_DIR="${FLEX_ROOT}/lib"
 
 module load gcc/13.2.0
 module load openmpi/5.0.3
