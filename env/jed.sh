@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
@@ -21,7 +21,6 @@ export MODULEPATH=$MODULEPATH:/work/eerl/wrf-chem-polar/software/libraries/gcc-v
 module --ignore_cache load zlib-v1.3.1.module
 module --ignore_cache load hdf5-v1.14.6_zlib-v1.3.1.module
 module --ignore_cache load netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module
-
 
 conda_run="/work/eerl/apdasilv/wrf-chem-polar/software/micromamba/micromamba
            run
