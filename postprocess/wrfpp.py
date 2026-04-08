@@ -1433,7 +1433,7 @@ class WRFAerNumberConcNonact(DerivedVariable):
 
         name = "Number concentration of non-activated aerosols (all bins)"
         return xr.DataArray(
-            sum(ds[v] for v in variables),
+            sum(ds[v].__getitem__(*args) for v in variables),
             name=name,
             attrs=dict(long_name=name, units=expected_units),
         )
@@ -1471,7 +1471,7 @@ class WRFAerNumberConcAct(DerivedVariable):
 
         name = "Number concentration of activated aerosols (all bins)"
         return xr.DataArray(
-            sum(ds[v] for v in variables),
+            sum(ds[v].__getitem__(*args) for v in variables),
             name=name,
             attrs=dict(long_name=name, units=expected_units),
         )
