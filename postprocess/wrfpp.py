@@ -26,6 +26,7 @@ The WRF model:
 from abc import ABC, abstractmethod
 import warnings
 import functools
+import re
 import numpy as np
 import scipy
 import xarray as xr
@@ -287,7 +288,7 @@ class GenericDatasetAccessor(ABC):
             units = replacements[units]
         except KeyError:
             pass
-        return units
+        return units.strip()
 
     def check_units(self, varname, expected, nice=True):
         """Make sure that units of given variable are as expected.
@@ -951,6 +952,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate grid box dz (vertical extent)."""
         return WRFBoxDz(self._dataset)
 
+    @property
+    def aer_number_conc_nonact(self):
+        """The DerivedVariable object to calculate non-activated aer number conc."""
+        return WRFAerNumberConcNonact(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1387,4 +1393,43 @@ class WRFBoxDz(DerivedVariable):
                 long_name="WRF grid box dz (vertical extent)",
                 units="m",
             ),
+        )
+
+
+class WRFAerNumberConcNonact(DerivedVariable):
+    """WRF derived variable for non-activated aerosol number conc."""
+
+    def __getitem__(self, *args):
+        """Return the number concentration of non-activated aerosol (all bins).
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The total number concentration of non-activated aerosol for given
+            slice, in /kg-dryair.
+
+        """
+        ds = self._dataset
+        pattern = re.compile("num_a[0-9]+")
+        variables = [v for v in ds.variables if pattern.fullmatch(v)]
+
+        if len(variables) < 1:
+            msg = "Could not find any matching variable."
+            raise ValueError(msg)
+
+        expected_units = "/kg-dryair"
+        for v in variables:
+            ds.wrf.check_units(v, expected_units)
+
+        # Calculate and return the number concentration
+        name = "Number concentration of non-activated aerosols (all bins)"
+        return xr.DataArray(
+            sum(ds[v] for v in variables),
+            name=name,
+            attrs=dict(long_name=name, units=expected_units),
         )
