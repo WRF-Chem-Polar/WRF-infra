@@ -127,7 +127,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if opts.scheduler:
-        cmd = [{"spirit": "sbatch","jed": "sbatch"}[host], "compile.job"]
+        cmd = [{"spirit": "sbatch", "jed": "sbatch"}[host], "compile.job"]
     else:
         cmd = ["./compile.job"]
     generic.run(cmd, cwd=opts.destination)
