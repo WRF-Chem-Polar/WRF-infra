@@ -82,7 +82,10 @@ file_pyproject = os.path.join(generic.path_of_repo(), "pyproject.toml")
 with open(file_pyproject, mode="rb") as f:
     pyproject = tomllib.load(f)
 python = pyproject["project"]["requires-python"].replace(" ", "")
-dependencies = pyproject["project"]["dependencies"]
+try:
+    dependencies = pyproject["project"]["dependencies"]
+except KeyError:
+    dependencies = []
 
 # Prepare and run the conda-like command
 
