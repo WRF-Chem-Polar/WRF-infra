@@ -83,7 +83,7 @@ def write_job_script(opts):
     # Prepare header of file (hash bang and scheduler options)
     lines = ["#!/bin/bash"]
     if opts.scheduler:
-        if host in ("spirit","jed"):
+        if host in ("spirit", "jed"):
             lines += compilation.prepare_slurm_options("03:00:00")
         else:
             msg = f"Unsupported host: {host}."
