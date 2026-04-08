@@ -962,6 +962,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate activated aer number conc."""
         return WRFAerNumberConcAct(self._dataset)
 
+    @property
+    def aer_number_conc_total(self):
+        """The DerivedVariable object to calculate total aer number conc."""
+        return WRFAerNumberConcTotal(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1431,7 +1436,7 @@ class WRFAerNumberConcNonact(DerivedVariable):
         for v in variables:
             ds.wrf.check_units(v, expected_units)
 
-        name = "Number concentration of non-activated aerosols (all bins)"
+        name = "Number concentration of non-activated aerosol (all bins)"
         return xr.DataArray(
             sum(ds[v].__getitem__(*args) for v in variables),
             name=name,
@@ -1469,9 +1474,37 @@ class WRFAerNumberConcAct(DerivedVariable):
         for v in variables:
             ds.wrf.check_units(v, expected_units)
 
-        name = "Number concentration of activated aerosols (all bins)"
+        name = "Number concentration of activated aerosol (all bins)"
         return xr.DataArray(
             sum(ds[v].__getitem__(*args) for v in variables),
             name=name,
             attrs=dict(long_name=name, units=expected_units),
+        )
+
+
+class WRFAerNumberConcTotal(DerivedVariable):
+    """WRF derived variable for total aerosol number concentration."""
+
+    def __getitem__(self, *args):
+        """Return the total number concentration of aerosol (all bins).
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The total aerosol number concentration (all bins, non-activated +
+            activated) for given slice, in /kg-dryair.
+
+        """
+        wrf = self._dataset.wrf
+        name = "Total number concentration of all aerosol (all bins)"
+        return xr.DataArray(
+            wrf.aer_number_conc_nonact.__getitem__(*args)
+            + wrf.aer_number_conc_act.__getitem__(*args),
+            name=name,
+            attrs=dict(long_name=name, units="/kg-dryair"),
         )
