@@ -967,6 +967,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate total aer number conc."""
         return WRFAerNumberConcTotal(self._dataset)
 
+    @property
+    def fraction_activated_aerosol(self):
+        """The DerivedVariable object to calculate the fraction of activated aerosol."""
+        return WRFFractionActivatedAerosol(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1507,4 +1512,31 @@ class WRFAerNumberConcTotal(DerivedVariable):
             + wrf.aer_number_conc_act.__getitem__(*args),
             name=name,
             attrs=dict(long_name=name, units="/kg-dryair"),
+        )
+
+
+class WRFFractionActivatedAerosol(DerivedVariable):
+    """WRF derived variable for the fraction of activated aerosol."""
+
+    def __getitem__(self, *args):
+        """Return the fraction of activated aerosol.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The fraction of activated aerosol (dimensionless).
+
+        """
+        wrf = self._dataset.wrf
+        name = "fraction of activated aerosol"
+        return xr.DataArray(
+            wrf.aer_number_conc_act.__getitem__(*args)
+            / wrf.aer_number_conc_total.__getitem__(*args),
+            name=name,
+            attrs=dict(long_name=name, units=None),
         )
