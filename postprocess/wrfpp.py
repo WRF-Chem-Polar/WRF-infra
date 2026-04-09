@@ -938,6 +938,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         return WRFCloudLiquidWaterPath(self._dataset)
 
     @property
+    def cloud_solid_water_path(self):
+        """The DerivedVariable object to calculate cloud solid water path."""
+        return WRFCloudSolidWaterPath(self._dataset)
+
+    @property
     def altitude_asl_c(self):
         """The DerivedVariable object to calculate grid cell height centre above sea level."""
         return WRFAltitudeASL_C(self._dataset)
@@ -1290,7 +1295,7 @@ class WRFAltitudeAGL(DerivedVariable):
 
 
 class WRFCloudLiquidWaterPath(DerivedVariable):
-    """The DerivedVariable object to calculate liquid water path."""
+    """The DerivedVariable object to calculate cloud liquid water path."""
 
     def __getitem__(self, *args):
         """Return the cloud liquid water path.
@@ -1313,6 +1318,39 @@ class WRFCloudLiquidWaterPath(DerivedVariable):
             liquid_water_path.sum(dim="bottom_top").__getitem__(*args),
             name="Cloud liquid water path",
             attrs=dict(long_name="Cloud liquid water path", units="kg m-2"),
+        )
+
+
+class WRFCloudSolidWaterPath(DerivedVariable):
+    """The DerivedVariable object to calculate cloud solid water path."""
+
+    def __getitem__(self, *args):
+        """Return the cloud solid water path.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The cloud solid water path for given slice, in kg m-2.
+
+        """
+        wrf = self._dataset.wrf
+        units = "kg kg-1"
+        wrf.check_units("QICE", units)
+        qsolid = wrf["QICE"]
+        for varname in ("QSNOW", "QGRAUP", "QHAIL"):
+            if varname in wrf.variables:
+                wrf.check_units(varname, units)
+                qsolid += wrf[varname]
+        solid_water_path = qsolid * wrf.density_of_dry_air * wrf.box_dz
+        return xr.DataArray(
+            solid_water_path.sum(dim="bottom_top").__getitem__(*args),
+            name="Cloud solid water path",
+            attrs=dict(long_name="Cloud solid water path", units="kg m-2"),
         )
 
 
