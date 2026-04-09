@@ -1398,14 +1398,12 @@ class WRFBoxDz(DerivedVariable):
             The grid cell vertical extent.
 
         """
-        wrf = self._dataset.wrf
-        alt = wrf.altitude_agl.__getitem__(*args)
-        box_dz = alt[:].isel(bottom_top_stag=slice(1, None)) - alt[:].isel(
-            bottom_top_stag=slice(None, -1)
-        )
-        box_dz = box_dz.rename({"bottom_top_stag": "bottom_top"})
+        asl = self._dataset.wrf.altitude_asl
+        top = asl.isel(bottom_top_stag=slice(1, None))
+        bottom = asl.isel(bottom_top_stag=slice(None, -1))
+        box_dz = (top - bottom).rename({"bottom_top_stag": "bottom_top"})
         return xr.DataArray(
-            box_dz,
+            box_dz.__getitem__(*args),
             name="WRF grid box dz (vertical extent)",
             attrs=dict(
                 long_name="WRF grid box dz (vertical extent)",
