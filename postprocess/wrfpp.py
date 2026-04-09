@@ -1308,18 +1308,10 @@ class WRFCloudLiquidWaterPath(DerivedVariable):
         """
         wrf = self._dataset.wrf
         wrf.check_units("QCLOUD", "kg kg-1")
-        qc = wrf["QCLOUD"].__getitem__(*args)
-        air_den = wrf.density_of_dry_air.__getitem__(*args)
-        cloud_water_content = air_den * qc
-        alt_asl = wrf.altitude_asl.__getitem__(*args)
-        box_height = alt_asl.diff(dim="bottom_top_stag").rename(
-            bottom_top_stag="bottom_top"
-        )
-        liquid_water_path = cloud_water_content * box_height
-        liquid_water_path = liquid_water_path.sum(dim="bottom_top")
+        liquid_water_path = wrf["QCLOUD"] * wrf.density_of_dry_air * wrf.box_dz
         return xr.DataArray(
-            liquid_water_path,
-            name="cloud liquid water path",
+            liquid_water_path.sum(dim="bottom_top").__getitem__(*args),
+            name="Cloud liquid water path",
             attrs=dict(long_name="Cloud liquid water path", units="kg m-2"),
         )
 
