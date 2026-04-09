@@ -1280,11 +1280,21 @@ class WRFAltitudeAGL(DerivedVariable):
 
 
 class WRFCloudLiquidWaterPath(DerivedVariable):
-    """Derived variable for cloud liquid water path from WRF outputs."""
+    """The DerivedVariable object to calculate liquid water path."""
 
     def __getitem__(self, *args):
-        """Return the computed cloud liquid water path.
-        The cloud liquid water path for given slice, in kg m-2.
+        """Return the cloud liquid water path.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The cloud liquid water path for given slice, in kg m-2.
+
         """
         wrf = self._dataset.wrf
         wrf.check_units("QCLOUD", "kg kg-1")
@@ -1318,7 +1328,6 @@ class WRFAltitudeASL_C(DerivedVariable):
         Return
         ------
         xarray.DataArray
-
             The grid cell centrepoint altitude above sea level in metres.
 
         """
