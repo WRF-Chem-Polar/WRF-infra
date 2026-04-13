@@ -84,7 +84,7 @@ if os.path.lexists(generic.process_path(env_dir)):
 file_pyproject = os.path.join(generic.path_of_repo(), "pyproject.toml")
 with open(file_pyproject, mode="rb") as f:
     pyproject = tomllib.load(f)
-python = pyproject["project"]["requires-python"].replace(" ", "")
+python_version = pyproject["project"]["requires-python"].strip()
 try:
     dependencies = pyproject["project"]["dependencies"]
 except KeyError:
@@ -106,7 +106,7 @@ cmd = [
     "--override-channels",
     "--strict-channel-priority",
     "--yes",
-    f"python{python}",
+    f"python{python_version}",
     *dependencies,
 ]
 
