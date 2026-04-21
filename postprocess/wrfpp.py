@@ -943,14 +943,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         return WRFCloudLiquidWaterPath(self._dataset)
 
     @property
-    def solid_water_path(self):
-        """The DerivedVariable object to calculate solid water path."""
-        return WRFSolidWaterPath(self._dataset)
+    def ice_water_path(self):
+        """The DerivedVariable object to calculate ice water path."""
+        return WRFIceWaterPath(self._dataset)
 
     @property
-    def cloud_solid_water_path(self):
-        """The DerivedVariable object to calculate cloud solid water path."""
-        return WRFCloudSolidWaterPath(self._dataset)
+    def cloud_ice_water_path(self):
+        """The DerivedVariable object to calculate cloud ice water path."""
+        return WRFCloudIceWaterPath(self._dataset)
 
     @property
     def altitude_asl_c(self):
@@ -1363,11 +1363,11 @@ class WRFCloudLiquidWaterPath(DerivedVariable):
         )
 
 
-class WRFSolidWaterPath(DerivedVariable):
-    """The DerivedVariable object to calculate solid water path."""
+class WRFIceWaterPath(DerivedVariable):
+    """The DerivedVariable object to calculate ice water path."""
 
     def __getitem__(self, *args):
-        """Return the solid water path.
+        """Return the ice water path.
 
         Parameters
         ----------
@@ -1377,30 +1377,30 @@ class WRFSolidWaterPath(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The solid water path for given slice, in kg m-2.
+            The ice water path for given slice, in kg m-2.
 
         """
         wrf = self._dataset.wrf
         units = "kg kg-1"
         wrf.check_units("QICE", units)
-        qsolid = wrf["QICE"]
+        qice = wrf["QICE"]
         for varname in ("QSNOW", "QGRAUP", "QHAIL"):
             if varname in wrf.variables:
                 wrf.check_units(varname, units)
-                qsolid += wrf[varname]
-        path = qsolid * wrf.density_of_dry_air * wrf.box_dz
+                qice += wrf[varname]
+        path = qice * wrf.density_of_dry_air * wrf.box_dz
         return xr.DataArray(
             path.sum(dim="bottom_top").__getitem__(*args),
-            name="Solid water path",
-            attrs=dict(long_name="Solid water path", units="kg m-2"),
+            name="Ice water path",
+            attrs=dict(long_name="Ice water path", units="kg m-2"),
         )
 
 
-class WRFCloudSolidWaterPath(DerivedVariable):
-    """The DerivedVariable object to calculate cloud solid water path."""
+class WRFCloudIceWaterPath(DerivedVariable):
+    """The DerivedVariable object to calculate cloud ice water path."""
 
     def __getitem__(self, *args):
-        """Return the cloud solid water path.
+        """Return the cloud ice water path.
 
         Parameters
         ----------
@@ -1410,7 +1410,7 @@ class WRFCloudSolidWaterPath(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The cloud solid water path for given slice, in kg m-2.
+            The cloud ice water path for given slice, in kg m-2.
 
         """
         wrf = self._dataset.wrf
@@ -1418,8 +1418,8 @@ class WRFCloudSolidWaterPath(DerivedVariable):
         path = wrf["QICE"] * wrf.density_of_dry_air * wrf.box_dz
         return xr.DataArray(
             path.sum(dim="bottom_top").__getitem__(*args),
-            name="Cloud solid water path",
-            attrs=dict(long_name="Cloud solid water path", units="kg m-2"),
+            name="Cloud ice water path",
+            attrs=dict(long_name="Cloud ice water path", units="kg m-2"),
         )
 
 
