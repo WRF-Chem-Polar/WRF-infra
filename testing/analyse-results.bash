@@ -197,7 +197,10 @@ ${conda_run} python \
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
 variables=(
-    "QCLOUD:9"
+    "CLT:9"
+    "cloud_liquid_water_path:9"
+    "cloud_ice_water_path:9"
+    "fraction_activated_aerosol:9"
 )
 locations=(
     "SeaIce:170:84"
