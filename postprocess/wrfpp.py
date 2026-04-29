@@ -967,6 +967,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate total aer number conc."""
         return WRFAerNumberConcTotal(self._dataset)
 
+    @property
+    def fraction_activated_aerosol(self):
+        """The DerivedVariable object to calculate the fraction of activated aerosol."""
+        return WRFFractionActivatedAerosol(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1265,41 +1270,53 @@ class WRFAltitudeAGL(DerivedVariable):
         Return
         ------
         xarray.DataArray
-            The grid cell altitude above ground level in metres.
+            The grid cell altitude above ground level in m.
 
         """
         wrf = self._dataset.wrf
-        wrf.check_units("HGT", "m")
-        hgt = wrf["HGT"].__getitem__(*args)
-        alt = wrf.altitude_asl.__getitem__(*args) - hgt
+        dimname_terrain, units_terrain = "HGT", "m"
+        wrf.check_units(dimname_terrain, units_terrain)
+        terrain = wrf[dimname_terrain]
+
+        varname_asl = "altitude_asl"
+        asl = getattr(wrf, varname_asl)
+
+        # In WRF outputs, terrain elevation has dimensionality "tyx" while grid
+        # cell elevation has dimensionality "tzyx", so we add a z-dimension to
+        # terrain elevation
+        iz = wrf.dimensionality(varname_asl).index("z")
+        terrain = terrain.expand_dims({asl.dims[iz]: asl.shape[iz]}, axis=iz)
+
         return xr.DataArray(
-            alt,
+            (asl - terrain).__getitem__(*args),
             name="Altitude above ground level",
             attrs=dict(long_name="Altitude above ground level", units="m"),
         )
 
 
 class WRFCloudLiquidWaterPath(DerivedVariable):
-    """Derived variable for cloud liquid water path from WRF outputs."""
+    """The DerivedVariable object to calculate liquid water path."""
 
     def __getitem__(self, *args):
-        """Return the computed cloud liquid water path.
-        The cloud liquid water path for given slice, in kg m-2.
+        """Return the cloud liquid water path.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The cloud liquid water path for given slice, in kg m-2.
+
         """
         wrf = self._dataset.wrf
         wrf.check_units("QCLOUD", "kg kg-1")
-        qc = wrf["QCLOUD"].__getitem__(*args)
-        air_den = wrf.density_of_dry_air.__getitem__(*args)
-        cloud_water_content = air_den * qc
-        alt_asl = wrf.altitude_asl.__getitem__(*args)
-        box_height = alt_asl.diff(dim="bottom_top_stag").rename(
-            bottom_top_stag="bottom_top"
-        )
-        liquid_water_path = cloud_water_content * box_height
-        liquid_water_path = liquid_water_path.sum(dim="bottom_top")
+        liquid_water_path = wrf["QCLOUD"] * wrf.density_of_dry_air * wrf.box_dz
         return xr.DataArray(
-            liquid_water_path,
-            name="cloud liquid water path",
+            liquid_water_path.sum(dim="bottom_top").__getitem__(*args),
+            name="Cloud liquid water path",
             attrs=dict(long_name="Cloud liquid water path", units="kg m-2"),
         )
 
@@ -1323,14 +1340,13 @@ class WRFAltitudeASL_C(DerivedVariable):
 
         """
         wrf = self._dataset.wrf
-        alt = wrf.altitude_asl.__getitem__(*args)
         alt_centre = (
-            alt[:].isel(bottom_top_stag=slice(None, -1))
-            + alt[:].isel(bottom_top_stag=slice(1, None))
-        ) / 2.0
+            wrf.altitude_asl.isel(bottom_top_stag=slice(None, -1))
+            + wrf.altitude_asl.isel(bottom_top_stag=slice(1, None))
+        ) / 2
         alt_centre = alt_centre.rename({"bottom_top_stag": "bottom_top"})
         return xr.DataArray(
-            alt_centre,
+            alt_centre.__getitem__(*args),
             name="Altitude grid box centrepoint above sea level",
             attrs=dict(
                 long_name="Altitude grid box centrepoint above sea level",
@@ -1357,14 +1373,13 @@ class WRFAltitudeAGL_C(DerivedVariable):
 
         """
         wrf = self._dataset.wrf
-        alt = wrf.altitude_agl.__getitem__(*args)
         alt_centre = (
-            alt[:].isel(bottom_top_stag=slice(None, -1))
-            + alt[:].isel(bottom_top_stag=slice(1, None))
+            wrf.altitude_agl.isel(bottom_top_stag=slice(None, -1))
+            + wrf.altitude_agl.isel(bottom_top_stag=slice(1, None))
         ) / 2.0
         alt_centre = alt_centre.rename({"bottom_top_stag": "bottom_top"})
         return xr.DataArray(
-            alt_centre,
+            alt_centre.__getitem__(*args),
             name="Altitude grid box centrepoint above ground level",
             attrs=dict(
                 long_name="Altitude grid box centrepoint above ground level",
@@ -1390,14 +1405,12 @@ class WRFBoxDz(DerivedVariable):
             The grid cell vertical extent.
 
         """
-        wrf = self._dataset.wrf
-        alt = wrf.altitude_agl.__getitem__(*args)
-        box_dz = alt[:].isel(bottom_top_stag=slice(1, None)) - alt[:].isel(
-            bottom_top_stag=slice(None, -1)
-        )
-        box_dz = box_dz.rename({"bottom_top_stag": "bottom_top"})
+        asl = self._dataset.wrf.altitude_asl
+        top = asl.isel(bottom_top_stag=slice(1, None))
+        bottom = asl.isel(bottom_top_stag=slice(None, -1))
+        box_dz = (top - bottom).rename({"bottom_top_stag": "bottom_top"})
         return xr.DataArray(
-            box_dz,
+            box_dz.__getitem__(*args),
             name="WRF grid box dz (vertical extent)",
             attrs=dict(
                 long_name="WRF grid box dz (vertical extent)",
@@ -1507,4 +1520,31 @@ class WRFAerNumberConcTotal(DerivedVariable):
             + wrf.aer_number_conc_act.__getitem__(*args),
             name=name,
             attrs=dict(long_name=name, units="/kg-dryair"),
+        )
+
+
+class WRFFractionActivatedAerosol(DerivedVariable):
+    """WRF derived variable for the fraction of activated aerosol."""
+
+    def __getitem__(self, *args):
+        """Return the fraction of activated aerosol.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The fraction of activated aerosol (dimensionless).
+
+        """
+        wrf = self._dataset.wrf
+        name = "fraction of activated aerosol"
+        return xr.DataArray(
+            wrf.aer_number_conc_act.__getitem__(*args)
+            / wrf.aer_number_conc_total.__getitem__(*args),
+            name=name,
+            attrs=dict(long_name=name, units=None),
         )

@@ -27,6 +27,8 @@ function get_host_name {
     local full_name=$(hostname)
     if [[ "${full_name}" == spirit* ]]; then
         echo "spirit"
+    elif [[ "${full_name}" == jed* ]]; then
+        echo "jed"
     else
         echo "commons.bash: get_host_name: unknown host (${full_name})." >&2
         return 2
