@@ -112,6 +112,7 @@ plotted_vars=(
     "PM2_5_DRY"
     "PM10"
     "AOD2D_OUT"
+    "CLDFRA"
     "CLT"
 )
 
@@ -197,7 +198,7 @@ ${conda_run} python \
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
 variables=(
-    "CLT:9"
+    "CLDFRA:9"
     "cloud_liquid_water_path:9"
     "cloud_ice_water_path:9"
     "fraction_activated_aerosol:9"
