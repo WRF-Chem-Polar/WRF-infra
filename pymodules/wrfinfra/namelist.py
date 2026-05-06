@@ -81,8 +81,8 @@ def _parse_key_values(line):
     if not _name_is_valid(key_name):
         msg = f"Invalid key name: {key_name}."
         raise ValueError(msg)
-    # For now we assume that values cannot contain commas. We will implement
-    # this edge case if needed in the future
+    # Some parsing edge cases are not yet implemented here
+    # cf https://github.com/WRF-Chem-Polar/WRF-infra/issues/192 for more info
     values = [_process_value(value.strip()) for value in split[1].split(",")]
     if values[-1] == "":
         values = values[:-1]
@@ -109,6 +109,35 @@ class Namelist:
             raise ValueError(msg)
         if filepath is not None:
             self.read(filepath, **kwargs)
+
+    def __str__(self):
+        """Returns string representation of self.
+
+        Returns
+        -------
+        str
+            String representation of self.
+
+        """
+        out = []
+        for section, key_values in self._content.items():
+            if len(key_values) == 0:
+                out.append(f"&{section}\n/")
+            else:
+                n = max(len(key) for key in key_values)
+                m = max(
+                    -1
+                    if len(values) == 0
+                    else max(len(str(v)) for v in values)
+                    for _, values in key_values.items()
+                )
+                fmt_key = "    %%-%ds = " % n
+                section_content = []
+                for key, values in key_values.items():
+                    fmt = fmt_key + ", ".join(["%%-%ds" % m] * len(values))
+                    section_content.append(fmt % tuple([key] + values))
+                out.append(f"&{section}\n{'\n'.join(section_content)}\n/")
+        return "\n\n".join(out)
 
     def read(self, filepath, overwrite=False):
         """Read and parse given file.
