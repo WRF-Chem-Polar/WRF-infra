@@ -164,8 +164,8 @@ class Namelist:
                 else:
                     if not overwrite and values != old_values:
                         msg = (
-                            f"Receiving new and different values for existing "
-                            "key {key_name} but overwriting is not allowed"
+                            "Receiving new and different values for existing "
+                            f"key {key_name} but overwriting is not allowed"
                         )
                         raise ValueError(msg)
                     section[key_name] = values
