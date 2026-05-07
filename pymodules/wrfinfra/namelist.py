@@ -37,25 +37,33 @@ def _process_value(value):
 
     Return
     ------
-    bool | int | float | str
+    Value
         The processed value.
 
     """
-    if value == ".true.":
-        return True
-    elif value == ".false.":
-        return False
-    for convert in (int, float):
-        try:
-            return convert(value)
-        except ValueError:
-            pass
     if value.startswith("'") or value.startswith('"'):
         if len(value) < 2 or value[-1] != value[0]:
             msg = f"Badly quoted value: {value}."
             raise ValueError(msg)
-        return value[1:-1]
-    return value
+        quoted = True
+        value = value[1:-1]
+    else:
+        quoted = False
+    if value == ".true.":
+        value = True
+    elif value == ".false.":
+        value = False
+    else:
+        for convert in (int, float):
+            try:
+                value = convert(value)
+            except ValueError:
+                pass
+            else:
+                break
+        else:
+            value = str(value)
+    return Value(value, quoted)
 
 
 def _parse_key_values(line):
@@ -68,9 +76,8 @@ def _parse_key_values(line):
 
     Returns
     -------
-    str, [data]
-        The key name and the correspond list of values (they can be strings,
-        numerical values, etc.).
+    str: [Value]
+        The key name and the corresponding list of values.
 
     """
     split = line.split("=")
@@ -84,16 +91,59 @@ def _parse_key_values(line):
     # Some parsing edge cases are not yet implemented here
     # cf https://github.com/WRF-Chem-Polar/WRF-infra/issues/192 for more info
     values = [_process_value(value.strip()) for value in split[1].split(",")]
-    if values[-1] == "":
+    if values[-1].is_empty:
         values = values[:-1]
     return key_name, values
+
+
+class Value:
+    """A namelist value."""
+
+    def __init__(self, value, quoting=None):
+        """Initialise instance.
+
+        Parameters
+        ----------
+        value: bool | int | float | str
+            The actual value.
+        quoting: None | bool
+            Whether the value should be quoted in the namelist (automatically
+            determined if None).
+
+        """
+        self._value = value
+        self._quoting = isinstance(value, str) if quoting is None else quoting
+
+    def __str__(self):
+        """Return string representation of self.
+
+        Returns
+        -------
+        str
+            String representation of self.
+
+        """
+        if self._value == True:
+            out = ".true."
+        elif self._value == False:
+            out = ".false."
+        else:
+            out = str(self._value)
+        if self._quoting:
+            out = f"'{out}'"
+        return out
+
+    @property
+    def is_empty(self):
+        """True if and only if the value is empty."""
+        return self._value == ""
 
 
 class Namelist:
     """A WRF of WRF-Chem namelist."""
 
     def __init__(self, filepath=None, **kwargs):
-        """Initialize instance.
+        """Initialise instance.
 
         Parameters
         ----------
@@ -111,7 +161,7 @@ class Namelist:
             self.read(filepath, **kwargs)
 
     def __str__(self):
-        """Returns string representation of self.
+        """Return string representation of self.
 
         Returns
         -------
