@@ -114,24 +114,19 @@ class Value:
         self._value = value
         self._quoting = isinstance(value, str) if quoting is None else quoting
 
-    def __str__(self):
-        """Return string representation of self.
-
-        Returns
-        -------
-        str
-            String representation of self.
-
-        """
-        if self._value == True:
+    def __repr__(self):
+        if self._value is True:
             out = ".true."
-        elif self._value == False:
+        elif self._value is False:
             out = ".false."
         else:
             out = str(self._value)
         if self._quoting:
             out = f"'{out}'"
         return out
+
+    def __str__(self):
+        return self.__repr__()
 
     @property
     def is_empty(self):
@@ -155,15 +150,7 @@ class Namelist:
         if filepath is not None:
             self.read(filepath)
 
-    def __str__(self):
-        """Return string representation of self.
-
-        Returns
-        -------
-        str
-            String representation of self.
-
-        """
+    def __repr__(self):
         out = []
         for section, key_values in self._content.items():
             if len(key_values) == 0:
@@ -183,6 +170,9 @@ class Namelist:
                     section_content.append(fmt % tuple([key] + values))
                 out.append(f"&{section}\n{'\n'.join(section_content)}\n/")
         return "\n\n".join(out)
+
+    def __str__(self):
+        return self.__repr__()
 
     def read(self, filepath, overwrite=False):
         """Read and parse given file.
