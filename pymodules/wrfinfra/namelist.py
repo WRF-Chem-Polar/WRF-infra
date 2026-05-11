@@ -142,23 +142,18 @@ class Value:
 class Namelist:
     """A WRF of WRF-Chem namelist."""
 
-    def __init__(self, filepath=None, **kwargs):
+    def __init__(self, filepath=None):
         """Initialise instance.
 
         Parameters
         ----------
         filepath: None | str
             If not None, parse the namelist located at given path.
-        kwargs:
-            Passed "as is" to self.read() if called.
 
         """
         self._content = {}
-        if filepath is None and len(kwargs) > 0:
-            msg = "Cannot specify additional arguments if filepath is None."
-            raise ValueError(msg)
         if filepath is not None:
-            self.read(filepath, **kwargs)
+            self.read(filepath)
 
     def __str__(self):
         """Return string representation of self.
@@ -235,16 +230,42 @@ class Namelist:
                 if not in_section:
                     msg = "Content line encountered out of section."
                     raise ValueError(msg)
-                key_name, values = _parse_key_values(line)
-                try:
-                    old_values = section[key_name]
-                except KeyError:
-                    section[key_name] = values
-                else:
-                    if not overwrite and values != old_values:
+                key, values = _parse_key_values(line)
+                self.set_values(section_name, key, values, overwrite=overwrite)
+
+    def set_values(self, section, key, values, overwrite=False):
+        """Set namelist values for given section and key.
+
+        Parameters
+        ----------
+        section: str
+            The name of the section.
+        key: str
+            The name of the key.
+        values: [Value]
+            The corresponding values.
+        overwrite: bool
+            Whether overwriting values is allowed.
+
+        """
+        if not isinstance(values, list):
+            msg = 'Input parameter "values" must be a list.'
+            raise TypeError(msg)
+        try:
+            section = self._content[section]
+        except KeyError:
+            self._content[section] = {key: values}
+        else:
+            try:
+                current_values = section[key]
+            except KeyError:
+                section[key] = values
+            else:
+                if values != current_values:
+                    if not overwrite:
                         msg = (
                             "Receiving new and different values for existing "
-                            f"key {key_name} but overwriting is not allowed"
+                            f"key {key} but overwriting is not allowed."
                         )
                         raise ValueError(msg)
-                    section[key_name] = values
+                    section[key] = values
