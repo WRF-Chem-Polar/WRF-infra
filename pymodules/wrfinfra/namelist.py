@@ -269,3 +269,25 @@ class Namelist:
                         )
                         raise ValueError(msg)
                     section[key] = values
+
+    def get_values(self, section, key):
+        """Get namelist values for given section and key.
+
+        Parameters
+        ----------
+        section: str
+            The name of the section.
+        key: str
+            The name of the key.
+
+        Returns
+        -------
+        [Value]
+            The values of given key in given section.
+
+        """
+        try:
+            return self._content[section][key]
+        except KeyError:
+            msg = f"Key {key} and/or section {section} does not exist."
+            raise ValueError(msg)
