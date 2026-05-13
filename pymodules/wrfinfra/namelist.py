@@ -57,7 +57,12 @@ def _process_value(value):
         The processed value.
 
     """
-    if value.startswith("'") or value.startswith('"'):
+    if (
+            value.startswith("'")
+            or value.startswith('"')
+            or value.endswith("'")
+            or value.endswith('"')
+    ):
         if len(value) < 2 or value[-1] != value[0]:
             msg = f"Badly quoted value: {value}."
             raise ValueError(msg)
@@ -129,6 +134,14 @@ class Value:
         """
         self._value = value
         self._quoting = isinstance(value, str) if quoting is None else quoting
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Value)
+            and type(self._value) == type(other._value)
+            and self._value == other._value
+            and self._quoting is other._quoting
+        )
 
     def __repr__(self):
         if self._value is True:

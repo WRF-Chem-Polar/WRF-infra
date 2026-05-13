@@ -4,7 +4,8 @@
 
 """Common Python resources for WRF-infra: tests for namelist module."""
 
-from namelist import _name_is_valid
+import pytest
+from namelist import Value, _name_is_valid, _process_value
 
 
 class TestNameIsValid:
@@ -49,3 +50,56 @@ class TestNameIsValid:
 
     def test_invalid_09(self):
         assert _name_is_valid("&") is False
+
+
+class TestProcessValue:
+    def test_01(self):
+        assert _process_value(".true.") == Value(True)
+
+    def test_02(self):
+        assert _process_value(".false.") == Value(False)
+
+    def test_03(self):
+        assert _process_value("12") == Value(12)
+
+    def test_04(self):
+        assert _process_value("0012") == Value(12)
+
+    def test_05(self):
+        assert _process_value("1.2") == Value(1.2)
+
+    def test_06(self):
+        assert _process_value("001.20") == Value(1.2)
+
+    def test_07(self):
+        assert _process_value("-12") == Value(-12)
+
+    def test_08(self):
+        assert _process_value("'-12'") == Value(-12, quoting=True)
+
+    def test_09(self):
+        assert _process_value('"-12"') == Value(-12, quoting=True)
+
+    def test_10(self):
+        with pytest.raises(ValueError):
+            _process_value("'-12")
+
+    def test_11(self):
+        with pytest.raises(ValueError):
+            _process_value("-12'")
+
+    def test_12(self):
+        with pytest.raises(ValueError):
+            _process_value('"-12')
+
+    def test_13(self):
+        with pytest.raises(ValueError):
+            _process_value('-12"')
+
+    def test_14(self):
+        with pytest.raises(ValueError):
+            _process_value("'")
+
+    def test_15(self):
+        with pytest.raises(ValueError):
+            _process_value('"')
