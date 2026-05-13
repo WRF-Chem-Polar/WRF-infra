@@ -4,6 +4,22 @@
 
 """Common Python resources for WRF-infra: read and write WRF namelists."""
 
+import sys
+
+# We want to garantee that key order is preserved in namelists, and we use
+# dictionaries for that (key order preservation is guaranteed for dictionaries
+# for Python >= 3.7)
+if (
+    sys.version_info.major < 3
+    or sys.version_info.major == 3
+    and sys.version_info.minor < 7
+):
+    msg = (
+        "This module uses features from Python >= 3.7. "
+        "Your version of Python is too old, please update."
+    )
+    raise RuntimeError(msg)
+
 
 def _name_is_valid(name):
     """Determine if given name is a valid section or key name.
