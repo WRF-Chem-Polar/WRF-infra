@@ -132,7 +132,7 @@ script_namelist = os.path.join(
     dir_infra,
     "pymodules",
     "wrfinfra",
-    "namelist.py"
+    "namelist.py",
 )
 
 # Prepare the work directory
