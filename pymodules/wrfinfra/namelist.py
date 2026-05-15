@@ -70,20 +70,18 @@ def _process_value(value):
         value = value[1:-1]
     else:
         quoted = False
-    if value == ".true.":
-        value = True
-    elif value == ".false.":
-        value = False
-    else:
-        for convert in (int, float):
-            try:
-                value = convert(value)
-            except ValueError:
-                pass
-            else:
-                break
+        if value == ".true.":
+            value = True
+        elif value == ".false.":
+            value = False
         else:
-            value = str(value)
+            for convert in (int, float):
+                try:
+                    value = convert(value)
+                except ValueError:
+                    pass
+                else:
+                    break
     return Value(value, quoted)
 
 
@@ -112,7 +110,7 @@ def _parse_key_values(line):
     # Some parsing edge cases are not yet implemented here
     # cf https://github.com/WRF-Chem-Polar/WRF-infra/issues/192 for more info
     values = [_process_value(value.strip()) for value in split[1].split(",")]
-    if values[-1].is_empty:
+    while values[-1].is_empty:
         values = values[:-1]
     return key_name, values
 

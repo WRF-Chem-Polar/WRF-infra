@@ -5,7 +5,7 @@
 """Common Python resources for WRF-infra: tests for namelist module."""
 
 import pytest
-from namelist import Value, _name_is_valid, _process_value
+from namelist import Value, _name_is_valid, _process_value, _parse_key_values
 
 
 class TestNameIsValid:
@@ -75,10 +75,10 @@ class TestProcessValue:
         assert _process_value("-12") == Value(-12)
 
     def test_08(self):
-        assert _process_value("'-12'") == Value(-12, quoting=True)
+        assert _process_value("'-12'") == Value("-12", quoting=True)
 
     def test_09(self):
-        assert _process_value('"-12"') == Value(-12, quoting=True)
+        assert _process_value('"-12"') == Value("-12", quoting=True)
 
     def test_10(self):
         with pytest.raises(ValueError):
@@ -103,3 +103,87 @@ class TestProcessValue:
     def test_15(self):
         with pytest.raises(ValueError):
             _process_value('"')
+
+
+class TestParseKeyValues:
+    def test_one_value_01(self):
+        result = _parse_key_values("start_date = 2026-05-15")
+        expected = ("start_date", [Value("2026-05-15", quoting=False)])
+        assert result == expected
+
+    def test_one_value_02(self):
+        result = _parse_key_values("start_date = '2026-05-15'")
+        expected = ("start_date", [Value("2026-05-15")])
+        assert result == expected
+
+    def test_one_value_03(self):
+        result = _parse_key_values('start_date = "2026-05-15"')
+        expected = ("start_date", [Value("2026-05-15")])
+        assert result == expected
+
+    def test_one_value_04(self):
+        result = _parse_key_values("the_answer = 42")
+        expected = ("the_answer", [Value(42)])
+        assert result == expected
+
+    def test_one_value_05(self):
+        result = _parse_key_values("i_like_pi = 3.14")
+        expected = ("i_like_pi", [Value(3.14)])
+        assert result == expected
+
+    def test_one_value_06(self):
+        result = _parse_key_values("i_like_pi_as_str = '3.14'")
+        expected = ("i_like_pi_as_str", [Value("3.14", quoting=True)])
+        assert result == expected
+
+    def test_multi_values_01(self):
+        result = _parse_key_values("some_values = 10, 3.14, '9.1', 2026-05-15")
+        expected = (
+            "some_values",
+            [
+                Value(10),
+                Value(3.14),
+                Value("9.1", quoting=True),
+                Value("2026-05-15", quoting=False),
+            ],
+        )
+        assert result == expected
+
+    def test_weird_spacing_01(self):
+        result = _parse_key_values(" some_values    =    10 ,    3.14  ")
+        expected = ("some_values", [Value(10), Value(3.14)])
+        assert result == expected
+
+    def test_trailing_commas_01(self):
+        result = _parse_key_values("some_values = 10, 3.14,")
+        expected = ("some_values", [Value(10), Value(3.14)])
+        assert result == expected
+
+    def test_trailing_commas_02(self):
+        result = _parse_key_values("some_values = 10, 3.14,,,")
+        expected = ("some_values", [Value(10), Value(3.14)])
+        assert result == expected
+
+    def test_bad_equal_signs_01(self):
+        with pytest.raises(ValueError):
+            _parse_key_values("some_values == 2.1, 3")
+
+    def test_bad_equal_signs_02(self):
+        with pytest.raises(ValueError):
+            _parse_key_values("some_values = 2.1, 3 =")
+
+    def test_bad_equal_signs_03(self):
+        with pytest.raises(ValueError):
+            _parse_key_values("= some_values = 2.1, 3")
+
+    def test_bad_equal_signs_04(self):
+        with pytest.raises(ValueError):
+            _parse_key_values("some_values <- 2.1, 3")
+
+    def test_bad_key_name_01(self):
+        with pytest.raises(ValueError):
+            _parse_key_values("some values = 2.1, 3")
+
+    def test_bad_key_name_02(self):
+        with pytest.raises(ValueError):
+            _parse_key_values(" = 2.1, 3")
