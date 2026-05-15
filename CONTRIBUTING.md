@@ -1,6 +1,14 @@
 # If you find a bug
 
+Create a [GitHub issue](https://github.com/WRF-Chem-Polar/WRF-infra/issues). Describe what the problem is, what you have tried, and copy-paste the corresponding error message(s) after having removed any personal information (eg. email address).
+
 # If you want to contribute a new feature
+
+Create a [GitHub issue](https://github.com/WRF-Chem-Polar/WRF-infra/issues) with the following information:
+
+ - Describe how things currently are without the new feature.
+ - Describe how things would be with the new feature.
+ - List use cases where this feature would be needed/useful.
 
 # Naming conventions
 
