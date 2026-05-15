@@ -103,9 +103,37 @@ parser.add_argument(
     help="Python command (useful to use a non-default installation).",
     default="python",
 )
+parser.add_argument(
+    "--update-wps-namelist",
+    help=(
+        "Set WPS namelist option. "
+        "Format: i:section/key=values where i is the run number (1-indexed). "
+        "Can be used multiple times."
+    ),
+    action="append",
+    default=[],
+)
+parser.add_argument(
+    "--update-wrf-namelist",
+    help=(
+        "Set WRF namelist option. "
+        "Format: i:section/key=values where i is the run number (1-indexed). "
+        "Can be used multiple times."
+    ),
+    action="append",
+    default=[],
+)
 args = parser.parse_args()
 dir_work = generic.process_path(args.work_dir)
 wrf_commits = [commit.strip() for commit in args.wrf_commits.split(",")]
+
+# Hard-coded parameter(s)
+script_namelist = os.path.join(
+    dir_infra,
+    "pymodules",
+    "wrfinfra",
+    "namelist.py",
+)
 
 # Prepare the work directory
 if os.path.lexists(dir_work):
@@ -159,9 +187,11 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
     last_job = f"Install WPS {i}"
     job_ids[last_job] = get_job_id(generic.run_stdout(cmd_wps, cwd=dir_wps))
 
-    # Clone WRF-infra and update simulation.conf
+    # Clone WRF-infra
     dir_infra = os.path.join(dir_work, f"WRF-infra_{i}")
     generic.run([args.git, "clone", generic.path_of_repo(), dir_infra])
+
+    # Update simulation.conf
     filepath = os.path.join(dir_infra, "run", "simulation.conf")
     new_options = dict(
         runid_wps=f"wps{i}",
@@ -173,6 +203,32 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
         dir_work=os.path.join(dir_work, f"scratch_{i}"),
     )
     replace_options_in_conf(filepath, new_options)
+
+    # Update WPS namelist
+    cmd_run = [
+        args.python,
+        script_namelist,
+        "--namelist",
+        os.path.join(dir_infra, "run", "WPS", "namelist.wps.YYYY"),
+    ]
+    for update in args.update_wps_namelist:
+        idx_sep = update.index(":")
+        if int(update[:idx_sep]) - 1 == i:
+            cmd_run += ["--update", update[idx_sep + 1 :]]
+    generic.run(cmd_run)
+
+    # Update WRF namelist
+    cmd_run = [
+        args.python,
+        script_namelist,
+        "--namelist",
+        os.path.join(dir_infra, "run", "real", "namelist.input.YYYY"),
+    ]
+    for update in args.update_wrf_namelist:
+        idx_sep = update.index(":")
+        if int(update[:idx_sep]) - 1 == i:
+            cmd_run += ["--update", update[idx_sep + 1 :]]
+    generic.run(cmd_run)
 
     # Run all model components
     for job in ["WPS", "real", "WRF-Chem"]:
