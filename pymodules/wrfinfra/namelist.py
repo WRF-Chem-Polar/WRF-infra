@@ -2,7 +2,12 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-"""Common Python resources for WRF-infra: read and write WRF namelists."""
+"""Common Python resources for WRF-infra: read and write WRF namelists.
+
+This module provides a Namelist object that can parse, modify, and update WRF
+namelists. It can also be used as a script to modify a namelist on disk.
+
+"""
 
 import sys
 
@@ -322,3 +327,45 @@ class Namelist:
         except KeyError:
             msg = f"Key {key} and/or section {section} does not exist."
             raise ValueError(msg)
+
+
+if __name__ == "__main__":
+
+    import sys
+    import argparse
+    import os
+
+    parser = argparse.ArgumentParser(
+        description="Modify a WRF namelist.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--namelist",
+        help="The path to the namelist to modify.",
+        required=True,
+    )
+    parser.add_argument(
+        "-u",
+        "--update",
+        help=(
+            "Create or update given value (format: section/key=values). "
+            "Can be used multiple times."
+        ),
+        action="append",
+        default=[],
+    )
+    args = parser.parse_args()
+
+    if len(args.update) == 0:
+        print(f"{os.path.basename(__file__)}: Nothing to do.")
+        sys.exit(0)
+
+    namelist = Namelist(args.namelist)
+
+    for update in args.update:
+        i = update.index("/")
+        key, values = _parse_key_values(update[i+1:])
+        namelist.set_values(update[:i], key, values, overwrite=True)
+
+    with open(args.namelist, mode="w") as f:
+        f.write(str(namelist))
