@@ -142,6 +142,21 @@ class TestParseKeyValues:
         expected = ("i_like_pi_as_str", [Value("3.14", quoting=True)])
         assert result == expected
 
+    def test_one_value_07(self):
+        result = _parse_key_values("a_bool_value = .true.")
+        expected = ("a_bool_value", [Value(True)])
+        assert result == expected
+
+    def test_one_value_08(self):
+        result = _parse_key_values("a_bool_value = .false.")
+        expected = ("a_bool_value", [Value(False)])
+        assert result == expected
+
+    def test_one_value_09(self):
+        result = _parse_key_values("a_quoted_bool_value = '.false.'")
+        expected = ("a_quoted_bool_value", [Value(".false.")])
+        assert result == expected
+
     def test_multi_values_01(self):
         result = _parse_key_values("some_values = 10, 3.14, '9.1', 2026-05-15")
         expected = (
@@ -156,8 +171,8 @@ class TestParseKeyValues:
         assert result == expected
 
     def test_weird_spacing_01(self):
-        result = _parse_key_values(" some_values    =    10 ,    3.14  ")
-        expected = ("some_values", [Value(10), Value(3.14)])
+        result = _parse_key_values(" some_values    =    10 , .true.,  3.14  ")
+        expected = ("some_values", [Value(10), Value(True), Value(3.14)])
         assert result == expected
 
     def test_trailing_commas_01(self):
