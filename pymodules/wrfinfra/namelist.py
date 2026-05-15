@@ -330,7 +330,6 @@ class Namelist:
 
 
 if __name__ == "__main__":
-
     import sys
     import argparse
     import os
@@ -364,7 +363,7 @@ if __name__ == "__main__":
 
     for update in args.update:
         i = update.index("/")
-        key, values = _parse_key_values(update[i+1:])
+        key, values = _parse_key_values(update[i + 1 :])
         namelist.set_values(update[:i], key, values, overwrite=True)
 
     with open(args.namelist, mode="w") as f:
