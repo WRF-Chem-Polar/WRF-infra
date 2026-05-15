@@ -201,22 +201,19 @@ class Namelist:
     def __str__(self):
         return self.__repr__()
 
-    def read(self, filepath, overwrite=False):
-        """Read and parse given file.
+    def parse(self, namelist, overwrite=False):
+        """Parse a namelist.
 
         Parameters
         ----------
-        filepath: str
-            Path to the file to read and parse.
+        namelist: str
+            The content of the namelist.
         overwrite: bool
-            Whether overwriting exisiting content is allowed.
+            Whether overwriting existing content is allowed.
 
         """
-        with open(filepath, mode="r") as f:
-            content = f.readlines()
-
         in_section = False
-        for line in [line.strip() for line in content]:
+        for line in [line.strip() for line in namelist.split("\n")]:
             if line == "" or line.startswith("!"):
                 continue
 
@@ -249,6 +246,23 @@ class Namelist:
                     raise ValueError(msg)
                 key, values = _parse_key_values(line)
                 self.set_values(section_name, key, values, overwrite=overwrite)
+
+
+    def read(self, filepath, overwrite=False):
+        """Read and parse given file.
+
+        Parameters
+        ----------
+        filepath: str
+            Path to the file to read and parse.
+        overwrite: bool
+            Whether overwriting existing content is allowed.
+
+        """
+        with open(filepath, mode="r") as f:
+            content = f.read()
+        self.parse(content, overwrite=overwrite)
+
 
     def set_values(self, section, key, values, overwrite=False):
         """Set namelist values for given section and key.
