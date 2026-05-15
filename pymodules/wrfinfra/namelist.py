@@ -58,10 +58,10 @@ def _process_value(value):
 
     """
     if (
-            value.startswith("'")
-            or value.startswith('"')
-            or value.endswith("'")
-            or value.endswith('"')
+        value.startswith("'")
+        or value.startswith('"')
+        or value.endswith("'")
+        or value.endswith('"')
     ):
         if len(value) < 2 or value[-1] != value[0]:
             msg = f"Badly quoted value: {value}."
@@ -193,7 +193,9 @@ class Namelist:
                 fmt_key = "    %%-%ds = " % n
                 section_content = []
                 for key, values in key_values.items():
-                    fmt = fmt_key + ", ".join(["%%-%ds" % m] * len(values))
+                    fmt_values = ", ".join(["%%-%ds" % m] * (len(values) - 1))
+                    fmt_values += f"{', ' if fmt_values != '' else ''}%s"
+                    fmt = fmt_key + fmt_values
                     section_content.append(fmt % tuple([key] + values))
                 out.append(f"&{section}\n{'\n'.join(section_content)}\n/")
         return "\n\n".join(out)
@@ -247,7 +249,6 @@ class Namelist:
                 key, values = _parse_key_values(line)
                 self.set_values(section_name, key, values, overwrite=overwrite)
 
-
     def read(self, filepath, overwrite=False):
         """Read and parse given file.
 
@@ -262,7 +263,6 @@ class Namelist:
         with open(filepath, mode="r") as f:
             content = f.read()
         self.parse(content, overwrite=overwrite)
-
 
     def set_values(self, section, key, values, overwrite=False):
         """Set namelist values for given section and key.

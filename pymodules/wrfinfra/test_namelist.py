@@ -5,7 +5,13 @@
 """Common Python resources for WRF-infra: tests for namelist module."""
 
 import pytest
-from namelist import Value, _name_is_valid, _process_value, _parse_key_values
+from namelist import (
+    Value,
+    Namelist,
+    _name_is_valid,
+    _process_value,
+    _parse_key_values,
+)
 
 
 class TestNameIsValid:
@@ -187,3 +193,34 @@ class TestParseKeyValues:
     def test_bad_key_name_02(self):
         with pytest.raises(ValueError):
             _parse_key_values(" = 2.1, 3")
+
+
+class TestIntegrationNamelist:
+    def test_only_one_section_01(self):
+        namelist_str = """&the_only_section
+    some_dates    = 2025-05-15, 2025-06-15, 2025-07-15
+    some_integers = 1         , 2         , 3
+    some_float    = 3.14      , 4.15      , 5.16
+    a_mix         = 2025-05-15, 1         , 3.14
+    some_quotes   = 1         , '2'       , 3
+/"""
+        namelist = Namelist()
+        namelist.parse(namelist_str)
+        assert str(namelist) == namelist_str
+
+    def test_two_sections_01(self):
+        namelist_str = """&first_section
+    some_dates    = 2025-05-15, 2025-06-15, 2025-07-15
+    some_integers = 1         , 2         , 3
+    some_float    = 3.14      , 4.15      , 5.16
+    a_mix         = 2025-05-15, 1         , 3.14
+    some_quotes   = 1         , '2'       , 3
+/
+
+&second_section
+    one_value     = 3
+    another_value = 4
+/"""
+        namelist = Namelist()
+        namelist.parse(namelist_str)
+        assert str(namelist) == namelist_str
