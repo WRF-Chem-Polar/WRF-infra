@@ -202,7 +202,8 @@ class Namelist:
                     fmt_values += f"{', ' if fmt_values != '' else ''}%s"
                     fmt = fmt_key + fmt_values
                     section_content.append(fmt % tuple([key] + values))
-                out.append(f"&{section}\n{'\n'.join(section_content)}\n/")
+                joined_section_content = '\n'.join(section_content)
+                out.append(f"&{section}\n{joined_section_content}\n/")
         return "\n\n".join(out)
 
     def __str__(self):
