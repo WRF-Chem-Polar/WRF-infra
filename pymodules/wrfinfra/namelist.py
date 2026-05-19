@@ -202,7 +202,7 @@ class Namelist:
                     fmt_values += f"{', ' if fmt_values != '' else ''}%s"
                     fmt = fmt_key + fmt_values
                     section_content.append(fmt % tuple([key] + values))
-                joined_section_content = '\n'.join(section_content)
+                joined_section_content = "\n".join(section_content)
                 out.append(f"&{section}\n{joined_section_content}\n/")
         return "\n\n".join(out)
 
