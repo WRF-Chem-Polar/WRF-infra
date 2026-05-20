@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - '**.py'
+      - '**'
 jobs:
   unit_tests_Python:
     runs-on: ubuntu-latest
