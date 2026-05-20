@@ -1,6 +1,7 @@
 [project]
 
 requires-python = ">=9"
+version = "development"
 
 [project.optional-dependencies]
 
