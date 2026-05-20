@@ -515,7 +515,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Parameters
         ----------
         var: str | xr.DataArray
-             The name of the variable or a WRF-conforming data array.
+             The name of the variable or a data array defined on the same grid
+             as the underlying dataset.
 
         Returns
         -------
@@ -585,7 +586,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Parameters
         ----------
         var: str | xr.DataArray
-            The name of the variable or a WRF-conforming data array.
+            The name of the variable or a data array defined on the same grid
+            as the underlying dataset.
 
         Returns
         -------
@@ -634,7 +636,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         Parameters
         ----------
         var: str | xr.DataArray
-            The name of the variable or a WRF-conforming data array.
+            The name of the variable or a data array defined on the same grid
+            as the underlying dataset.
 
         Returns
         -------
@@ -648,12 +651,13 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         return scipy.spatial.Delaunay(np.hstack([x, y]))
 
     def interp_h(self, var, lon, lat, times=None, levels=None):
-        """Interpolate WRF variable (native or derived) horizontally.
+        """Interpolate WRF variable or WRF-like array horizontally.
 
         Parameters
         ----------
         var: str | xr.DataArray
-             The name of the variable or a WRF-conforming data array.
+             The name of the variable or a data array defined on the same grid
+             as the underlying dataset.
         lon: scalar or numeric array
             Longitude(s) at which to interpolate.
         lat: scalar or numeric array
