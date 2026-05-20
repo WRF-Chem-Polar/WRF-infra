@@ -1,6 +1,6 @@
 [project]
 
-name = "wrfinfra"
+name = "wrf-infra"
 requires-python = ">=9"
 
 [project.optional-dependencies]
