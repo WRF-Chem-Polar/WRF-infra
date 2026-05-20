@@ -2,7 +2,6 @@
 
 name = "wrfinfra"
 requires-python = ">=9"
-version = "0.dev0"
 
 [project.optional-dependencies]
 
