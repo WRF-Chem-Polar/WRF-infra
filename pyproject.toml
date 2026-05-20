@@ -1,7 +1,8 @@
 [project]
 
+name = "wrfinfra"
 requires-python = ">=9"
-version = "development"
+version = "rolling"
 
 [project.optional-dependencies]
 
