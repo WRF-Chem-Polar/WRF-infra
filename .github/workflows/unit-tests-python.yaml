@@ -1,0 +1,31 @@
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+
+name: unit_tests_Python
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '**.py'
+jobs:
+  unit_tests_Python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Prepare Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          pyton-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install  pytest
+      - name: Run the tests
+        run: python -m pytest ./pymodules/wrfinfra
