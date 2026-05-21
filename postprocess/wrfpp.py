@@ -1339,7 +1339,7 @@ class WRFLiquidWaterPath(DerivedVariable):
         wrf.check_units("QCLOUD", "kg kg-1")
         wrf.check_units("QRAIN", "kg kg-1")
         path = (
-            (wrf["QCLOUD"] + wrf["QCLOUD"])
+            (wrf["QCLOUD"] + wrf["QRAIN"])
             * wrf.density_of_dry_air
             * wrf.box_dz
         )
