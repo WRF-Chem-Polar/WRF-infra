@@ -193,6 +193,8 @@ def _units_mpl(units):
         The units formatted for Matplotlib (eg. "km s$^{-1}$").
 
     """
+    if unit is None:
+        return "dimensionless"
     split = units.split()
     for i, s in enumerate(split):
         n = len(s) - 1
