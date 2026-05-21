@@ -10,7 +10,10 @@
 #
 
 module purge
-module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module
+module load gcc/11.2.0
+module load openmpi/4.0.7
+module load netcdf-c/4.7.4-serial
+module load netcdf-fortran/4.5.3-serial
 
 conda_run="/proju/wrf-chem/software/micromamba/micromamba
            run
