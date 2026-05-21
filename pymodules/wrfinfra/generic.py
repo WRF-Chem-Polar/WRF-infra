@@ -50,10 +50,13 @@ def identify_host_platform():
 
     """
     known_plateforms = {
-        "spirit1.ipsl.fr": "spirit",
-        "spirit2.ipsl.fr": "spirit",
+        "jean-zay1": "jeanzay",
+        "jean-zay2": "jeanzay",
+        "jean-zay3": "jeanzay",
         "jed1": "jed",
         "jed2": "jed",
+        "spirit1.ipsl.fr": "spirit",
+        "spirit2.ipsl.fr": "spirit",
     }
     nodename = os.uname().nodename
     try:
