@@ -288,7 +288,9 @@ class GenericDatasetAccessor(ABC):
             units = replacements[units]
         except KeyError:
             pass
-        return units.strip()
+        if units is not None:
+            units = units.strip()
+        return units
 
     def check_units(self, varname, expected, nice=True):
         """Make sure that units of given variable are as expected.
