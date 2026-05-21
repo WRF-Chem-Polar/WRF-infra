@@ -509,13 +509,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
     # Coordinates
 
-    def dimensionality(self, varname):
-        """Return the dimensionality of given variable.
+    def dimensionality(self, var):
+        """Return the dimensionality of given variable or array.
 
         Parameters
         ----------
-        varname: str
-             The name of the variable of interest.
+        var: str | xr.DataArray
+             The name of the variable or a data array defined on the same grid
+             as the underlying dataset.
 
         Returns
         -------
@@ -529,7 +530,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         """
         out = ""
-        for dim in getattr(self, varname).dims:
+        array = getattr(self, var) if isinstance(var, str) else var
+        for dim in array.dims:
             if dim == "Time":
                 out += "t"
             elif dim in ("bottom_top", "bottom_top_stag"):
@@ -578,13 +580,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             lats = lats[0]
         return lons, lats
 
-    def lonlat_var(self, varname):
-        """Return the longitude and latitude arrays for given variable.
+    def lonlat_var(self, var):
+        """Return longitude and latitude arrays for given variable or array.
 
         Parameters
         ----------
-        varname: str
-            The name of the variable of interest.
+        var: str | xr.DataArray
+            The name of the variable or a data array defined on the same grid
+            as the underlying dataset.
 
         Returns
         -------
@@ -594,9 +597,10 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             The latitude values.
 
         """
+        array = getattr(self, var) if isinstance(var, str) else var
         dims = [
             dim
-            for dim in getattr(self, varname).dims
+            for dim in array.dims
             if dim.startswith("south_north") or dim.startswith("west_east")
         ]
         if dims == ["south_north", "west_east"]:
@@ -606,11 +610,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         elif dims == ["south_north", "west_east_stag"]:
             lon, lat = self["XLONG_U"], self["XLAT_U"]
         else:
-            msg = f"Cannot get lon/lat for variable {varname}."
+            msg = "Cannot get lon/lat for given variable or array."
             raise ValueError(msg)
         # Quality controls on longitude and latitude
         if lon.dims != lat.dims or lon.shape != lat.shape:
             msg = "Inconsistent dims or shapes for longitudes and latitudes."
+            raise ValueError(msg)
+        if not isinstance(var, str) and array.shape[-2:] != lon.shape[-2:]:
+            msg = "Cannot get lon/lat values for a horizontal subset of array."
             raise ValueError(msg)
         if lon.dims[0] != "Time":
             msg = f"Expecting first dimension to be Time, got {lon.dims[0]}."
@@ -623,13 +630,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
     # Interpolation
 
-    def _delaunay_xy(self, varname):
-        """Return the (x,y) Delaunay triangulation for given variable.
+    def _delaunay_xy(self, var):
+        """Return the (x,y) Delaunay triangulation for variable or array.
 
         Parameters
         ----------
-        varname: str
-            The name of the variable of interest.
+        var: str | xr.DataArray
+            The name of the variable or a data array defined on the same grid
+            as the underlying dataset.
 
         Returns
         -------
@@ -637,18 +645,19 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             The Delaunay triangulation in (x,y) space for given variable.
 
         """
-        x, y = self.ll2xy(*self.lonlat_var(varname))
+        x, y = self.ll2xy(*self.lonlat_var(var))
         x = np.expand_dims(x.flatten(), 1)
         y = np.expand_dims(y.flatten(), 1)
         return scipy.spatial.Delaunay(np.hstack([x, y]))
 
-    def interp_h(self, varname, lon, lat, times=None, levels=None):
-        """Interpolate WRF variable (native or derived) horizontally.
+    def interp_h(self, var, lon, lat, times=None, levels=None):
+        """Interpolate WRF variable or WRF-like array horizontally.
 
         Parameters
         ----------
-        varname: str
-            The name of the variable of interest.
+        var: str | xr.DataArray
+             The name of the variable or a data array defined on the same grid
+             as the underlying dataset.
         lon: scalar or numeric array
             Longitude(s) at which to interpolate.
         lat: scalar or numeric array
@@ -680,8 +689,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         poorly chosen for the domain.
 
         """
-        data = getattr(self, varname)
-        dimensionality = self.dimensionality(varname)
+        data = getattr(self, var) if isinstance(var, str) else var
+        dimensionality = self.dimensionality(var)
 
         # Transform lon and lat into meshgridded arrays
         if not hasattr(lon, "shape"):
@@ -699,14 +708,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         # Set up the list(s) of time and level indices
         if "t" not in dimensionality and times is not None:
-            msg = f"Cannot specify times for variable {varname}."
+            msg = "Cannot specify times for given variable or array."
             raise ValueError(msg)
         elif "t" in dimensionality and times is None:
             times = range(data.shape[dimensionality.index("t")])
         elif "t" in dimensionality and not _is_iterable(times):
             times = [times]
         if "z" not in dimensionality and levels is not None:
-            msg = f"Cannot specify levels for variable {varname}."
+            msg = "Cannot specify levels for given variable or array."
             raise ValueError(msg)
         elif "z" in dimensionality and levels is None:
             levels = range(data.shape[dimensionality.index("z")])
@@ -721,7 +730,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         # Prepare the interpolation
         values_in = data.isel(**selection).values
         interpolator = scipy.interpolate.LinearNDInterpolator
-        delaunay = self._delaunay_xy(varname)
+        delaunay = self._delaunay_xy(var)
         x, y = self.ll2xy(lon, lat)
 
         # For clarity, we handle each dimensionality manually
@@ -933,9 +942,24 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         return WRFAltitudeAGL(self._dataset)
 
     @property
+    def liquid_water_path(self):
+        """The DerivedVariable object to calculate liquid water path."""
+        return WRFLiquidWaterPath(self._dataset)
+
+    @property
     def cloud_liquid_water_path(self):
         """The DerivedVariable object to calculate cloud liquid water path."""
         return WRFCloudLiquidWaterPath(self._dataset)
+
+    @property
+    def ice_water_path(self):
+        """The DerivedVariable object to calculate ice water path."""
+        return WRFIceWaterPath(self._dataset)
+
+    @property
+    def cloud_ice_water_path(self):
+        """The DerivedVariable object to calculate cloud ice water path."""
+        return WRFCloudIceWaterPath(self._dataset)
 
     @property
     def altitude_asl_c(self):
@@ -1294,8 +1318,40 @@ class WRFAltitudeAGL(DerivedVariable):
         )
 
 
-class WRFCloudLiquidWaterPath(DerivedVariable):
+class WRFLiquidWaterPath(DerivedVariable):
     """The DerivedVariable object to calculate liquid water path."""
+
+    def __getitem__(self, *args):
+        """Return the liquid water path.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The liquid water path for given slice, in kg m-2.
+
+        """
+        wrf = self._dataset.wrf
+        wrf.check_units("QCLOUD", "kg kg-1")
+        wrf.check_units("QRAIN", "kg kg-1")
+        path = (
+            (wrf["QCLOUD"] + wrf["QRAIN"])
+            * wrf.density_of_dry_air
+            * wrf.box_dz
+        )
+        return xr.DataArray(
+            path.sum(dim="bottom_top").__getitem__(*args),
+            name="Liquid water path",
+            attrs=dict(long_name="Liquid water path", units="kg m-2"),
+        )
+
+
+class WRFCloudLiquidWaterPath(DerivedVariable):
+    """The DerivedVariable object to calculate cloud liquid water path."""
 
     def __getitem__(self, *args):
         """Return the cloud liquid water path.
@@ -1313,11 +1369,71 @@ class WRFCloudLiquidWaterPath(DerivedVariable):
         """
         wrf = self._dataset.wrf
         wrf.check_units("QCLOUD", "kg kg-1")
-        liquid_water_path = wrf["QCLOUD"] * wrf.density_of_dry_air * wrf.box_dz
+        path = wrf["QCLOUD"] * wrf.density_of_dry_air * wrf.box_dz
         return xr.DataArray(
-            liquid_water_path.sum(dim="bottom_top").__getitem__(*args),
+            path.sum(dim="bottom_top").__getitem__(*args),
             name="Cloud liquid water path",
             attrs=dict(long_name="Cloud liquid water path", units="kg m-2"),
+        )
+
+
+class WRFIceWaterPath(DerivedVariable):
+    """The DerivedVariable object to calculate ice water path."""
+
+    def __getitem__(self, *args):
+        """Return the ice water path.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The ice water path for given slice, in kg m-2.
+
+        """
+        wrf = self._dataset.wrf
+        units = "kg kg-1"
+        wrf.check_units("QICE", units)
+        qice = wrf["QICE"]
+        for varname in ("QSNOW", "QGRAUP", "QHAIL"):
+            if varname in wrf.variables:
+                wrf.check_units(varname, units)
+                qice += wrf[varname]
+        path = qice * wrf.density_of_dry_air * wrf.box_dz
+        return xr.DataArray(
+            path.sum(dim="bottom_top").__getitem__(*args),
+            name="Ice water path",
+            attrs=dict(long_name="Ice water path", units="kg m-2"),
+        )
+
+
+class WRFCloudIceWaterPath(DerivedVariable):
+    """The DerivedVariable object to calculate cloud ice water path."""
+
+    def __getitem__(self, *args):
+        """Return the cloud ice water path.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The cloud ice water path for given slice, in kg m-2.
+
+        """
+        wrf = self._dataset.wrf
+        wrf.check_units("QICE", "kg kg-1")
+        path = wrf["QICE"] * wrf.density_of_dry_air * wrf.box_dz
+        return xr.DataArray(
+            path.sum(dim="bottom_top").__getitem__(*args),
+            name="Cloud ice water path",
+            attrs=dict(long_name="Cloud ice water path", units="kg m-2"),
         )
 
 
@@ -1335,7 +1451,6 @@ class WRFAltitudeASL_C(DerivedVariable):
         Return
         ------
         xarray.DataArray
-
             The grid cell centrepoint altitude above sea level in metres.
 
         """
