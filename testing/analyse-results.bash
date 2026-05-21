@@ -84,34 +84,37 @@ re_dir_wrfout="wrf\\..+\\..+\\..+\\.$d$d$d$d-$d$d-$d${d}Z\\.$d+"
 
 # Variables that should be kept when concatenating wrfout files
 essential_vars=(
-    XLONG
-    XLAT
-    XLONG_U
-    XLAT_U
-    XLONG_V
-    XLAT_V
+    "XLONG"
+    "XLAT"
+    "XLONG_U"
+    "XLAT_U"
+    "XLONG_V"
+    "XLAT_V"
 )
 used_in_derived_vars=(
-    HGT
-    MAPFAC_M
-    P
-    PB
-    PH
-    PHB
-    QCLOUD
-    QVAPOR
-    RAINC
-    RAINNC
-    T
+    "HGT"
+    "MAPFAC_M"
+    "^num_a[0-9]+\$"
+    "^num_cw[0-9]+\$"
+    "P"
+    "PB"
+    "PH"
+    "PHB"
+    "QCLOUD"
+    "QVAPOR"
+    "RAINC"
+    "RAINNC"
+    "T"
 )
 plotted_vars=(
-    o3
-    PM2_5_DRY
-    PM10
-    QCLOUD
-    T2
+    "T2"
+    "o3"
+    "PM2_5_DRY"
+    "PM10"
+    "AOD2D_OUT"
+    "CLDFRA"
+    "CLT"
 )
-
 
 # Process hard-coded parameters
 essential_vars=$(IFS=, ; echo "${essential_vars[*]}")
@@ -180,6 +183,7 @@ variables=(
     "o3:1"
     "PM2_5_DRY:1"
     "PM10:1"
+    "aer_number_conc_total"
 )
 locations=(
     "NorthPole:0:90"
@@ -194,7 +198,10 @@ ${conda_run} python \
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
 variables=(
-    "QCLOUD:9"
+    "CLDFRA:9"
+    "cloud_liquid_water_path:9"
+    "cloud_ice_water_path:9"
+    "fraction_activated_aerosol:9"
 )
 locations=(
     "SeaIce:170:84"
@@ -211,7 +218,13 @@ ${conda_run} python \
 # Plot surface maps
 variables=(
     "T2"
+    "o3"
     "PM2_5_DRY"
+    "PM10"
+    "aer_number_conc_total"
+    "AOD2D_OUT"
+    "CLT"
+    "accumulated_precipitation"
 )
 metrics=(
     "mean"
