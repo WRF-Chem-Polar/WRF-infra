@@ -16,3 +16,4 @@ export FLEX_LIB_DIR=$(dirname $(dirname $(which flex)))/lib
 module load openmpi/4.1.8
 module load netcdf-c/4.7.4-mpi
 module load netcdf-fortran/4.5.3-mpi
+export YACC="bison -d"
