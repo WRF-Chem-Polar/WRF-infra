@@ -204,6 +204,10 @@ def format_shell_value(value):
 def get_default_project_name():
     """Get default project name on current host.
 
+    On some super calculators, computing hours are allocated to specific
+    projects, and one must associate a project name to each job. This function
+    is used to guess a default project name for the host platform.
+
     Returns
     -------
     str
@@ -215,8 +219,7 @@ def get_default_project_name():
         pattern = re.compile("PROJECT: [a-z]+ SPACE: WORK")
         selected = [
             line
-            for line
-            in generic.run_stdout(["idr_quota_project"])
+            for line in generic.run_stdout(["idr_quota_project"])
             if pattern.fullmatch(line) is not None
         ]
         project_name = selected[0].split()[1]
