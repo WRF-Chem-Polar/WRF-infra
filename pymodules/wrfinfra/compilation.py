@@ -6,6 +6,7 @@
 
 import os
 import argparse
+import re
 import json
 from . import generic
 
@@ -35,7 +36,7 @@ def prepare_argparser(which):
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "WRF",
+            generic.path_of_repo(), "compile", "patches", "WRF"
         )
     else:
         msg = f"Invalid choice: {which}."
@@ -200,6 +201,32 @@ def format_shell_value(value):
         raise TypeError(msg)
 
 
+def get_default_project_name():
+    """Get default project name on current host.
+
+    Returns
+    -------
+    str
+        The name of the default project name on the host machine.
+
+    """
+    host = generic.identify_host_platform()
+    if host == "jeanzay":
+        stdout = generic.run_stdout(["idr_quota_project"])
+        pattern = re.compile("PROJECT: [a-z]+ SPACE: WORK")
+        selected = [
+            line
+            for line
+            in stdout
+            if pattern.fullmatch(line) is not None
+        ]
+        project_name = selected[0].split()[1]
+    else:
+        msg = f"This function is not implemented for host {host}."
+        raise NotImplemented(msg)
+    return project_name
+
+
 def prepare_slurm_options(time):
     """Prepare slurm options.
 
@@ -225,6 +252,9 @@ def prepare_slurm_options(time):
     if host == "spirit":
         slurm["partition"] = "zen16"
         slurm["mem"] = "12GB"
+    elif host == "jeanzay":
+        slurm["cpus-per-task"] = 5
+        slurm["account"] = f"{get_default_project_name()}@cpu"
     return [f"#SBATCH --{key}={value}" for key, value in slurm.items()]
 
 
