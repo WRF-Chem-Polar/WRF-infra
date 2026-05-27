@@ -212,18 +212,17 @@ def get_default_project_name():
     """
     host = generic.identify_host_platform()
     if host == "jeanzay":
-        stdout = generic.run_stdout(["idr_quota_project"])
         pattern = re.compile("PROJECT: [a-z]+ SPACE: WORK")
         selected = [
             line
             for line
-            in stdout
+            in generic.run_stdout(["idr_quota_project"])
             if pattern.fullmatch(line) is not None
         ]
         project_name = selected[0].split()[1]
     else:
         msg = f"This function is not implemented for host {host}."
-        raise NotImplemented(msg)
+        raise NotImplementedError(msg)
     return project_name
 
 
