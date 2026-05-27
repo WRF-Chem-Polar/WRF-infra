@@ -34,7 +34,9 @@ def prepare_argparser(which):
     elif which == "WRF":
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
-        patches = None
+        patches = os.path.join(
+            generic.path_of_repo(), "compile", "patches", "WRF",
+        )
     else:
         msg = f"Invalid choice: {which}."
         raise RuntimeError(msg)
