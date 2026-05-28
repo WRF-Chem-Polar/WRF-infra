@@ -237,7 +237,7 @@
 ! aero_cw_diag_opt                    = 1, 1, 1,
 ! Emission options
 ! emiss_inpt_opt and emiss_opt are constrained by chem_opt
- kemit                               = 1
+ kemit                               = 16
  emiss_opt                           = 10, 10, 10,
  emiss_inpt_opt                      = 102, 102, 102,
  io_style_emissions                  = 2
@@ -250,8 +250,9 @@
  seas_opt                            = 6
  seas_oa_opt                         = 1
  seas_so4_opt                        = 1
+ seas_leads_opt                      = 0
  dms_opt                             = 1
-! blowing_snow_opt                     = .true.
+ blowing_snow_opt                    = 1
 ! lnox_opt                            = 1, 1, 1,
 ! iccg_method                         = 3, 3, 3,
 ! N_IC                                = 250, 250, 250,
