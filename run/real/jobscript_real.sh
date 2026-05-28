@@ -247,7 +247,8 @@ $conda_run python -u \
            --start $(utc -d ${date_start} +%Y-%m-%d) \
            --end $(utc -d ${date_end} +%Y-%m-%d) \
            --domain 1 \
-           --dir-em-in ${ANTHRO_EMS_DIR}
+           --dir-em-in ${ANTHRO_EMS_DIR} \
+           --CAMS-version ${cams_anthropo_emis_version}
 
 #----------------------------#
 # Initialize snow on sea ice #
