@@ -57,20 +57,20 @@ for i, nc_in in enumerate(nc_in_all):
         nc_out = Dataset(args.output, mode="x")
 
         # Create the dimensions in the output file
-        for name, dim in nc_in.dimensions.items():
-            size = ntimes if name == "time" else dim.size
-            nc_out.createDimension(name, size)
+        for varname, dim in nc_in.dimensions.items():
+            size = ntimes if varname == "time" else dim.size
+            nc_out.createDimension(varname, size)
 
         # Create the variables in the output file
-        for name, var_in in nc_in.variables.items():
-            dtype = float if name == "time" else var_in.dtype
-            args, kwargs = [name, dtype, var_in.dimensions], {}
+        for varname, var_in in nc_in.variables.items():
+            dtype = float if varname == "time" else var_in.dtype
+            args, kwargs = [varname, dtype, var_in.dimensions], {}
             if "_FillValue" in var_in.ncattrs():
                 kwargs["fill_value"] = getattr(var_in, "_FillValue")
             var_out = nc_out.createVariable(*args, **kwargs)
             for attr in [a for a in var_in.ncattrs() if a != "_FillValue"]:
                 setattr(var_out, attr, getattr(var_in, attr))
-            if name == "time":
+            if varname == "time":
                 units = f"seconds since {date_ref.strftime('%Y-%m-%d')}"
                 var_out.units = units
 
@@ -83,22 +83,22 @@ for i, nc_in in enumerate(nc_in_all):
         if sorted(nc_in.dimensions.keys()) != sorted(nc_out.dimensions.keys()):
             msg = "Inconsistent list of dimensions."
             raise ValueError(msg)
-        for name, dim_in in nc_in.dimensions.items():
-            size = ntimes if name == "time" else dim_in.size
-            if size != nc_out.dimensions[name].size:
-                msg = f"Inconsistent dimension: {name}."
+        for varname, dim_in in nc_in.dimensions.items():
+            size = ntimes if varname == "time" else dim_in.size
+            if size != nc_out.dimensions[varname].size:
+                msg = f"Inconsistent dimension: {varname}."
                 raise ValueError(msg)
 
         # Check variables between input file and output file
         if sorted(nc_in.variables.keys()) != sorted(nc_out.variables.keys()):
             msg = "Inconsistent list of variables."
             raise ValueError(msg)
-        for name, var_in in nc_in.variables.items():
-            var_out = nc_out.variables[name]
+        for varname, var_in in nc_in.variables.items():
+            var_out = nc_out.variables[varname]
             if var_in.dimensions != var_out.dimensions:
-                msg = f"Inconsistent dimensions for variable {name}."
+                msg = f"Inconsistent dimensions for variable {varname}."
             for attr in var_in.ncattrs():
-                if name == "time" and attr == "units":
+                if varname == "time" and attr == "units":
                     continue
                 attr_in = getattr(var_in, attr)
                 attr_out = getattr(var_out, attr)
@@ -111,7 +111,7 @@ for i, nc_in in enumerate(nc_in_all):
                         or attr_in == attr_out
                     )
                 if not ok:
-                    msg = f"Inconsistent attribute {attr} for {name}."
+                    msg = f"Inconsistent attribute {attr} for {varname}."
                     raise ValueError(msg)
 
         # Check global attributes between input file and output file
@@ -125,12 +125,12 @@ for i, nc_in in enumerate(nc_in_all):
 
     # Put the values in the output file
     ntimes_in = nc_in.dimensions["time"].size
-    for name, var_out in nc_out.variables.items():
+    for varname, var_out in nc_out.variables.items():
         dims = var_out.dimensions
-        var_in = nc_in.variables[name]
+        var_in = nc_in.variables[varname]
 
         # The time variable needs separate processing
-        if name == "time":
+        if varname == "time":
             if dims != ("time",):
                 msg = "Unexpected dimensions for time."
                 raise ValueError(msg)
@@ -169,7 +169,7 @@ for i, nc_in in enumerate(nc_in_all):
                 if i == 0:
                     var_out[:] = var_in[:]
                 elif np.any(var_out[:] != var_in[:]):
-                    msg = f"Inconsistent values for {name}."
+                    msg = f"Inconsistent values for {varname}."
                     raise ValueError(msg)
             elif dims == ("time", "lat", "lon"):
                 var_out[itime : itime + ntimes_in, :, :] = var_in[:, :, :]
