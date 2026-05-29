@@ -135,7 +135,7 @@ for i, nc_in in enumerate(nc_in_all):
                 if isinstance(attr_in, str):
                     ok = attr_in == attr_out
                 else:
-                    of = (
+                    ok = (
                         np.isnan(attr_in)
                         and np.isnan(attr_out)
                         or attr_in == attr_out
