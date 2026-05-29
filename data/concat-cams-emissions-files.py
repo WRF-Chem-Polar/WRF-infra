@@ -18,6 +18,35 @@ import datetime
 import numpy as np
 from netCDF4 import Dataset
 
+
+def plus_one_month(year, month):
+    """Advance given date by one month.
+
+    Parameters
+    ----------
+    year: int
+        The start year.
+    month: int
+        The start month.
+
+    Returns
+    -------
+    int
+        The year of given date + one month.
+    int
+        The month of given date + one month.
+
+    """
+    if int(month) != month or month < 1 or month > 12:
+        msg = "Bad month value."
+        raise ValueError(msg)
+    month = month + 1
+    if month == 13:
+        month = 1
+        year = year + 1
+    return year, month
+
+
 # Command-line arguments
 parser = argparse.ArgumentParser(
     description="Concatenate CAMS emissions files.",
@@ -146,7 +175,7 @@ for i, nc_in in enumerate(nc_in_all):
                 msg = "This date reference is not ok for 'months since...'."
                 raise ValueError(msg)
             # Calculate proper time steps
-            year, month = int(date_since.year), int(date_since.month)
+            year, month = date_since.year, date_since.month
             dates = []
             for j in range(ntimes_in):
                 if var_in[j] != j:
@@ -156,10 +185,7 @@ for i, nc_in in enumerate(nc_in_all):
                     f"{year}-{month}-01", "%Y-%m-%d"
                 )
                 dates.append(new_date)
-                month += 1
-                if month == 13:
-                    year += 1
-                    month = 1
+                year, month = plus_one_month(year, month)
             timestamps = [(d - date_ref).total_seconds() for d in dates]
             var_out[itime : itime + ntimes_in] = timestamps
 
@@ -178,10 +204,20 @@ for i, nc_in in enumerate(nc_in_all):
 
     itime += ntimes_in
 
-# Make sure that timestamps are in chronological order:
-if np.any(nc_out.variables["time"][1:] - nc_out.variables["time"][:-1] <= 0):
-    msg = "Timestamps are not in chronological order."
-    raise ValueError(msg)
+# Make sure that timestamps represent monthly data
+times = nc_out["time"][:]
+timestamps = [date_ref + datetime.timedelta(seconds=t) for t in times]
+for i, timestamp in enumerate(timestamps):
+    if timestamp.strftime("%d %H:%M:%S") != "01 00:00:00":
+        msg = "Bad timestamp (residual values)."
+        raise ValueError(msg)
+    if i == 0:
+        year, month = timestamp.year, timestamp.month
+    else:
+        year, month = plus_one_month(year, month)
+        if timestamp.year != year or timestamp.month != month:
+            msg = "Bad timestamps (not monthly values)."
+            raise ValueError(msg)
 
 # Update the history global attribute
 try:
