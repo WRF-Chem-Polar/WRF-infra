@@ -178,6 +178,11 @@ for i, nc_in in enumerate(nc_in_all):
 
     itime += ntimes_in
 
+# Make sure that timestamps are in chronological order:
+if np.any(nc_out.variables["time"][1:] - nc_out.variables["time"][:-1] <= 0):
+    msg = "Timestamps are not in chronological order."
+    raise ValueError(msg)
+
 # Update the history global attribute
 try:
     history = nc_out.history
