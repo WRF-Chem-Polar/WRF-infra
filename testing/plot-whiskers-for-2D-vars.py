@@ -88,7 +88,7 @@ parser.add_argument(
 parser.add_argument(
     "--output",
     help="Path to output file. It must have the .pdf extension.",
-    default="whisker-plots.pdf",
+    default="whiskers-plots.pdf",
 )
 args = parser.parse_args()
 
@@ -168,6 +168,10 @@ with PdfPages(args.output) as pdf:
         fig = new_page()
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.6])
         plt.boxplot(data, tick_labels=tick_labels)
+
+        # Format the plot
+        units = ds.units_mpl(variable)
+        ax.set_title(f"Surface values of {variable} ({units})")
 
         # Finalize the page
         pdf.savefig()
