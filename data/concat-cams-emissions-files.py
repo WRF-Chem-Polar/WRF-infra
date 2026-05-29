@@ -48,6 +48,7 @@ def plus_one_month(year, month):
 
 
 # Command-line arguments
+script_name = os.path.basename(__file__)
 parser = argparse.ArgumentParser(
     description="Concatenate CAMS emissions files.",
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -60,7 +61,7 @@ parser.add_argument(
 parser.add_argument(
     "--output",
     help="Path to the output file (must not already exist).",
-    default=f"{os.path.basename(__file__)[:-3]}_out.nc",
+    default=f"{script_name[:-3]}_out.nc",
 )
 parser.add_argument(
     "--date-ref",
@@ -227,7 +228,8 @@ except AttributeError:
 else:
     history += " ; "
 now = datetime.datetime.now(datetime.UTC)
-setattr(nc_out, "history", f"{str(now)}: {' '.join(sys.argv)}")
+history += f"{str(now)}: {script_name} {' '.join(sys.argv[1:])}"
+setattr(nc_out, "history", history)
 
 # Close all open connections
 nc_out.close()
