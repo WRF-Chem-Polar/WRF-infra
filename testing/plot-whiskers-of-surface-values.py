@@ -88,7 +88,7 @@ parser.add_argument(
 parser.add_argument(
     "--output",
     help="Path to output file. It must have the .pdf extension.",
-    default="whiskers-plots.pdf",
+    default="whiskers-plots-of-2D-values.pdf",
 )
 args = parser.parse_args()
 
