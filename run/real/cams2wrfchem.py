@@ -273,7 +273,16 @@ def time_as_datetime(nc):
         raise NotImplementedError("Only supported calendar is gregorian.")
     units = time.getncattr("units")
     dt = units.split()[0]
-    start = datetime.strptime(units, dt + " since %Y-%m-%d %H:%M:%S")
+    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+        try:
+            start = datetime.strptime(units, dt + f" since {fmt}")
+        except ValueError:
+            continue
+        else:
+            break
+    else:
+        msg = f"Could not parse units {units}."
+        raise ValueError(msg)
     dt = timedelta(**{dt: 1})
     return np.full(time.shape, start) + np.full(time.shape, dt)*time
 
