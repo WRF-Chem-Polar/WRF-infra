@@ -1,0 +1,13 @@
+--- Makefile	2026-05-27 13:49:55.000000000 +0200
++++ Makefile.new	2026-05-27 13:49:50.000000000 +0200
+@@ -78,8 +78,8 @@
+ 	@$(FLEX) scan.l
+ 
+ y.tab.c: scan.y scan.h
+-	@echo "  "$(YACC) scan.y
+-	@$(YACC) scan.y
++	@echo "  "$(YACC) -o y.tab.c scan.y
++	@$(YACC) -o y.tab.c scan.y
+ 
+ flex: lex.yy.c y.tab.c
+ 
