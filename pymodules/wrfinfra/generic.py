@@ -198,23 +198,3 @@ def run_stdout(args, **kwargs):
         raise ValueError(msg)
     out = run(args, capture_output=True, text=True, **kwargs)
     return out.stdout[:-1].split("\n")
-
-
-def clone_and_checkout(opts):
-    """Clone the repository and checkout the required commit.
-
-    Parameters
-    ----------
-    opts: Namespace
-        The pre-processed user-defined installation options.
-
-    Raises
-    ------
-    RuntimeError
-        If the destination already exists.
-
-    """
-    if os.path.exists(opts.destination):
-        raise RuntimeError("Destination directory already exists.")
-    run([opts.git, "clone", opts.repository, opts.destination])
-    run([opts.git, "checkout", opts.commit], cwd=opts.destination)

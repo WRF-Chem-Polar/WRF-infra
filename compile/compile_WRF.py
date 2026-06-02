@@ -5,7 +5,7 @@
 """Compile WRF."""
 
 import sys
-import os.path
+import os
 from wrfinfra import generic, compilation
 
 
@@ -120,7 +120,16 @@ if __name__ == "__main__":
     host = generic.identify_host_platform()
     opts = compilation.get_options("WRF")
 
-    generic.clone_and_checkout(opts)
+    generic.run([opts.git, "clone", opts.repository, opts.destination])
+    generic.run([opts.git, "checkout", opts.commit], cwd=opts.destination)
+    # On some supercalculators, cloning from GitHub is allowed on the login
+    # nodes but not on the computing nodes. For that reason, we clone the git
+    # submodules now, ie. before potentially sending the rest of the work to
+    # the computing nodes
+    generic.run(
+        [opts.git, "submodule", "update", "--init", "--recursive"],
+        cwd=opts.destination,
+    )
     compilation.write_options(opts)
     write_job_script(opts)
     compilation.process_patches(opts)
