@@ -23,10 +23,11 @@ The WRF model:
 
 """
 
-from abc import ABC, abstractmethod
-import warnings
 import functools
 import re
+import warnings
+from abc import ABC, abstractmethod
+
 import numpy as np
 import scipy
 import xarray as xr
@@ -1000,6 +1001,16 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The DerivedVariable object to calculate the fraction of activated aerosol."""
         return WRFFractionActivatedAerosol(self._dataset)
 
+    @property
+    def aer_nbins(self):
+        """The DerivedVariable object to return the number of aerosols' size bins."""
+        return WRFAerNbins(self._dataset)
+
+    @property
+    def aer_bins_charac(self):
+        """The DerivedVariable object to return the bins' characteristics for the size distributions of the number concentration of aerosols"""
+        return WRFAerBinsCharacteristics(self._dataset)
+
 
 class DerivedVariable(ABC):
     """Abstract class to define derived variables.
@@ -1666,4 +1677,165 @@ class WRFFractionActivatedAerosol(DerivedVariable):
             / wrf.aer_number_conc_total.__getitem__(*args),
             name=name,
             attrs=dict(long_name=name, units=None),
+        )
+
+
+class WRFAerNbins(DerivedVariable):
+    """The DerivedVariable object to return the number of aerosols' size bins."""
+
+    def __getitem__(self, *args):
+        """Return the number of bins for aerosols' number concentration size distributions, if any.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The number of bins for aerosols' number concentration size distributions (dimensionless).
+
+        """
+        ds = self._dataset
+
+        # We use the total number concentration of non-activated aerosol to see if it is a binned aer output
+
+        pattern = re.compile("num_cw[0-9]+")
+
+        matching_variables_names = [
+            var_name
+            for var_name in ds.variables
+            if pattern.fullmatch(var_name)
+        ]
+
+        # Check if any num_cwXX found
+
+        if matching_variables_names:
+            size_bins = [
+                var_name.split("_cw")[1]
+                for var_name in matching_variables_names
+            ]
+
+            # MOSAIC 4 BINS
+
+            if size_bins == ["01", "02", "03", "04"]:
+                nbins = 4
+
+                return xr.DataArray(
+                    nbins,
+                    name="Number of bins for aerosols",
+                    attrs=dict(
+                        long_name="Number of bins for aerosols' number concentration size distributions",
+                        units=None,
+                    ),
+                )
+
+            # MOSAIC 8 BINS
+
+            if size_bins == ["01", "02", "03", "04", "05", "06", "07", "08"]:
+                nbins = 8
+
+                return xr.DataArray(
+                    nbins,
+                    name="Number of bins for aerosols",
+                    attrs=dict(
+                        long_name="Number of bins for aerosols' number concentration size distributions",
+                        units=None,
+                    ),
+                )
+
+        # Raise not binned aer output error
+
+        else:
+            msg = (
+                "num_cwXX variable not found : presuming not binned aer output"
+            )
+            raise KeyError(msg)
+
+
+class WRFAerBinsCharacteristics(DerivedVariable):
+    """The DerivedVariable object to return the bins' characteristics for the size distributions of the number concentration of aerosols."""
+
+    def __getitem__(self, *args):
+        """Return the bins' characteristics for the size distributions of the number concentration of aerosols.
+
+        Parameters
+        ----------
+        *args: slice
+            Slice of interest in the WRF output.
+
+        Return
+        ------
+        xarray.DataArray
+            The characteristics [lower, center, higher] of each bin for the size distribution of the number concentration of aerosols.
+
+        """
+
+        wrf = self._dataset.wrf
+
+        # Constants (from WRF-Chem logic)
+
+        # First bin lower diameter in meters (0.0390625 nm)
+
+        dlower_1 = 3.90625e-8
+
+        # Last bin upper diameter in meters (10 µm)
+
+        dhigher_n = 10.0e-6
+
+        # Get number of bins for given output
+
+        nbins = wrf.aer_nbins.__getitem__(*args).values
+
+        # Calculate logarithmic spacing factor
+
+        log_step = np.log(dhigher_n / dlower_1) / nbins
+
+        # Initialize arrays
+
+        dlower = np.zeros(shape=nbins, dtype=np.float32)
+
+        dcenter = np.zeros(shape=nbins, dtype=np.float32)
+
+        dhigher = np.zeros(shape=nbins, dtype=np.float32)
+
+        # Set first lower diameter and last upper diameter
+
+        dlower[0] = dlower_1
+
+        dhigher[-1] = dhigher_n
+
+        # Compute bin edges
+
+        for n in range(1, nbins):
+            dlower[n] = dlower[0] * np.exp(n * log_step)
+
+            dhigher[n - 1] = dlower[n]
+
+        # Compute bin centers
+
+        for n in range(nbins):
+            dcenter[n] = np.sqrt(dlower[n] * dhigher[n])
+
+        # Define the characteristics' array
+
+        bins_charac = np.array(
+            [
+                [dlower_ii, dcenter_ii, dhigher_ii]
+                for dlower_ii, dcenter_ii, dhigher_ii in zip(
+                    dlower, dcenter, dhigher
+                )
+            ]
+        )
+
+        return xr.DataArray(
+            bins_charac,
+            name="Aerosols' bins characteristics",
+            dims=["bin_index", "edge_index"],
+            attrs=dict(
+                long_name="Characteristics of each bin for the size distribution of the number concentration of aerosols",
+                units="m",
+                description="[lower, center, higher]",
+            ),
         )
