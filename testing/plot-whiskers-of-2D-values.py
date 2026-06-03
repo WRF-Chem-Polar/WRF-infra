@@ -40,7 +40,8 @@ def add_title_page(pdf, runs):
 
     """
     ax = new_page().add_axes([0, 0, 1, 1])
-    ax.text(0.5, 0.8, "Surface maps", ha="center", va="center")
+    title = "Distributions of surface-level or single-level variables"
+    ax.text(0.5, 0.8, title, ha="center", va="center")
     y = 0.6
     for i, run in enumerate(runs):
         ax.text(0.1, y, f"Run {i + 1}: {run['ds'].encoding['source']}")
