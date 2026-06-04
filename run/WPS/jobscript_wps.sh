@@ -219,12 +219,10 @@ if $USE_CHLA_DMS_WPS; then
     date_e=$(utc -d "${date_end}" +%Y-%m-%d)
 
     #---- Add chlorophyll-a oceanic concentrations to met_em*
-    echo "python -u add_chloroa_wps.py $SCRATCH/ ${date_s} ${date_e}"
-    $conda_run python -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    ${cmd_python} -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
     #---- Add DMS oceanic concentrations to met_em*
-    echo "python -u add_dmsocean_wps.py $SCRATCH/ ${date_s} ${date_e}"
-    $conda_run python -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    ${cmd_python} -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
 fi
 

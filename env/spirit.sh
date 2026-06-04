@@ -15,7 +15,8 @@ module load openmpi/4.0.7
 module load netcdf-c/4.7.4-serial
 module load netcdf-fortran/4.5.3-serial
 
-conda_run="/proju/wrf-chem/software/micromamba/micromamba
-           run
-           --root-prefix=/proju/wrf-chem/software/conda-envs/shared
-           --name=WRF-Chem-Polar"
+cmd_python="/proju/wrf-chem/software/micromamba/micromamba
+            run
+            --root-prefix=/proju/wrf-chem/software/conda-envs/shared
+            --name=WRF-Chem-Polar
+            python"

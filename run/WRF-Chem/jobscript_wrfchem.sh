@@ -85,22 +85,22 @@ nudging_scale=1000000
 
 # Get values from namelist
 cp $submit_dir/../../pymodules/wrfinfra/namelist.py "$SCRATCH/"
-wrf_dx=$($conda_run python -u \
+wrf_dx=$($cmd_python -u \
            namelist.py \
            --namelist namelist.input \
            --read "domains/dx-0"
 )
-wrf_dy=$($conda_run python -u \
+wrf_dy=$($cmd_python -u \
            namelist.py \
            --namelist namelist.input \
            --read "domains/dy-0"
 )
-wrf_e_we=$($conda_run python -u \
+wrf_e_we=$($cmd_python -u \
            namelist.py \
            --namelist namelist.input \
           --read "domains/e_we-0"
 )
-wrf_e_sn=$($conda_run python -u \
+wrf_e_sn=$($cmd_python -u \
            namelist.py \
            --namelist namelist.input \
            --read "domains/e_sn-0"
