@@ -340,6 +340,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
+        "-n",
         "--namelist",
         help="The path to the namelist to modify.",
         required=True,
