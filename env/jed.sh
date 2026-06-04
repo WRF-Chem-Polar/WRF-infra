@@ -11,6 +11,8 @@
 
 module purge
 
+export YACC="byacc -d"
+
 module load flex/2.6.1-y4a5vd2
 export FLEX_LIB_DIR="${FLEX_ROOT}/lib"
 

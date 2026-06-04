@@ -12,9 +12,11 @@
 module purge
 module load gcc/13.3.0
 module load flex/2.6.4
-export FLEX_LIB_DIR=$(dirname $(dirname $(which flex)))/lib
 module load openmpi/4.1.8
 module load netcdf-c/4.7.4-mpi
 module load netcdf-fortran/4.5.3-mpi
 module load git/2.53.0
+
+# Variables required at compile-time
 export YACC="bison -d"
+export FLEX_LIB_DIR=$(dirname $(dirname $(which flex)))/lib

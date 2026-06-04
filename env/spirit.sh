@@ -16,6 +16,7 @@ module load netcdf-c/4.7.4-serial
 module load netcdf-fortran/4.5.3-serial
 
 # Variables required at compile-time
+export YACC="byacc -d"
 export FLEX_LIB_DIR="/usr/lib/x86_64-linux-gnu"
 
 # Variables required at run-time
