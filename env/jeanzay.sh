@@ -20,3 +20,4 @@ module load git/2.53.0
 # Variables required at compile-time
 export YACC="bison -d"
 export FLEX_LIB_DIR=$(dirname $(dirname $(which flex)))/lib
+WRF_COMPILE_PLATFORM=34

@@ -87,11 +87,10 @@ def write_job_script(opts):
         env = [line.strip() for line in f]
     lines += [line for line in env if line and not line.startswith("#")]
     lines += prepare_environment_variables(opts)
-    setup = {"jeanzay": 34, "jed": 34, "spirit": 34}[host]
     nesting = 1
 
     # Add the call to ./configure
-    lines.append('echo -e "%d\\n%d" | \\' % (setup, nesting))
+    lines.append('echo -e "${WRF_COMPILE_PLATFORM}\\n%d" | \\' % nesting)
     lines.append(f"./configure{prepare_components(opts)}")
 
     # Add the call to ./compile

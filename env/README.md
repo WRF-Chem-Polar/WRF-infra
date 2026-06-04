@@ -2,10 +2,12 @@ This directory contains the definitions of environments for compiling and runnin
 
 There is one file per supported machine.
 
-Each file may manipulate the environment in any way necessary (eg. load modules) but must define a number of environmental variables. Below are listed all the required and optional environmental variables (they can be needed for compilation, runtime, or both -- this is indicated in square brackets in each case).
+Each file may manipulate the environment in any way necessary (eg. load modules) but must define a number of environmental variables. Below are listed all the required and optional environmental variables (they can be needed for compilation or at run-time -- this is indicated in square brackets in each case). Variables in bold need to be exported, the others don't.
 
- - YACC [compilation]: the executable to use for the yacc program (typically byacc or bison). Must use the `-d` command-line argument.
+ - WRF_COMPILE_PLATFORM [compilation]: the option (which defines the host platform and compiler suite to use) to choose from the list when running the vanilla WRF configure script.
 
- - FLEX_LIB_DIR [compilation, optional]: if the flex library is not in a default search location for the linker, use this variable to indicate where it is.
+ - *YACC* [compilation]: the executable to use for the yacc program (typically byacc or bison). Must use the `-d` command-line argument.
+
+ - *FLEX_LIB_DIR* [compilation, optional]: if the flex library is not in a default search location for the linker, use this variable to indicate where it is.
 
  - cmd_python [runtime]: the command to run Python code (this can, for example, be a `conda run ... python` command or a system-wide Python such as `/usr/bin/python`).

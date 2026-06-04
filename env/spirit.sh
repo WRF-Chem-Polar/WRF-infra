@@ -18,6 +18,7 @@ module load netcdf-fortran/4.5.3-serial
 # Variables required at compile-time
 export YACC="byacc -d"
 export FLEX_LIB_DIR="/usr/lib/x86_64-linux-gnu"
+WRF_COMPILE_PLATFORM=34
 
 # Variables required at run-time
 cmd_python="/proju/wrf-chem/software/micromamba/micromamba
