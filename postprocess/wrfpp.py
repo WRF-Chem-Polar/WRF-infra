@@ -898,6 +898,112 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         j, i = np.unravel_index(np.argmin(dists), wrflons.shape)
         return i, j
 
+    # Aerosols methods
+
+    def convert_set_of_aer_variables_to_binned_dataset(
+        self, species: list[str], total: bool = True
+    ):
+        """Convert a set of aerosols mass concentration variables into a single Dataset with a 'bins' dimension.
+
+        Parameters
+        ----------
+        species : list[str]
+            The list of species of interest as called in MOSAIC chemistry outputs.
+            For example, for na_aXX and na_cwXX, the user should provide "na".
+
+        total : bool, optional
+            This option defines whether the total value (non-activated + activated) is given for each bin, by default True.
+            If set to false, the activated and non-activated aerosols are considered as independent species.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset with a 'bins' dimension.
+        """
+
+        wrf = self._dataset.wrf
+        ds_binned = xr.Dataset()
+
+        # Get number of bins for given output
+        nbins = wrf.aer_nbins.values
+
+        # Loop over the species
+        for species_name in species:
+            # Search for binned variables for var_name
+            pattern_a = re.compile(species_name + "_a[0-9]+")
+            pattern_cw = re.compile(species_name + "_cw[0-9]+")
+            matching_variables_names_a = [
+                var_name
+                for var_name in wrf.variables
+                if pattern_a.fullmatch(var_name)
+            ]
+            matching_variables_names_cw = [
+                var_name
+                for var_name in wrf.variables
+                if pattern_cw.fullmatch(var_name)
+            ]
+
+            # Test result for a search
+            if matching_variables_names_a:
+                # Check units
+                expected_units = "ug/kg-dryair"
+                for var_name in matching_variables_names_a:
+                    wrf.check_units(var_name, expected_units)
+
+                # Convert a0X output for this species to one array with new bin dimension
+                array_a = wrf[matching_variables_names_a].to_array(dim="bin")
+                array_a["bin"] = np.arange(1, nbins + 1)
+            # Raise aer key output not found
+            else:
+                msg = (
+                    var_name + " variable not found for non-activated aerosols"
+                )
+                raise KeyError(msg)
+            # Test result for cw search
+            if matching_variables_names_cw:
+                # Check units
+                expected_units = "ug/kg-dryair"
+                for var_name in matching_variables_names_cw:
+                    wrf.check_units(var_name, expected_units)
+
+                # Convert cw0X output for this species to one array with new bin dimension
+                array_cw = wrf[matching_variables_names_cw].to_array(dim="bin")
+                array_cw["bin"] = np.arange(1, nbins + 1)
+            # Raise aer key output not found
+            else:
+                msg = var_name + " variable not found for activated aerosols"
+                raise KeyError(msg)
+
+            # Add new variables to ds_binned according to total option
+            if total:
+                ds_binned[species_name] = array_a + array_cw
+
+            else:
+                ds_binned[species_name + "_a"] = array_a
+                ds_binned[species_name + "_cw"] = array_cw
+
+        # Add bin size coordinates for bin dimension
+        bins_charac_array = wrf.aer_bins_charac.values
+        ds_binned = ds_binned.assign_coords(
+            {
+                "Dlo": ("bin", bins_charac_array[:, 0]),
+                "Dmid": ("bin", bins_charac_array[:, 1]),
+                "Dhi": ("bin", bins_charac_array[:, 2]),
+                "dD": (
+                    "bin",
+                    bins_charac_array[:, 2] - bins_charac_array[:, 0],
+                ),
+            }
+        )
+
+        return xr.Dataset(
+            ds_binned,
+            attrs=dict(
+                name="Subset of WRF aerosols' mass concentrations distributed over size bins",
+                units="ug/kg-dryair",
+            ),
+        )
+
     # Derived variables
 
     @property
@@ -1009,11 +1115,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
     def aer_bins_charac(self):
         """The DerivedVariable object to return the bins' characteristics for the size distributions of the number concentration of aerosols"""
         return WRFAerBinsCharacteristics(self._dataset)
-
-    @property
-    def aer_binned_subset(self):
-        """The DerivedVariable object to return a set of aerosols mass concentration variables condensed into a single Dataset with a 'bins' dimension."""
-        return WRFAerBinnedSubset(self._dataset)
 
 
 class DerivedVariable(ABC):
@@ -1811,113 +1912,5 @@ class WRFAerBinsCharacteristics(DerivedVariable):
                 long_name="Characteristics of each bin for the size distribution of aerosols",
                 units="m",
                 description="[lower, center, higher]",
-            ),
-        )
-
-
-class WRFAerBinnedSubset(DerivedVariable):
-    """The DerivedVariable object to return a set of aerosols mass concentration variables condensed into a single Dataset with a 'bins' dimension."""
-
-    def __getitem__(self, species: list[str], total: bool = True, *args):
-        """Convert a set of aerosols mass concentration variables into a single Dataset with a 'bins' dimension.
-
-        Parameters
-        ----------
-        species : list[str]
-            The list of species of interest as called in MOSAIC chemistry outputs.
-            For example, for na_aXX and na_cwXX, the user should provide "na".
-
-        total : bool, optional
-            This option defines whether the total value (non-activated + activated) is given for each bin, by default True.
-            If set to false, the activated and non-activated aerosols are considered as independent species.
-
-        *args: slice
-                Slice of interest in the WRF output.
-
-        Returns
-        -------
-        xr.Dataset
-            The dataset with a 'bins' dimension.
-        """
-
-        wrf = self._dataset.wrf.__getitem__(*args)
-        ds_binned = xr.Dataset()
-
-        # Get number of bins for given output
-        nbins = wrf.aer_nbins.__getitem__(*args).values
-        # Loop over the species
-        for species_name in species:
-            # Search for binned variables for var_name
-            pattern_a = re.compile(species_name + "_a[0-9]+")
-            pattern_cw = re.compile(species_name + "_cw[0-9]+")
-            matching_variables_names_a = [
-                var_name
-                for var_name in wrf.variables
-                if pattern_a.fullmatch(var_name)
-            ]
-            matching_variables_names_cw = [
-                var_name
-                for var_name in wrf.variables
-                if pattern_cw.fullmatch(var_name)
-            ]
-
-            # Test result for a search
-            if matching_variables_names_a:
-                # Check units
-                expected_units = "ug/kg-dryair"
-                for var_name in matching_variables_names_a:
-                    wrf.check_units(var_name, expected_units)
-
-                # Convert a0X output for this species to one array with new bin dimension
-                array_a = wrf[matching_variables_names_a].to_array(dim="bin")
-                array_a["bin"] = np.arange(1, nbins + 1)
-            # Raise aer key output not found
-            else:
-                msg = (
-                    var_name + " variable not found for non-activated aerosols"
-                )
-                raise KeyError(msg)
-            # Test result for cw search
-            if matching_variables_names_cw:
-                # Check units
-                expected_units = "ug/kg-dryair"
-                for var_name in matching_variables_names_cw:
-                    wrf.check_units(var_name, expected_units)
-
-                # Convert cw0X output for this species to one array with new bin dimension
-                array_cw = wrf[matching_variables_names_cw].to_array(dim="bin")
-                array_cw["bin"] = np.arange(1, nbins + 1)
-            # Raise aer key output not found
-            else:
-                msg = var_name + " variable not found for activated aerosols"
-                raise KeyError(msg)
-
-            # Add new variables to ds_binned according to total option
-            if total:
-                ds_binned[species_name] = array_a + array_cw
-
-            else:
-                ds_binned[species_name + "_a"] = array_a
-                ds_binned[species_name + "_cw"] = array_cw
-
-        # Add bin size coordinates for bin dimension
-        bins_charac_array = wrf.aer_bins_charac.values
-        ds_binned = ds_binned.assign_coords(
-            {
-                "Dlo": ("bin", bins_charac_array[:, 0]),
-                "Dmid": ("bin", bins_charac_array[:, 1]),
-                "Dhi": ("bin", bins_charac_array[:, 2]),
-                "dD": (
-                    "bin",
-                    bins_charac_array[:, 2] - bins_charac_array[:, 0],
-                ),
-            }
-        )
-
-        return xr.Dataset(
-            ds_binned.__getitem__(*args),
-            attrs=dict(
-                name="Subset of WRF aerosols' mass concentrations distributed over size bins",
-                units="ug/kg-dryair",
             ),
         )
