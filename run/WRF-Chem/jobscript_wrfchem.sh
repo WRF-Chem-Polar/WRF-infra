@@ -39,6 +39,7 @@ source ../../env/$(get_host_name).sh
 # Prepare #
 #---------#
 
+
 # Directory containing real output (e.g. wrfinput_d01, wrfbdy_d01 files)
 REALDIR="${dir_outputs}/real.${runid_wps}.${runid_real}.$(utc -d ${date_start} +%Y-%m-%dZ)"
 # Directory containing WRF-Chem output
@@ -77,13 +78,34 @@ cp "$dir_wrf/run/"* "$SCRATCH/"
 
 #  Copy and prepare the WRF namelist, set up run start and end dates
 cp -vf $submit_dir/$namelist_wrf namelist.input
+
 # Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
-wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
-wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
-wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
-wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
+
+# Get values from namelist
+cp $submit_dir/../../pymodules/wrfinfra/namelist.py "$SCRATCH/"
+wrf_dx=$($conda_run python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/dx-0"
+)
+wrf_dy=$($conda_run python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/dy-0"
+)
+wrf_e_we=$($conda_run python -u \
+           namelist.py \
+           --namelist namelist.input \
+          --read "domains/e_we-0"
+)
+wrf_e_sn=$($conda_run python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/e_sn-0"
+)
+
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))
 # Edit the namelist

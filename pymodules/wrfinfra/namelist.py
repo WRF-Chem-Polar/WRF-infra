@@ -336,15 +336,17 @@ if __name__ == "__main__":
     import os
 
     parser = argparse.ArgumentParser(
-        description="Modify a WRF namelist.",
+        description="Modify or read a WRF namelist.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
+        "-n",
         "--namelist",
         help="The path to the namelist to modify.",
         required=True,
     )
-    parser.add_argument(
+    mut_excl_args = parser.add_mutually_exclusive_group()
+    mut_excl_args.add_argument(
         "-u",
         "--update",
         help=(
@@ -354,18 +356,39 @@ if __name__ == "__main__":
         action="append",
         default=[],
     )
+    mut_excl_args.add_argument(
+        "-r",
+        "--read",
+        help=(
+            "Output the value associated to the given section and key. "
+            "(format: section/key-index). Can be used multiple times."
+        ),
+        action="append",
+        default=[],
+    )
     args = parser.parse_args()
-
-    if len(args.update) == 0:
-        print(f"{os.path.basename(__file__)}: Nothing to do.")
-        sys.exit(0)
 
     namelist = Namelist(args.namelist)
 
-    for update in args.update:
-        i = update.index("/")
-        key, values = _parse_key_values(update[i + 1 :])
-        namelist.set_values(update[:i], key, values, overwrite=True)
+    if args.update:
+        for update in args.update:
+            i = update.index("/")
+            key, values = _parse_key_values(update[i + 1 :])
+            namelist.set_values(update[:i], key, values, overwrite=True)
 
-    with open(args.namelist, mode="w") as f:
-        f.write(str(namelist))
+        with open(args.namelist, mode="w") as f:
+            f.write(str(namelist))
+
+    elif args.read:
+        for read in args.read:
+            i = read.index("/")
+            j = read.index("-")
+            section = read[:i]
+            key = read[i + 1 : j]
+            index = int(read[j + 1 :])
+            values = namelist.get_values(section=section, key=key)
+            print(str(values[index]))
+
+    else:
+        print(f"{os.path.basename(__file__)}: Nothing to do.")
+        sys.exit(0)
