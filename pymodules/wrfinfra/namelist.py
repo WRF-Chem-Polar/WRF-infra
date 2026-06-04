@@ -356,7 +356,6 @@ if __name__ == "__main__":
         action="append",
         default=[],
     )
-
     mut_excl_args.add_argument(
         "-r",
         "--read",
