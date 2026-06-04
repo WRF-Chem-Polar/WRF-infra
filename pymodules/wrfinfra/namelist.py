@@ -346,7 +346,6 @@ if __name__ == "__main__":
         required=True,
     )
     mut_excl_args = parser.add_mutually_exclusive_group()
-
     mut_excl_args.add_argument(
         "-u",
         "--update",
