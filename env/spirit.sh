@@ -15,6 +15,10 @@ module load openmpi/4.0.7
 module load netcdf-c/4.7.4-serial
 module load netcdf-fortran/4.5.3-serial
 
+# Variables required at compile-time
+export FLEX_LIB_DIR="/usr/lib/x86_64-linux-gnu"
+
+# Variables required at run-time
 cmd_python="/proju/wrf-chem/software/micromamba/micromamba
             run
             --root-prefix=/proju/wrf-chem/software/conda-envs/shared
