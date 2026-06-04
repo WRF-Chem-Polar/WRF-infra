@@ -345,7 +345,6 @@ if __name__ == "__main__":
         help="The path to the namelist to modify.",
         required=True,
     )
-
     mut_excl_args = parser.add_mutually_exclusive_group()
 
     mut_excl_args.add_argument(
