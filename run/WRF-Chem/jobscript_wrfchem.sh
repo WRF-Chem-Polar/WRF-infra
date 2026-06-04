@@ -83,32 +83,28 @@ cp -vf $submit_dir/$namelist_wrf namelist.input
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
 
-#  Copy the python script to handle the namelist
+# Get values from namelist
 cp $submit_dir/../../pymodules/wrfinfra/namelist.py "$SCRATCH/"
-
 wrf_dx=$($conda_run python -u \
            namelist.py \
            --namelist namelist.input \
            --read "domains/dx-0"
-) 
-
+)
 wrf_dy=$($conda_run python -u \
            namelist.py \
            --namelist namelist.input \
            --read "domains/dy-0"
-) 
-
+)
 wrf_e_we=$($conda_run python -u \
            namelist.py \
            --namelist namelist.input \
           --read "domains/e_we-0"
 )
-
 wrf_e_sn=$($conda_run python -u \
            namelist.py \
            --namelist namelist.input \
            --read "domains/e_sn-0"
-) 
+)
 
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))

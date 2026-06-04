@@ -340,6 +340,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
+    parser.add_argument(
         "-n",
         "--namelist",
         help="The path to the namelist to modify.",
@@ -360,13 +361,12 @@ if __name__ == "__main__":
         "-r",
         "--read",
         help=(
-            "Output the value associated to the given section and key. (format: section/key-index). "
-            "Can be used multiple times."
+            "Output the value associated to the given section and key. "
+            "(format: section/key-index). Can be used multiple times."
         ),
         action="append",
         default=[],
     )
-
     args = parser.parse_args()
 
     namelist = Namelist(args.namelist)
@@ -383,17 +383,11 @@ if __name__ == "__main__":
     elif args.read:
         for read in args.read:
             i = read.index("/")
-
             j = read.index("-")
-
             section = read[:i]
-
             key = read[i + 1 : j]
-
             index = int(read[j + 1 :])
-
             values = namelist.get_values(section=section, key=key)
-
             print(str(values[index]))
 
     else:
