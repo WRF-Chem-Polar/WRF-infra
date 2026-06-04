@@ -331,9 +331,9 @@ class Namelist:
 
 
 if __name__ == "__main__":
+    import sys
     import argparse
     import os
-    import sys
 
     parser = argparse.ArgumentParser(
         description="Modify or read a WRF namelist.",
