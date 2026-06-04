@@ -342,6 +342,7 @@ if __name__ == "__main__":
     parser.add_argument(
     parser.add_argument(
     parser.add_argument(
+    parser.add_argument(
         "-n",
         "--namelist",
         help="The path to the namelist to modify.",
