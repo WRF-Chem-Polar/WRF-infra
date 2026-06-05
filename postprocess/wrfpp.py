@@ -1060,6 +1060,139 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         return ds_binned
 
+    def cutoff_wrf_aerosols_bins(
+        self,
+        cutoff: float,
+        species: list[str],
+        total: bool = True,
+    ):
+        """Extract the PMXX cutoff for a set of aerosols' concentration variables defined per size bins.
+
+        Parameters
+        ----------
+        cutoff : float
+            Define the cutoff (in um).
+
+        species : list[str]
+            The list of species of interest as called in MOSAIC chemistry outputs.
+            For example, for na_aXX and na_cwXX, the user should provide "na".
+
+        total : bool, optional
+            This option defines whether the total value (non-activated + activated) is given, by default True.
+            If set to false, the activated and non-activated aerosols are considered as independent species.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset holding the variables on which the cutoff was realised.
+        """
+        # Initialise
+        wrf = self._dataset.wrf
+        ds_binned = wrf.convert_set_of_aer_variables_to_binned_dataset(
+            species=species, total=total
+        )
+
+        # Extract bins characteristics
+        nbins = wrf.aer_nbins.values
+        lower_bin_bounds = ds_binned.dlower.values
+        highest_bound = ds_binned.dhigher.values[-1]
+        bin_bounds = np.append(lower_bin_bounds, highest_bound)
+
+        # Express cutoff in m with same type as fortran bins
+        cutoff_m = np.float32(cutoff * 10**-6)
+
+        # Position cutoff within bins
+        cutoff_bin_index = np.searchsorted(bin_bounds, cutoff_m)
+        # Cutoff smaller than lowest bound
+        if cutoff_bin_index < 1:
+            msg = "Cutoff too small for output bins."
+            raise ValueError(msg)
+        # Cutoff greater than highest bound
+        elif cutoff_bin_index > nbins:
+            # Sum all bins
+            ds_sum = ds_binned.sum(dim="bin")
+        # Cutoff within bins' range
+        else:
+            # Previous bins summed
+            ds_sum = ds_binned.sel(bin=slice(0, cutoff_bin_index - 1)).sum(
+                dim="bin"
+            )
+
+            # Add fraction of cutoff_bin containing
+            # [lower_bound_cutoff_bin, cutoff] in log scale
+            log_step = (np.log(bin_bounds[-1] / bin_bounds[0])) / nbins
+            log_dist_cutoff_lower_bound = np.log(
+                cutoff_m / bin_bounds[cutoff_bin_index - 1]
+            )
+            fraction = log_dist_cutoff_lower_bound / log_step
+
+            ds_sum = ds_sum + (
+                fraction * ds_binned.sel(bin=cutoff_bin_index, drop=True)
+            )
+
+        # Set DataArray attributes by looping over the species
+        for species_name in species:
+            # Add attributes according to total option
+            if total:
+                if species_name == "num":
+                    ds_sum[species_name].attrs["description"] = (
+                        "Total aerosols' number concentration for sizes smaller than "
+                        + str(cutoff)
+                        + " um"
+                    )
+
+                else:
+                    ds_sum[species_name].attrs["description"] = (
+                        "Total mass concentration of "
+                        + species_name
+                        + " for sizes smaller than "
+                        + str(cutoff)
+                        + " um"
+                    )
+
+            else:
+                if species_name == "num":
+                    ds_sum[species_name + "_a"].attrs["description"] = (
+                        "Non-activated aerosols' number concentration  for sizes smaller than "
+                        + str(cutoff)
+                        + " um"
+                    )
+
+                    ds_sum[species_name + "_cw"].attrs["description"] = (
+                        "Activated aerosols' number concentration for sizes smaller than "
+                        + str(cutoff)
+                        + " um"
+                    )
+                else:
+                    ds_sum[species_name + "_a"].attrs["description"] = (
+                        "Mass concentration of non-activated "
+                        + species_name
+                        + " for sizes smaller than "
+                        + str(cutoff)
+                        + " um"
+                    )
+
+                    ds_sum[species_name + "_cw"].attrs["description"] = (
+                        "Mass concentration of activated "
+                        + species_name
+                        + " for sizes smaller than "
+                        + str(cutoff)
+                        + " um"
+                    )
+
+        # Set Dataset attributes
+        ds_sum.attrs["name"] = (
+            "Subset of WRF aerosols' concentrations for sizes smaller than "
+            + str(cutoff)
+            + " um"
+        )
+
+        # Add cutoff as a variable
+        ds_sum["cutoff"] = cutoff
+        ds_sum["cutoff"].attrs["units"] = "um"
+
+        return ds_sum
+
     # Derived variables
 
     @property
