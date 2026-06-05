@@ -1222,6 +1222,147 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         return pmXX_total_aer
 
+    def range_within_wrf_aerosols_bins(
+        self,
+        lower_bnd: float,
+        higher_bnd: float,
+        species: list[str],
+        total: bool = True,
+    ):
+        """Extract a given [lower_bnd, higher_bnd] interval for a set of aerosols' concentration variables defined per size bins.
+
+        Parameters
+        ----------
+        lower_bnd : float
+            Define the lower boundary (in um).
+
+        higher_bnd : float
+            Define the higher boundary (in um).
+
+        species : list[str]
+            The list of species of interest as called in MOSAIC chemistry outputs.
+            For example, for na_aXX and na_cwXX, the user should provide "na".
+
+        total : bool, optional
+            This option defines whether the total value (non-activated + activated) is given, by default True.
+            If set to false, the activated and non-activated aerosols are considered as independent species.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset holding the concentration variables values for the [lower_bnd, higher_bnd] interval.
+        """
+        # Check sanity of inputs
+        if lower_bnd >= higher_bnd:
+            msg = "The lower boundary needs to be smaller than the higher one"
+            raise ValueError(msg)
+
+        else:
+            ds_pmXX_lower_bnd = self.cutoff_wrf_aerosols_bins(
+                cutoff=lower_bnd, species=species, total=total
+            )
+            ds_pmXX_higher_bnd = self.cutoff_wrf_aerosols_bins(
+                cutoff=higher_bnd, species=species, total=total
+            )
+            ds_interval = ds_pmXX_higher_bnd - ds_pmXX_lower_bnd
+
+            # Set DataArray attributes by looping over the species
+            for species_name in species:
+                # Add attributes according to total option
+                if total:
+                    if species_name == "num":
+                        ds_interval[species_name].attrs["description"] = (
+                            "Total aerosols' number concentration for sizes smaller than "
+                            + str(higher_bnd)
+                            + " um"
+                            + " and higher than "
+                            + str(lower_bnd)
+                            + " um"
+                        )
+
+                    else:
+                        ds_interval[species_name].attrs["description"] = (
+                            "Total mass concentration of "
+                            + species_name
+                            + " for sizes smaller than "
+                            + str(higher_bnd)
+                            + " um"
+                            + " and higher than "
+                            + str(lower_bnd)
+                            + " um"
+                        )
+
+                else:
+                    if species_name == "num":
+                        ds_interval[species_name + "_a"].attrs[
+                            "description"
+                        ] = (
+                            "Non-activated aerosols' number concentration  for sizes smaller than "
+                            + str(higher_bnd)
+                            + " um"
+                            + " and higher than "
+                            + str(lower_bnd)
+                            + " um"
+                        )
+
+                        ds_interval[species_name + "_cw"].attrs[
+                            "description"
+                        ] = (
+                            "Activated aerosols' number concentration for sizes smaller than "
+                            + str(higher_bnd)
+                            + " um"
+                            + " and higher than "
+                            + str(lower_bnd)
+                            + " um"
+                        )
+                    else:
+                        ds_interval[species_name + "_a"].attrs[
+                            "description"
+                        ] = (
+                            "Mass concentration of non-activated "
+                            + species_name
+                            + " for sizes smaller than "
+                            + str(higher_bnd)
+                            + " um"
+                            + " and higher than "
+                            + str(lower_bnd)
+                            + " um"
+                        )
+
+                        ds_interval[species_name + "_cw"].attrs[
+                            "description"
+                        ] = (
+                            "Mass concentration of activated "
+                            + species_name
+                            + " for sizes smaller than "
+                            + str(higher_bnd)
+                            + " um"
+                            + " and higher than "
+                            + str(lower_bnd)
+                            + " um"
+                        )
+
+            # Rename the "cutoff" variable
+            ds_interval = ds_interval.rename_vars({"cutoff": "interval_range"})
+
+            # Add the interval characteristics
+            ds_interval["lower_bnd"] = lower_bnd
+            ds_interval["lower_bnd"].attrs["units"] = "um"
+            ds_interval["higher_bnd"] = higher_bnd
+            ds_interval["higher_bnd"].attrs["units"] = "um"
+
+            # Set Dataset attributes
+            ds_interval.attrs["name"] = (
+                "Subset of WRF aerosols' concentrations for sizes smaller than "
+                + str(higher_bnd)
+                + " um"
+                + " and higher than "
+                + str(lower_bnd)
+                + " um"
+            )
+
+        return ds_interval
+
     # Derived variables
 
     @property
