@@ -1193,6 +1193,35 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         return ds_pmXX
 
+    def total_aer_pmXX(
+        self,
+        cutoff: float,
+    ):
+        """Extract the PMXX cutoff for the total aerosol number concentration.
+
+        Parameters
+        ----------
+        cutoff : float
+            Define the cutoff (in um).
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset holding the PMXX cutoff for the total aerosol number concentration as well as the cutoff value.
+        """
+        pmXX_total_aer = self.cutoff_wrf_aerosols_bins(
+            cutoff=cutoff, species=["num"], total=True
+        )
+
+        # Set Dataset attributes
+        pmXX_total_aer.attrs["name"] = (
+            "Total aerosol number concentration for sizes smaller than "
+            + str(cutoff)
+            + " um"
+        )
+
+        return pmXX_total_aer
+
     # Derived variables
 
     @property
