@@ -903,7 +903,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
     def convert_set_of_aer_variables_to_binned_dataset(
         self, species: list[str], total: bool = True
     ):
-        """Convert a set of aerosols mass concentration variables into a single Dataset with a 'bins' dimension.
+        """Convert a set of aerosols's concentrations defined per size bins into a single Dataset with a 'bins' dimension.
 
         Parameters
         ----------
@@ -946,13 +946,18 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             # Test result for a search
             if matching_variables_names_a:
                 # Check units
-                expected_units = "ug/kg-dryair"
+                if species_name == "num":
+                    expected_units = "/kg-dryair"
+                else:
+                    expected_units = "ug/kg-dryair"
                 for var_name in matching_variables_names_a:
                     wrf.check_units(var_name, expected_units)
 
                 # Convert a0X output for this species to one array with new bin dimension
                 array_a = wrf[matching_variables_names_a].to_array(dim="bin")
                 array_a["bin"] = np.arange(1, nbins + 1)
+                # Do not propagate namelist as attribute
+                array_a.attrs = {}
             # Raise aer key output not found
             else:
                 msg = (
@@ -962,13 +967,19 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             # Test result for cw search
             if matching_variables_names_cw:
                 # Check units
-                expected_units = "ug/kg-dryair"
+                if species_name == "num":
+                    expected_units = "/kg-dryair"
+                else:
+                    expected_units = "ug/kg-dryair"
                 for var_name in matching_variables_names_cw:
                     wrf.check_units(var_name, expected_units)
 
                 # Convert cw0X output for this species to one array with new bin dimension
                 array_cw = wrf[matching_variables_names_cw].to_array(dim="bin")
                 array_cw["bin"] = np.arange(1, nbins + 1)
+                # Do not propagate namelist as attribute
+                array_cw.attrs = {}
+
             # Raise aer key output not found
             else:
                 msg = var_name + " variable not found for activated aerosols"
@@ -978,31 +989,76 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             if total:
                 ds_binned[species_name] = array_a + array_cw
 
+                # Set DataArray attributes
+                if species_name == "num":
+                    ds_binned[species_name].attrs["units"] = "/kg-dryair"
+                    ds_binned[species_name].attrs["description"] = (
+                        "Binned total aerosols' number concentration"
+                    )
+
+                else:
+                    ds_binned[species_name].attrs["units"] = "ug/kg-dryair"
+                    ds_binned[species_name].attrs["description"] = (
+                        "Total binned mass concentration of " + species_name
+                    )
+
             else:
                 ds_binned[species_name + "_a"] = array_a
                 ds_binned[species_name + "_cw"] = array_cw
+
+                # Set DataArray attributes
+                if species_name == "num":
+                    ds_binned[species_name + "_a"].attrs["units"] = (
+                        "/kg-dryair"
+                    )
+                    ds_binned[species_name + "_a"].attrs["description"] = (
+                        "Binned number concentration of non-activated aerosols"
+                    )
+
+                    ds_binned[species_name + "_cw"].attrs["units"] = (
+                        "/kg-dryair"
+                    )
+                    ds_binned[species_name + "_cw"].attrs["description"] = (
+                        "Binned number concentration of activated aerosols"
+                    )
+
+                else:
+                    ds_binned[species_name + "_a"].attrs["units"] = (
+                        "/kg-dryair"
+                    )
+                    ds_binned[species_name + "_a"].attrs["description"] = (
+                        "Binned mass concentration of non-activated "
+                        + species_name
+                    )
+
+                    ds_binned[species_name + "_cw"].attrs["units"] = (
+                        "/kg-dryair"
+                    )
+                    ds_binned[species_name + "_cw"].attrs["description"] = (
+                        "Binned mass concentration of activated "
+                        + species_name
+                    )
 
         # Add bin size coordinates for bin dimension
         bins_charac_array = wrf.aer_bins_charac.values
         ds_binned = ds_binned.assign_coords(
             {
-                "Dlo": ("bin", bins_charac_array[:, 0]),
-                "Dmid": ("bin", bins_charac_array[:, 1]),
-                "Dhi": ("bin", bins_charac_array[:, 2]),
-                "dD": (
+                "dlower": ("bin", bins_charac_array[:, 0]),
+                "dcenter": ("bin", bins_charac_array[:, 1]),
+                "dhigher": ("bin", bins_charac_array[:, 2]),
+                "dlength": (
                     "bin",
                     bins_charac_array[:, 2] - bins_charac_array[:, 0],
                 ),
             }
         )
 
-        return xr.Dataset(
-            ds_binned,
-            attrs=dict(
-                name="Subset of WRF aerosols' mass concentrations distributed over size bins",
-                units="ug/kg-dryair",
-            ),
+        # Set Dataset attributes
+        ds_binned.attrs["name"] = (
+            "Subset of WRF aerosols' concentrations distributed over size bins"
         )
+
+        return ds_binned
 
     # Derived variables
 
