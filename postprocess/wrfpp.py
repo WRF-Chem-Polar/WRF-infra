@@ -1110,11 +1110,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         # Cutoff greater than highest bound
         elif cutoff_bin_index > nbins:
             # Sum all bins
-            ds_sum = ds_binned.sum(dim="bin")
+            ds_pmXX = ds_binned.sum(dim="bin")
         # Cutoff within bins' range
         else:
             # Previous bins summed
-            ds_sum = ds_binned.sel(bin=slice(0, cutoff_bin_index - 1)).sum(
+            ds_pmXX = ds_binned.sel(bin=slice(0, cutoff_bin_index - 1)).sum(
                 dim="bin"
             )
 
@@ -1126,7 +1126,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             )
             fraction = log_dist_cutoff_lower_bound / log_step
 
-            ds_sum = ds_sum + (
+            ds_pmXX = ds_pmXX + (
                 fraction * ds_binned.sel(bin=cutoff_bin_index, drop=True)
             )
 
@@ -1135,14 +1135,14 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             # Add attributes according to total option
             if total:
                 if species_name == "num":
-                    ds_sum[species_name].attrs["description"] = (
+                    ds_pmXX[species_name].attrs["description"] = (
                         "Total aerosols' number concentration for sizes smaller than "
                         + str(cutoff)
                         + " um"
                     )
 
                 else:
-                    ds_sum[species_name].attrs["description"] = (
+                    ds_pmXX[species_name].attrs["description"] = (
                         "Total mass concentration of "
                         + species_name
                         + " for sizes smaller than "
@@ -1152,19 +1152,19 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
             else:
                 if species_name == "num":
-                    ds_sum[species_name + "_a"].attrs["description"] = (
+                    ds_pmXX[species_name + "_a"].attrs["description"] = (
                         "Non-activated aerosols' number concentration  for sizes smaller than "
                         + str(cutoff)
                         + " um"
                     )
 
-                    ds_sum[species_name + "_cw"].attrs["description"] = (
+                    ds_pmXX[species_name + "_cw"].attrs["description"] = (
                         "Activated aerosols' number concentration for sizes smaller than "
                         + str(cutoff)
                         + " um"
                     )
                 else:
-                    ds_sum[species_name + "_a"].attrs["description"] = (
+                    ds_pmXX[species_name + "_a"].attrs["description"] = (
                         "Mass concentration of non-activated "
                         + species_name
                         + " for sizes smaller than "
@@ -1172,7 +1172,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                         + " um"
                     )
 
-                    ds_sum[species_name + "_cw"].attrs["description"] = (
+                    ds_pmXX[species_name + "_cw"].attrs["description"] = (
                         "Mass concentration of activated "
                         + species_name
                         + " for sizes smaller than "
@@ -1181,17 +1181,17 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                     )
 
         # Set Dataset attributes
-        ds_sum.attrs["name"] = (
+        ds_pmXX.attrs["name"] = (
             "Subset of WRF aerosols' concentrations for sizes smaller than "
             + str(cutoff)
             + " um"
         )
 
         # Add cutoff as a variable
-        ds_sum["cutoff"] = cutoff
-        ds_sum["cutoff"].attrs["units"] = "um"
+        ds_pmXX["cutoff"] = cutoff
+        ds_pmXX["cutoff"].attrs["units"] = "um"
 
-        return ds_sum
+        return ds_pmXX
 
     # Derived variables
 
