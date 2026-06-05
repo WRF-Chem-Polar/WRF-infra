@@ -77,7 +77,7 @@ def write_job_script(opts):
     lines = ["#!/bin/bash"]
     if opts.scheduler:
         if host in ("jeanzay", "jed", "spirit"):
-            lines += compilation.prepare_slurm_options("03:00:00")
+            lines += compilation.prepare_job_header("03:00:00").split("\n")
         else:
             msg = f"Unsupported host: {host}."
             raise NotImplementedError(msg)
@@ -98,7 +98,7 @@ def write_job_script(opts):
 
     # Write the script
     with open(script, mode="x") as f:
-        f.write("\n".join(lines))
+        f.write("\n".join(line for line in lines if line.strip() != ""))
         f.write("\n")
     os.chmod(script, 0o744)
 

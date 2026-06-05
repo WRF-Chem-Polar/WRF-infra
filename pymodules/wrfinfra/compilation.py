@@ -6,6 +6,7 @@
 
 import os
 import argparse
+import configparser
 import re
 import json
 from . import generic
@@ -201,63 +202,44 @@ def format_shell_value(value):
         raise TypeError(msg)
 
 
-def get_default_project_name():
-    """Get default project name on current host.
-
-    On some super calculators, computing hours are allocated to specific
-    projects, and one must associate a project name to each job. This function
-    is used to guess a default project name for the host platform.
-
-    Returns
-    -------
-    str
-        The name of the default project name on the host machine.
-
-    """
-    host = generic.identify_host_platform()
-    if host == "jeanzay":
-        pattern = re.compile("PROJECT: [a-z]+ SPACE: WORK")
-        selected = [
-            line
-            for line in generic.run_stdout(["idr_quota_project"])
-            if pattern.fullmatch(line) is not None
-        ]
-        project_name = selected[0].split()[1]
-    else:
-        msg = f"This function is not implemented for host {host}."
-        raise NotImplementedError(msg)
-    return project_name
-
-
-def prepare_slurm_options(time):
-    """Prepare slurm options.
+def prepare_job_header(time, account=None):
+    """Prepare job header.
 
     Parameters
     ----------
     time: str
         The wall time requested for the job with format HH:MM:SS.
+    account: None | str
+        If not None, the name of the account to use for running the job.
 
     Returns
     -------
-    [str]
-        The lines of text that contain the slurm options.
+    str
+        The header for the jobscript.
 
     """
     host = generic.identify_host_platform()
-    slurm = {
+    dir_jobs = os.path.join(generic.path_of_repo(), "env", "jobs")
+    header_file = os.path.join(dir_jobs, f"{host}.job")
+    with open(header_file, mode="r") as f:
+        header = f.read()
+    config = configparser.ConfigParser()
+    config.read(os.path.join(dir_jobs, "compile.config"))
+    to_replace = {
         "ntasks": "1",
-        "ntasks-per-node": "1",
-        "output": "compile.log",
-        "error": "compile.log",
-        "time": time,
+        "ntasks_per_node": "1",
+        "stdout": "compile.log",
+        "stderr": "compile.log",
+        "walltime": time,
     }
-    if host == "spirit":
-        slurm["partition"] = "zen16"
-        slurm["mem"] = "12GB"
-    elif host == "jeanzay":
-        slurm["cpus-per-task"] = 5
-        slurm["account"] = f"{get_default_project_name()}@cpu"
-    return [f"#SBATCH --{key}={value}" for key, value in slurm.items()]
+    for key in config[f"{host}.WRF"]:
+        to_replace[key] = config[f"{host}.WRF"][key]
+    if account is not None:
+        to_replace["account"] = account
+    for key, value in to_replace.items():
+        placeholder = f"<{key}>"
+        header = header.replace(placeholder, value)
+    return header
 
 
 def write_options(opts):
