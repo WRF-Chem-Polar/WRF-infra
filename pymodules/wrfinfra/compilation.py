@@ -6,7 +6,6 @@
 
 import os
 import argparse
-import configparser
 import json
 from . import generic
 
@@ -105,12 +104,6 @@ def prepare_argparser(which):
             help="Directory where WRF is installed.",
             default="./WRF",
         )
-        parser.add_argument(
-            "--parallel",
-            help="Whether to compile with support for parallel computing.",
-            action=generic.ConvertToBoolean,
-            default=True,
-        )
     elif which == "WRF":
         parser.add_argument(
             "--executable",
@@ -177,68 +170,71 @@ def get_options(which):
     return opts
 
 
-def format_shell_value(value):
-    """Format shell value.
+def write_job_script(opts, config, which):
+    """Create the job script.
 
     Parameters
     ----------
-    value: str | int
-        Value to format.
-
-    Returns
-    -------
-    str
-        A version of value that is suitable to write in a shell script as
-        `my_variable=value`.
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+    which: "WRF" | "WPS"
+        The program being compiled.
 
     """
-    if isinstance(value, str):
-        return f'"{value}"'
-    elif isinstance(value, int):
-        return str(value)
-    else:
-        msg = f"Unsupported type for input value: {type(value)}."
-        raise TypeError(msg)
+    script = os.path.join(opts.destination, "compile.job")
+    with open(script, mode="x") as f:
+        f.write("#!/bin/bash\n")
 
+        # Write the job header
+        if opts.scheduler:
+            header = "#" + config["common"]["job_header"].replace("\n", "\n#")
+            for section_name in ("compile.all", f"compile.{which}"):
+                try:
+                    section = config[section_name]
+                except KeyError:
+                    continue
+                for key, value in section.items():
+                    if key.startswith("job_header_replace_"):
+                        name = key[19:]
+                        header = header.replace(f"<{name}>", value)
+            f.write(header + "\n")
 
-def prepare_job_header(time, account=None):
-    """Prepare job header.
+        # Write the plateform-specific environment
+        for section_name in ("common", "compile.all", f"compile.{which}"):
+            try:
+                shell = config[section_name]["shell"]
+            except KeyError:
+                continue
+            f.write(shell + "\n")
 
-    Parameters
-    ----------
-    time: str
-        The wall time requested for the job with format HH:MM:SS.
-    account: None | str
-        If not None, the name of the account to use for running the job.
+        # Write the generic environment
+        f.write("export EM_CORE=1\nexport NMM_CORE=0\n")
 
-    Returns
-    -------
-    str
-        The header for the jobscript.
+        # Write the model-dependent environment
+        opt = int(config[f"compile.{which}"]["configure_opt"])
+        if which == "WRF":
+            # Just using the chem and kpp options is not enough, one also has
+            # to explicitly set the corresponding environment variables
+            if "chem" in opts.components:
+                f.write("export WRF_CHEM=1\n")
+            if "kpp" in opts.components:
+                f.write("export WRF_KPP=1\n")
+            cmd = 'echo -e "%d\\n1" | ./configure' % opt
+            if opts.components:
+                cmd += " " + " ".join(opts.components)
+            f.write(cmd + f"\n./compile {opts.executable}\n")
 
-    """
-    host = generic.identify_host_platform()
-    dir_jobs = os.path.join(generic.path_of_repo(), "env", "jobs")
-    header_file = os.path.join(dir_jobs, f"{host}.job")
-    with open(header_file, mode="r") as f:
-        header = f.read()
-    config = configparser.ConfigParser()
-    config.read(os.path.join(dir_jobs, "compile.config"))
-    to_replace = {
-        "ntasks": "1",
-        "ntasks_per_node": "1",
-        "stdout": "compile.log",
-        "stderr": "compile.log",
-        "walltime": time,
-    }
-    for key, value in config[f"{host}.WRF"].items():
-        to_replace[key] = value
-    if account is not None:
-        to_replace["account"] = account
-    for key, value in to_replace.items():
-        placeholder = f"<{key}>"
-        header = header.replace(placeholder, value)
-    return header
+        elif which == "WPS":
+            raise NotImplementedError()
+
+        else:
+            msg = f"Invalid value for which (f{which})"
+            raise ValueError(msg)
+
+    # Make the script executable and we are done
+    os.chmod(script, 0o744)
 
 
 def write_options(opts):

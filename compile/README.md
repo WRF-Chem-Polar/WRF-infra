@@ -84,8 +84,6 @@ python compile_WPS.py --wrfdir=/path/to/installation/of/WRF
 
  - `wrfdir`: the directory where WRF is installed.
 
- - `parallel`: whether WPS should be compiled with support for parallel computing.
-
 # Default values in JSON format
 
 ## WRF
@@ -113,6 +111,5 @@ python compile_WPS.py --wrfdir=/path/to/installation/of/WRF
     "scheduler": "yes",
     "patches": "compile/patches_WPS directory of this repository",
     "wrfdir": "./WRF",
-    "parallel": "yes"
 }
 ```
