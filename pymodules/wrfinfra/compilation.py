@@ -7,7 +7,6 @@
 import os
 import argparse
 import configparser
-import re
 import json
 from . import generic
 
@@ -232,8 +231,8 @@ def prepare_job_header(time, account=None):
         "stderr": "compile.log",
         "walltime": time,
     }
-    for key in config[f"{host}.WRF"]:
-        to_replace[key] = config[f"{host}.WRF"][key]
+    for key, value in config[f"{host}.WRF"].items():
+        to_replace[key] = value
     if account is not None:
         to_replace["account"] = account
     for key, value in to_replace.items():
