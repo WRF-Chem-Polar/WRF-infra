@@ -190,7 +190,7 @@ def write_job_script(opts, config, which):
         # Write the job header
         if opts.scheduler:
             header = "#" + config["common"]["job_header"].replace("\n", "\n#")
-            for section_name in ("compile.all", f"compile.{which}"):
+            for section_name in (f"compile.{which}", "compile.all"):
                 try:
                     section = config[section_name]
                 except KeyError:
@@ -227,7 +227,9 @@ def write_job_script(opts, config, which):
             f.write(cmd + f"\n./compile {opts.executable}\n")
 
         elif which == "WPS":
-            raise NotImplementedError()
+            f.write(f"export WRF_DIR={generic.process_path(opts.wrfdir)}\n")
+            f.write('echo -e "%d" | ./configure --build-grib2-libs\n' % opt)
+            f.write("./compile\n")
 
         else:
             msg = f"Invalid value for which (f{which})"
