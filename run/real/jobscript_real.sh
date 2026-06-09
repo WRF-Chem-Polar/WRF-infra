@@ -270,9 +270,9 @@ $conda_run python -u \
 echo " "
 echo "-------- $SLURM_JOB_NAME: Initialize snow on sea ice --------"
 echo " "
-mms_zero=$(utc -d ${date_start} +%m)
+month_start=$(utc -d ${date_start} +%m)
 # Only in winter and early spring (December-April)
-if ((mms_zero < 5 || mms_zero > 11)); then
+if ((month_start < 5 || month_start > 11)); then
 # Initialize snow depth on sea ice to 30 cm
   ncap2 -s 'where(SEAICE>0. && XLAT>65.) SNOWH=0.3;' wrfinput_d01 -O wrfinput_d01
 # Initialize snow water equivalent to 60 kg/m2 (assuming a snow density of 200 kg/m3)
