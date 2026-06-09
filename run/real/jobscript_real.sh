@@ -150,13 +150,6 @@ MEGANEMIS_DIR="$dir_shared_data/natural_emissions/terrestrial/megan"
 ln -s "${MEGANEMIS_DIR}/"*".nc" .
 sed -i "s:MEGANEMIS_DIR:${MEGANEMIS_DIR}:g" megan_bioemiss.inp
 sed -i "s:WRFRUNDIR:$PWD/:g" megan_bioemiss.inp
-if [ $mms -eq 1 ]; then
-  sed -i "s:SMONTH:1:g" megan_bioemiss.inp
-  sed -i "s:EMONTH:12:g" megan_bioemiss.inp
-else
-  sed -i "s:SMONTH:$((10#$mms - 1)):g" megan_bioemiss.inp
-  sed -i "s:EMONTH:$mme:g" megan_bioemiss.inp
-fi
 set +e # Temporary until we fix the seg fault in megan_bio_emiss
 megan_bio_emiss < megan_bioemiss.inp > megan_bioemiss.out
 set -e # Temporary until we fix the seg fault in megan_bio_emiss
@@ -277,7 +270,7 @@ $conda_run python -u \
 echo " "
 echo "-------- $SLURM_JOB_NAME: Initialize snow on sea ice --------"
 echo " "
-mms_zero=$(echo "$mms" | sed 's/^0*//')
+mms_zero=$(utc -d ${date_start} +%m)
 # Only in winter and early spring (December-April)
 if ((mms_zero < 5 || mms_zero > 11)); then
 # Initialize snow depth on sea ice to 30 cm
