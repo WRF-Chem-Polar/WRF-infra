@@ -17,7 +17,7 @@ config.read(os.path.join(generic.path_of_repo(), "env", f"{host}.config"))
 generic.run([opts.git, "clone", opts.repository, opts.destination])
 generic.run([opts.git, "checkout", opts.commit], cwd=opts.destination)
 compilation.write_options(opts)
-generic.write_job_script(opts, config, "WPS")
+compilation.write_job_script(opts, config, "WPS")
 compilation.process_patches(opts)
 compilation.process_extra_sources(opts)
 
