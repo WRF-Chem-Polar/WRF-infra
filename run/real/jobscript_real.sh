@@ -165,7 +165,7 @@ echo " "
 # Prepare the real.exe namelist, set up run start and end dates
 sed -i \
     "s/[ \t]*bio_emiss_opt[ \t]*=.*/bio_emiss_opt = 3, 3, 3,/g" \
-    namelist.input.YYYY
+    namelist.input
 mpirun ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
