@@ -20,8 +20,8 @@
 &control
 
 domains = 1,
-start_lai_mnth = SMONTH,
-end_lai_mnth = EMONTH,
+start_lai_mnth = 1,
+end_lai_mnth = 12,
 wrf_dir = 'WRFRUNDIR',
 megan_dir = 'MEGANEMIS_DIR'
 
