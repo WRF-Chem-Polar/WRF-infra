@@ -241,7 +241,9 @@ function get_host_config_value {
     #
     # Notes
     # -----
-    # This function reads the file env/${host}.config to get the information.
+    # This function:
+    # - reads the file env/${host}.config to get the information.
+    # - prints an empty line if the file or the option was not found.
     #
     if [[ $# -eq 2 ]]; then
         local remove_newlines=no
@@ -264,8 +266,10 @@ function get_host_config_value {
         "print(config['$1']['$2'])"
     )
     script=$(printf '%s;' "${script[@]}")
-    local output=$(python -c "${script}")
-    if [[ ${remove_newlines} == yes ]]; then
+    local output=$(python -c "${script}" 2> /dev/null)
+    if [[ $? -ne 0 ]]; then
+        echo ""
+    elif [[ ${remove_newlines} == yes ]]; then
         echo ${output}
     else
         echo "${output}"

@@ -33,7 +33,10 @@ submit_dir=$(pwd)
 # Environment #
 #-------------#
 
-source ../../env/$(get_host_name).sh
+eval "$(get_host_config_value common shell)"
+eval "$(get_host_config_value run.all shell)"
+eval "$(get_host_config_value run.real shell)"
+cmd_python=$(get_host_config_value run.all cmd_python yes)
 
 # Add WRF-Chem preprocessors to PATH
 PATH=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Preprocessing-Tools/bin:$PATH
