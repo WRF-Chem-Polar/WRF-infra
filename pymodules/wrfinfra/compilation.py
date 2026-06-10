@@ -210,7 +210,7 @@ def prepare_scheduler_header(opts, config, which):
         for key, value in section.items():
             if not key.startswith("job-header-option-"):
                 continue
-            name = key[len("job-header-option-"):]
+            name = key[len("job-header-option-") :]
             if name == "":
                 msg = f"Invalid option ({key})."
                 raise ValueError(msg)
