@@ -11,6 +11,7 @@
 
 module purge
 module load gcc/13.3.0
+module load bison/3.6.4
 module load flex/2.6.4
 module load openmpi/4.1.8
 module load netcdf-c/4.7.4-mpi
