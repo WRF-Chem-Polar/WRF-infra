@@ -10,9 +10,13 @@ What follows describes the typical content of these configuration files.
 
 This section is mandatory only if a scheduler is used. It defines parameters that are common to everything (compiling and running WPS and WRF).
 
- - `job_exe` (mandatory for scheduler use): the executable of the scheduler.
+ - `job-exe` (mandatory for scheduler use): the executable of the scheduler.
 
- - `job_header` (mandatory for scheduler use): the header of the scheduler jobs (without the pound signs at the beginning of lines), with possibility of using place holders (syntax: <place_holder>).
+ - `job-header-prefix` (mandatory for scheduler use): the prefix of the scheduler instruction lines in job scripts (eg. `#SBATCH --` if scheduler uses lines such as `#SBATCH --time=00:01:00`).
+
+ - `job-header-separator` (mandatory for scheduler use): the character string that separates option names from option values in scheduler instruction lines in job scripts (typically an equal sign or a space character).
+
+ - `job_header_option_${option_name}` (optional): the value of given scheduler option.
 
  - `shell` (optional): Bash commands to be executed before compiling and executing WPS or WRF.
 
@@ -20,7 +24,7 @@ This section is mandatory only if a scheduler is used. It defines parameters tha
 
 This section is optional and defines parameters that are common to the compilation of WRF and WPS.
 
- - `job_header_replace_${place_holder}` (optional): replace given place holder in the job header by given value.
+ - `job_header_option_${option_name}` (optional): the value of given scheduler option, has precedence over the one in section "common".
 
  - `shell` (optional): Bash commands to be executed before compiling WRF and WPS.
 
@@ -28,11 +32,11 @@ This section is optional and defines parameters that are common to the compilati
 
 This section is mandatory when compiling WRF and defines parameters that are specific to the compilation of WRF.
 
- - `job_header_replace_${place_holder}` (optional): same (but higher precedence) as for section `compile.all`.
+ - `job_header_option_${option_name}` (optional): the value of given scheduler option, has precedence over the one in section "compile.all".
 
  - `shell` (optional): contains Bash commands to be executed before compiling WRF.
 
- - `configure_opt` (mandatory): the option which defines the host platform and compiler suite to use for WRF/WRF-Chem, to choose from the list when running the vanilla WRF configure script.
+ - `configure-opt` (mandatory): the option which defines the host platform and compiler suite to use for WRF/WRF-Chem, to choose from the list when running the vanilla WRF configure script.
 
 Note that when compiling WRF, the `shell` commands of the "common" section will be executed before the `shell` commands of the `compile.all` section, which will themselves be executed before the `shell` commands of the "compile.WRF" section.
 
@@ -44,4 +48,4 @@ Same as "compile.WRF" but for compiling WPS.
 
 This section is mandatory when running WPS or WRF.
 
- - `cmd_python` (mandatory): the command to execute Python.
+ - `cmd-python` (mandatory): the command to execute Python.
