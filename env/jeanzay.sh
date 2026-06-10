@@ -11,6 +11,7 @@
 
 module purge
 module load gcc/13.3.0
+module load bison/3.6.4
 module load flex/2.6.4
 export FLEX_LIB_DIR=$(dirname $(dirname $(which flex)))/lib
 module load openmpi/4.1.8
