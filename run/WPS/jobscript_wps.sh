@@ -49,7 +49,7 @@ USE_CHLA_DMS_WPS=true
 eval "$(get_host_config_value common shell)"
 eval "$(get_host_config_value run.all shell)"
 eval "$(get_host_config_value run.WPS shell)"
-cmd_python=$(get_host_config_value run.all cmd_python yes)
+cmd_python=$(get_host_config_value run.all cmd-python yes)
 
 #-------------------------#
 # Sanity checks on inputs #

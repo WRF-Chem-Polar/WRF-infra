@@ -36,7 +36,7 @@ submit_dir=$(pwd)
 eval "$(get_host_config_value common shell)"
 eval "$(get_host_config_value run.all shell)"
 eval "$(get_host_config_value run.wrf shell)"
-cmd_python=$(get_host_config_value run.all cmd_python yes)
+cmd_python=$(get_host_config_value run.all cmd-python yes)
 
 #---------#
 # Prepare #
