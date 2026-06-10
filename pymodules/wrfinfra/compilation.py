@@ -78,6 +78,13 @@ def prepare_argparser(which):
         default=True,
     )
     parser.add_argument(
+        "--scheduler-opt",
+        help="Define a scheduler option (can be used multiple times).",
+        action="append",
+        nargs=2,
+        default=[],
+    )
+    parser.add_argument(
         "--patches",
         help="Path to directory containing patches.",
         default=patches,
@@ -170,6 +177,56 @@ def get_options(which):
     return opts
 
 
+def prepare_scheduler_header(opts, config, which):
+    """Create the scheduler header.
+
+    Parameters
+    ----------
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+    which: "WRF" | "WPS"
+        The program being compiled.
+
+    Returns
+    -------
+    str
+        The scheduler header.
+
+    """
+    # Quality checks on input arguments
+    if which not in ("WRF", "WPS"):
+        msg = f"Bad value of which ({which})."
+        raise ValueError(msg)
+
+    # Prepare options from platform-dependent config file
+    options = {}
+    for section_name in ("common", "compile.all", f"compile.{which}"):
+        try:
+            section = config[section_name]
+        except KeyError:
+            continue
+        for key, value in section.items():
+            if not key.startswith("job-header-option-"):
+                continue
+            name = key[len("job-header-option-"):]
+            if name == "":
+                msg = f"Invalid option ({key})."
+                raise ValueError(msg)
+            options[name] = value
+
+    # Update options with command-line arguments
+    for name, value in opts.scheduler_opt:
+        options[name] = value
+
+    # Format and return the header
+    pfx = config["common"]["job-header-prefix"]
+    sep = config["common"]["job-header-separator"]
+    header = [f"{pfx}{key}{sep}{value}" for key, value in options.items()]
+    return "\n".join(header)
+
+
 def write_job_script(opts, config, which):
     """Create the job script.
 
@@ -189,17 +246,7 @@ def write_job_script(opts, config, which):
 
         # Write the job header
         if opts.scheduler:
-            header = "#" + config["common"]["job_header"].replace("\n", "\n#")
-            for section_name in (f"compile.{which}", "compile.all"):
-                try:
-                    section = config[section_name]
-                except KeyError:
-                    continue
-                for key, value in section.items():
-                    if key.startswith("job_header_replace_"):
-                        name = key[19:]
-                        header = header.replace(f"<{name}>", value)
-            f.write(header + "\n")
+            f.write(prepare_scheduler_header(opts, config, which) + "\n")
 
         # Write the plateform-specific environment
         for section_name in ("common", "compile.all", f"compile.{which}"):
@@ -213,7 +260,7 @@ def write_job_script(opts, config, which):
         f.write("export EM_CORE=1\nexport NMM_CORE=0\n")
 
         # Write the model-dependent environment
-        opt = int(config[f"compile.{which}"]["configure_opt"])
+        opt = int(config[f"compile.{which}"]["configure-opt"])
         if which == "WRF":
             # Just using the chem and kpp options is not enough, one also has
             # to explicitly set the corresponding environment variables

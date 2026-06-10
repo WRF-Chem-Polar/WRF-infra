@@ -25,7 +25,7 @@ if opts.dry:
     sys.exit(0)
 
 if opts.scheduler:
-    cmd = [config["common"]["job_exe"], "compile.job"]
+    cmd = [config["common"]["job-exe"], "compile.job"]
 else:
     cmd = ["./compile.job"]
 generic.run(cmd, cwd=opts.destination)
