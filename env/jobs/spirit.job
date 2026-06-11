@@ -1,7 +1,0 @@
-#SBATCH --ntasks=<ntasks>
-#SBATCH --ntasks-per-node=<ntasks_per_node>
-#SBATCH --output=<stdout>
-#SBATCH --error=<stderr>
-#SBATCH --time=<walltime>
-#SBATCH --partition=<partition>
-#SBATCH --mem=<memory>
