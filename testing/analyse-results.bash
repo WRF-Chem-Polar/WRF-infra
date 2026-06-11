@@ -168,9 +168,11 @@ done
 
 # Prepare the environment
 dir_infra="${dir_work}/WRF-infra_1"
+cd "${dir_infra}"
 check_simulation_conf=no
-source "${dir_infra}/run/commons.bash"
-source "${dir_infra}/env/$(get_host_name).sh"
+source "./run/commons.bash"
+cmd_python=$(get_host_config_value run.all cmd-python yes)
+cd "${dir_work}"
 
 # Plot a first series of vertical profiles for non-cloud variables,
 # using a one-cell window
