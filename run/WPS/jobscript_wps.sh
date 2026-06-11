@@ -46,7 +46,10 @@ USE_CHLA_DMS_WPS=true
 # Environment #
 #-------------#
 
-source ../../env/$(get_host_name).sh
+eval "$(get_host_config_value common shell)"
+eval "$(get_host_config_value run.all shell)"
+eval "$(get_host_config_value run.WPS shell)"
+cmd_python=$(get_host_config_value run.all cmd-python yes)
 
 #-------------------------#
 # Sanity checks on inputs #
@@ -219,12 +222,10 @@ if $USE_CHLA_DMS_WPS; then
     date_e=$(utc -d "${date_end}" +%Y-%m-%d)
 
     #---- Add chlorophyll-a oceanic concentrations to met_em*
-    echo "python -u add_chloroa_wps.py $SCRATCH/ ${date_s} ${date_e}"
-    $conda_run python -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    ${cmd_python} -u add_chloroa_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
     #---- Add DMS oceanic concentrations to met_em*
-    echo "python -u add_dmsocean_wps.py $SCRATCH/ ${date_s} ${date_e}"
-    $conda_run python -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
+    ${cmd_python} -u add_dmsocean_wps.py "$SCRATCH/" "${date_s}" "${date_e}"
 
 fi
 

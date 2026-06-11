@@ -181,6 +181,101 @@ function utc {
     return $?
 }
 
+function get_git_root_dir {
+    # Prints the git root directory of given directory or current location.
+    #
+    # Parameters
+    # ----------
+    # path: str
+    #     (optional, default=current working directory) The path to the
+    #     directory belonging to the git repository of interest.
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if git root directory could be found, non-zero otherwise.
+    #
+    # Notes
+    # -----
+    # If within a submodule, it gives the path of the super project repository.
+    #
+    if [[ $# -eq 0 ]]; then
+        local path=$(pwd)
+    elif [[ $# -eq 1 ]]; then
+        local path=$1
+    else
+        echo "commons.bash: get_git_root_dir: need 0 or 1 argument." >&2
+        return 1
+    fi
+    local git_version=$(git --version | cut -d" " -f3)
+    if awk "BEGIN {exit !(${git_version%.*} < 2.13)}"; then
+        # Git v2.13 introduces --show-superproject-working-tree used below
+        echo "commons.bash: get_git_root_dir: need git >= 2.13." >&2
+        return 2
+    fi
+    local git_repo=$(git -C "${path}" rev-parse \
+                         --show-superproject-working-tree --show-toplevel)
+    if [[ $? -ne 0 ]]; then
+        echo "commons.bash: get_git_root_dir: git command failed." >&2
+        return 3
+    fi
+    echo "${git_repo}" | head -n 1
+}
+
+function get_host_config_value {
+    # Prints the value of one of the host-specific configuration options.
+    #
+    # Parameters
+    # ----------
+    # section: str
+    #     The name of the section.
+    # option: str
+    #     The name of the option.
+    # remove_newlines: yes | no
+    #     (optional, default=no) Whether to replace newlines by spaces.
+    #
+    # Returns
+    # -------
+    # int
+    #     Zero if the option was found, non-zero otherwise.
+    #
+    # Notes
+    # -----
+    # This function:
+    # - reads the file env/${host}.config to get the information.
+    # - prints an empty line if the file or the option was not found.
+    #
+    if [[ $# -eq 2 ]]; then
+        local remove_newlines=no
+    elif [[ $# -ne 3 ]]; then
+        echo "commons.bash: get_host_config_value: need 2 or 3 arguments." >&2
+        return 1
+    elif [[ $3 != yes ]] && [[ $3 != no ]]; then
+        echo "commons.bash: get_host_config_value:" \
+             "bad value for \$remove_newlines." >&2
+        return 2
+    else
+        local remove_newlines=$3
+    fi
+    local script=(
+        "from os.path import join"
+        "import configparser"
+        "config = configparser.ConfigParser()"
+        "path = join('$(get_git_root_dir)', 'env', '$(get_host_name).config')"
+        "config.read(path)"
+        "print(config['$1']['$2'])"
+    )
+    script=$(printf '%s;' "${script[@]}")
+    local output=$(python -c "${script}" 2> /dev/null)
+    if [[ $? -ne 0 ]]; then
+        echo ""
+    elif [[ ${remove_newlines} == yes ]]; then
+        echo ${output}
+    else
+        echo "${output}"
+    fi
+}
+
 if [[ $check_simulation_conf == yes ]]; then
 
     echo "commons.bash: Quality checking the simulation's configuration..."
