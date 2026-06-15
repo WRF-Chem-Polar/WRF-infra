@@ -193,6 +193,8 @@ def _units_mpl(units):
         The units formatted for Matplotlib (eg. "km s$^{-1}$").
 
     """
+    if units is None:
+        return "dimensionless"
     split = units.split()
     for i, s in enumerate(split):
         n = len(s) - 1
@@ -288,7 +290,9 @@ class GenericDatasetAccessor(ABC):
             units = replacements[units]
         except KeyError:
             pass
-        return units.strip()
+        if units is not None:
+            units = units.strip()
+        return units
 
     def check_units(self, varname, expected, nice=True):
         """Make sure that units of given variable are as expected.

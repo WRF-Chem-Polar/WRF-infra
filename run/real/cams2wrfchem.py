@@ -273,7 +273,16 @@ def time_as_datetime(nc):
         raise NotImplementedError("Only supported calendar is gregorian.")
     units = time.getncattr("units")
     dt = units.split()[0]
-    start = datetime.strptime(units, dt + " since %Y-%m-%d %H:%M:%S")
+    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+        try:
+            start = datetime.strptime(units, dt + f" since {fmt}")
+        except ValueError:
+            continue
+        else:
+            break
+    else:
+        msg = f"Could not parse units {units}."
+        raise ValueError(msg)
     dt = timedelta(**{dt: 1})
     return np.full(time.shape, start) + np.full(time.shape, dt)*time
 
@@ -395,8 +404,10 @@ if __name__ == "__main__":
     parser.add_argument("--CAMS-version", default="5.3")
     parser.add_argument("--domain", default=1, type=int)
     parser.add_argument("--dir-wrf-in", default="./")
-    parser.add_argument("--dir-em-in",
-                        default=("/data/marelle/marelle/EMISSIONS/CAMS/v5.3/"))
+    parser.add_argument(
+        "--dir-em-in",
+        default="/proju/wrf-chem/input-data/anthro_emissions/cams",
+    )
     args = parser.parse_args()
     start = datetime.strptime(args.start, "%Y-%m-%d")
     end = datetime.strptime(args.end, "%Y-%m-%d")
@@ -407,8 +418,6 @@ if __name__ == "__main__":
         raise ValueError("Start date must be before end date.")
     if args.nlevels <= 0:
         raise ValueError("The number of levels must be a positive integer.")
-    if args.CAMS_version != "5.3":
-        raise NotImplementedError("Only v5.3 of CAMS emissions is supported.")
     if args.domain <= 0:
         raise ValueError("The domain number must be a positive integer.")
 
@@ -626,8 +635,8 @@ if __name__ == "__main__":
 
     ncs_cams = dict()
     for i, species in enumerate(all_species_cams):
-        filename = "CAMS-GLOB-ANT_v%s_%s_2019.nc" % (args.CAMS_version, species)
-        filepath = join(args.dir_em_in, filename)
+        filename = "CAMS-GLOB-ANT_v%s_%s.nc" % (args.CAMS_version, species)
+        filepath = join(args.dir_em_in, f"v{args.CAMS_version}", filename)
         nc = ncs_cams[species] = netCDF4.Dataset(filepath)
         if nc.getncattr("projection") != "latlon":
             raise ValueError("Expecting lat-lon grid.")

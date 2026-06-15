@@ -33,7 +33,10 @@ submit_dir=$(pwd)
 # Environment #
 #-------------#
 
-source ../../env/$(get_host_name).sh
+eval "$(get_host_config_value common shell)"
+eval "$(get_host_config_value run.all shell)"
+eval "$(get_host_config_value run.real shell)"
+cmd_python=$(get_host_config_value run.all cmd-python yes)
 
 # Add WRF-Chem preprocessors to PATH
 PATH=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Preprocessing-Tools/bin:$PATH
@@ -83,10 +86,30 @@ cp ${WPSDIR}/met_em.d* $SCRATCH/
 #---- Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
-wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
-wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
-wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
-wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' "$submit_dir/$namelist_real" | sed -n -e 's/,.*//p')
+
+# Get values from namelist
+cp $submit_dir/../../pymodules/wrfinfra/namelist.py "$SCRATCH/"
+wrf_dx=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/dx-0"
+)
+wrf_dy=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/dy-0"
+)
+wrf_e_we=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/e_we-0"
+)
+wrf_e_sn=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/e_sn-0"
+)
+
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))
 
@@ -130,13 +153,6 @@ MEGANEMIS_DIR="$dir_shared_data/natural_emissions/terrestrial/megan"
 ln -s "${MEGANEMIS_DIR}/"*".nc" .
 sed -i "s:MEGANEMIS_DIR:${MEGANEMIS_DIR}:g" megan_bioemiss.inp
 sed -i "s:WRFRUNDIR:$PWD/:g" megan_bioemiss.inp
-if [ $mms -eq 1 ]; then
-  sed -i "s:SMONTH:1:g" megan_bioemiss.inp
-  sed -i "s:EMONTH:12:g" megan_bioemiss.inp
-else
-  sed -i "s:SMONTH:$((10#$mms - 1)):g" megan_bioemiss.inp
-  sed -i "s:EMONTH:$mme:g" megan_bioemiss.inp
-fi
 set +e # Temporary until we fix the seg fault in megan_bio_emiss
 megan_bio_emiss < megan_bioemiss.inp > megan_bioemiss.out
 set -e # Temporary until we fix the seg fault in megan_bio_emiss
@@ -152,7 +168,7 @@ echo " "
 # Prepare the real.exe namelist, set up run start and end dates
 sed -i \
     "s/[ \t]*bio_emiss_opt[ \t]*=.*/bio_emiss_opt = 3, 3, 3,/g" \
-    namelist.input.YYYY
+    namelist.input
 mpirun ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
@@ -242,12 +258,13 @@ echo "-------- $SLURM_JOB_NAME: run emission script --------"
 echo " "
 ANTHRO_EMS_DIR="$dir_shared_data/anthro_emissions/cams/"
 cp $submit_dir/cams2wrfchem.py $SCRATCH/
-$conda_run python -u \
-           cams2wrfchem.py \
-           --start $(utc -d ${date_start} +%Y-%m-%d) \
-           --end $(utc -d ${date_end} +%Y-%m-%d) \
-           --domain 1 \
-           --dir-em-in ${ANTHRO_EMS_DIR}
+${cmd_python} -u \
+              cams2wrfchem.py \
+              --start $(utc -d ${date_start} +%Y-%m-%d) \
+              --end $(utc -d ${date_end} +%Y-%m-%d) \
+              --domain 1 \
+              --dir-em-in ${ANTHRO_EMS_DIR} \
+              --CAMS-version ${cams_anthropo_emis_version}
 
 #----------------------------#
 # Initialize snow on sea ice #
@@ -256,9 +273,9 @@ $conda_run python -u \
 echo " "
 echo "-------- $SLURM_JOB_NAME: Initialize snow on sea ice --------"
 echo " "
-mms_zero=$(echo "$mms" | sed 's/^0*//')
+month_start=$(utc -d ${date_start} +%m)
 # Only in winter and early spring (December-April)
-if ((mms_zero < 5 || mms_zero > 11)); then
+if ((month_start < 5 || month_start > 11)); then
 # Initialize snow depth on sea ice to 30 cm
   ncap2 -s 'where(SEAICE>0. && XLAT>65.) SNOWH=0.3;' wrfinput_d01 -O wrfinput_d01
 # Initialize snow water equivalent to 60 kg/m2 (assuming a snow density of 200 kg/m3)
