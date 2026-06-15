@@ -168,9 +168,11 @@ done
 
 # Prepare the environment
 dir_infra="${dir_work}/WRF-infra_1"
+cd "${dir_infra}"
 check_simulation_conf=no
-source "${dir_infra}/run/commons.bash"
-source "${dir_infra}/env/$(get_host_name).sh"
+source "./run/commons.bash"
+cmd_python=$(get_host_config_value run.all cmd-python yes)
+cd "${dir_work}"
 
 # Plot a first series of vertical profiles for non-cloud variables,
 # using a one-cell window
@@ -184,12 +186,11 @@ variables=(
 locations=(
     "NorthPole:0:90"
 )
-${conda_run} python \
-             "${dir_infra}/testing/plot-vertical-profiles.py" \
-             --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
-             --variables=$(IFS=, ; echo "${variables[*]}") \
-             --locations=$(IFS=, ; echo "${locations[*]}") \
-             --output="${dir_work}/vertical-profiles_non-clouds.pdf"
+${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
+              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+              --variables=$(IFS=, ; echo "${variables[*]}") \
+              --locations=$(IFS=, ; echo "${locations[*]}") \
+              --output="${dir_work}/vertical-profiles_non-clouds.pdf"
 
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
@@ -201,12 +202,11 @@ locations=(
     "OpenOcean:-29:55"
     "Siberia:108:60"
 )
-${conda_run} python \
-             "${dir_infra}/testing/plot-vertical-profiles.py" \
-             --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
-             --variables=$(IFS=, ; echo "${variables[*]}") \
-             --locations=$(IFS=, ; echo "${locations[*]}") \
-             --output="${dir_work}/vertical-profiles_clouds.pdf"
+${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
+              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+              --variables=$(IFS=, ; echo "${variables[*]}") \
+              --locations=$(IFS=, ; echo "${locations[*]}") \
+              --output="${dir_work}/vertical-profiles_clouds.pdf"
 
 # Plot surface maps
 variables=(
@@ -218,9 +218,8 @@ metrics=(
     "min"
     "max"
 )
-${conda_run} python \
-             "${dir_infra}/testing/plot-surface-maps.py" \
-             --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
-             --variables=$(IFS=, ; echo "${variables[*]}") \
-             --metrics=$(IFS=, ; echo "${metrics[*]}") \
-             --output="${dir_work}/surface-maps.pdf"
+${cmd_python} "${dir_infra}/testing/plot-surface-maps.py" \
+              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+              --variables=$(IFS=, ; echo "${variables[*]}") \
+              --metrics=$(IFS=, ; echo "${metrics[*]}") \
+              --output="${dir_work}/surface-maps.pdf"

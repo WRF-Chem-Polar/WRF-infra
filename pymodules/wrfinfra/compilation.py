@@ -6,7 +6,6 @@
 
 import os
 import argparse
-import re
 import json
 from . import generic
 
@@ -79,6 +78,13 @@ def prepare_argparser(which):
         default=True,
     )
     parser.add_argument(
+        "--scheduler-opt",
+        help="Define a scheduler option (can be used multiple times).",
+        action="append",
+        nargs=2,
+        default=[],
+    )
+    parser.add_argument(
         "--patches",
         help="Path to directory containing patches.",
         default=patches,
@@ -104,12 +110,6 @@ def prepare_argparser(which):
             "--wrfdir",
             help="Directory where WRF is installed.",
             default="./WRF",
-        )
-        parser.add_argument(
-            "--parallel",
-            help="Whether to compile with support for parallel computing.",
-            action=generic.ConvertToBoolean,
-            default=True,
         )
     elif which == "WRF":
         parser.add_argument(
@@ -177,87 +177,113 @@ def get_options(which):
     return opts
 
 
-def format_shell_value(value):
-    """Format shell value.
+def prepare_scheduler_header(opts, config, which):
+    """Create the scheduler header.
 
     Parameters
     ----------
-    value: str | int
-        Value to format.
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+    which: "WRF" | "WPS"
+        The program being compiled.
 
     Returns
     -------
     str
-        A version of value that is suitable to write in a shell script as
-        `my_variable=value`.
+        The scheduler header.
 
     """
-    if isinstance(value, str):
-        return f'"{value}"'
-    elif isinstance(value, int):
-        return str(value)
-    else:
-        msg = f"Unsupported type for input value: {type(value)}."
-        raise TypeError(msg)
+    # Quality checks on input arguments
+    if which not in ("WRF", "WPS"):
+        msg = f"Bad value of which ({which})."
+        raise ValueError(msg)
+
+    # Prepare options from platform-dependent config file
+    options = {}
+    for section_name in ("common", "compile.all", f"compile.{which}"):
+        try:
+            section = config[section_name]
+        except KeyError:
+            continue
+        for key, value in section.items():
+            if not key.startswith("job-header-option-"):
+                continue
+            name = key[len("job-header-option-") :]
+            if name == "":
+                msg = f"Invalid option ({key})."
+                raise ValueError(msg)
+            options[name] = value
+
+    # Update options with command-line arguments
+    for name, value in opts.scheduler_opt:
+        options[name] = value
+
+    # Format and return the header
+    pfx = config["common"]["job-header-prefix"]
+    sep = config["common"]["job-header-separator"]
+    header = [f"{pfx}{key}{sep}{value}" for key, value in options.items()]
+    return "\n".join(header)
 
 
-def get_default_project_name():
-    """Get default project name on current host.
-
-    On some super calculators, computing hours are allocated to specific
-    projects, and one must associate a project name to each job. This function
-    is used to guess a default project name for the host platform.
-
-    Returns
-    -------
-    str
-        The name of the default project name on the host machine.
-
-    """
-    host = generic.identify_host_platform()
-    if host == "jeanzay":
-        pattern = re.compile("PROJECT: [a-z]+ SPACE: WORK")
-        selected = [
-            line
-            for line in generic.run_stdout(["idr_quota_project"])
-            if pattern.fullmatch(line) is not None
-        ]
-        project_name = selected[0].split()[1]
-    else:
-        msg = f"This function is not implemented for host {host}."
-        raise NotImplementedError(msg)
-    return project_name
-
-
-def prepare_slurm_options(time):
-    """Prepare slurm options.
+def write_job_script(opts, config, which):
+    """Create the job script.
 
     Parameters
     ----------
-    time: str
-        The wall time requested for the job with format HH:MM:SS.
-
-    Returns
-    -------
-    [str]
-        The lines of text that contain the slurm options.
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+    which: "WRF" | "WPS"
+        The program being compiled.
 
     """
-    host = generic.identify_host_platform()
-    slurm = {
-        "ntasks": "1",
-        "ntasks-per-node": "1",
-        "output": "compile.log",
-        "error": "compile.log",
-        "time": time,
-    }
-    if host == "spirit":
-        slurm["partition"] = "zen16"
-        slurm["mem"] = "12GB"
-    elif host == "jeanzay":
-        slurm["cpus-per-task"] = 5
-        slurm["account"] = f"{get_default_project_name()}@cpu"
-    return [f"#SBATCH --{key}={value}" for key, value in slurm.items()]
+    script = os.path.join(opts.destination, "compile.job")
+    with open(script, mode="x") as f:
+        f.write("#!/bin/bash\n")
+
+        # Write the job header
+        if opts.scheduler:
+            f.write(prepare_scheduler_header(opts, config, which) + "\n")
+
+        # Write the plateform-specific environment
+        for section_name in ("common", "compile.all", f"compile.{which}"):
+            try:
+                shell = config[section_name]["shell"]
+            except KeyError:
+                continue
+            f.write(shell + "\n")
+
+        # Write the generic environment
+        f.write("export EM_CORE=1\nexport NMM_CORE=0\n")
+
+        # Write the model-dependent environment
+        opt = int(config[f"compile.{which}"]["configure-opt"])
+        if which == "WRF":
+            # Just using the chem and kpp options is not enough, one also has
+            # to explicitly set the corresponding environment variables
+            if "chem" in opts.components:
+                f.write("export WRF_CHEM=1\n")
+            if "kpp" in opts.components:
+                f.write("export WRF_KPP=1\n")
+            cmd = 'echo -e "%d\\n1" | ./configure' % opt
+            if opts.components:
+                cmd += " " + " ".join(opts.components)
+            f.write(cmd + f"\n./compile {opts.executable}\n")
+
+        elif which == "WPS":
+            f.write(f"export WRF_DIR={generic.process_path(opts.wrfdir)}\n")
+            f.write('echo -e "%d" | ./configure --build-grib2-libs\n' % opt)
+            f.write("./compile\n")
+
+        else:
+            msg = f"Invalid value for which (f{which})"
+            raise ValueError(msg)
+
+    # Make the script executable and we are done
+    os.chmod(script, 0o744)
 
 
 def write_options(opts):
