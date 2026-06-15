@@ -189,6 +189,8 @@ variables=(
 )
 locations=(
     "NorthPole:0:90"
+    "Summit:-38.48:72.58"
+    "Pallas:24.12:67.97"
 )
 ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
@@ -200,8 +202,8 @@ ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
 # using a larger window
 variables=(
     "CLDFRA:9"
-    "cloud_liquid_water_path:9"
-    "cloud_ice_water_path:9"
+    "QCLOUD:9"
+    "QICE:9"
     "fraction_activated_aerosol:9"
 )
 locations=(
@@ -236,3 +238,9 @@ ${cmd_python} "${dir_infra}/testing/plot-surface-maps.py" \
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --metrics=$(IFS=, ; echo "${metrics[*]}") \
               --output="${dir_work}/surface-maps.pdf"
+
+# Whisker plots of these variables
+${cmd_python} "${dir_infra}/testing/plot-whiskers-of-2D-values.py" \
+              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
+              --variables=$(IFS=, ; echo "${variables[*]}") \
+              --output="${dir_work}/whiskers-plots.pdf"
