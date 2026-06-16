@@ -4,6 +4,7 @@
 
 """Plot vertical profiles at specific locations for WRF run(s)."""
 
+import os
 import argparse
 from itertools import product
 from collections import namedtuple
@@ -62,41 +63,6 @@ def parse_variable(variable):
     return Variable(name, window)
 
 
-def new_page():
-    """Create a new A4 page in current document.
-
-    Returns
-    -------
-    matplotlib.Figure
-        Handle to the figure object that represents the new page.
-
-    """
-    cm2in = 0.393701
-    return plt.figure(figsize=(21 * cm2in, 29.7 * cm2in))
-
-
-def add_title_page(pdf, runs):
-    """Add title page to current document.
-
-    Parameters
-    ----------
-    pdf: handle to PDF backend.
-        The handle to the PDF backend.
-    runs: [dict]
-        The information about the runs.
-
-    """
-    ax = new_page().add_axes([0, 0, 1, 1])
-    ax.text(0.5, 0.8, "Vertical profiles", ha="center", va="center")
-    y = 0.6
-    for i, run in enumerate(runs):
-        ax.text(0.1, y, f"Run {i + 1}: {run['ds'].encoding['source']}")
-        y -= 0.1
-    plt.axis("off")
-    pdf.savefig()
-    plt.close()
-
-
 # Command-line arguments
 
 parser = argparse.ArgumentParser(
@@ -141,9 +107,14 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
-    "--output",
-    help="Path to output file. It must have the .pdf extension.",
-    default="vertical-profiles.pdf",
+    "--output-dir",
+    help="Path to output directory.",
+    default=os.getcwd(),
+)
+parser.add_argument(
+    "--license",
+    help="License to use for the content created by this script.",
+    default="CC-BY-SA-4.0",
 )
 args = parser.parse_args()
 
@@ -155,9 +126,6 @@ if args.start is not None:
     args.start = datetime.datetime.strptime(args.start, "%Y-%m-%d")
 if args.end is not None:
     args.end = datetime.datetime.strptime(args.end, "%Y-%m-%d")
-if not args.output.endswith(".pdf"):
-    msg = "Parameter --output must have the .pdf extension."
-    raise ValueError(msg)
 
 # Hard-coded graphical parameters
 
@@ -182,8 +150,13 @@ dont_drop_these_variables = (
     "PB",
     "PH",
     "PHB",
-    "QCLOUD",
     "QVAPOR",
+    "QCLOUD",
+    "QRAIN",
+    "QICE",
+    "QSNOW",
+    "QGRAUP",
+    "QHAIL"
     "RAINC",
     "RAINNC",
     "T",
@@ -233,16 +206,23 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
 
     runs.append(run)
 
-# Create the PDF with the plots
+# Create the output markdown file and the plots
 
-with PdfPages(args.output) as pdf:
-    add_title_page(pdf, runs)
+basename = os.path.basename(__file__)[:-3]
+
+if not os.path.isdir(args.output_dir):
+    os.mkdir(args.output_dir)
+
+with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
+
+    f.write(f"License: {args.license}\n.")
+    f.write(f"\n# Vertical profiles\n")
 
     for variable, location in product(variables, locations):
         print(f"Plotting {variable.name} at {location.name}...")
 
         lon, lat = location.lon, location.lat
-        fig = new_page()
+        fig = plt.figure()
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.6])
 
         for i_run, run in enumerate(runs):
@@ -269,21 +249,24 @@ with PdfPages(args.output) as pdf:
                 label=f"Run {i_run + 1}",
             )
 
-            # Format the plot
-            ax.set_ylim(y.min(), y.max())
-            ax.legend()
-            ax.set_xlabel(f"{variable.name} ({ds.units_mpl(variable.name)})")
-            ax.set_ylabel(f"{array_y.name} ({ds.units_mpl(variable_z_axis)})")
-            lon_formatted = f"{abs(lon)}{'E' if lon > 0 else 'W'}"
-            lat_formatted = f"{abs(lat)}{'N' if lat > 0 else 'S'}"
-            loclonlat = f"{location.name} ({lon_formatted}, {lat_formatted})"
-            ax.set_title(
-                f"Vertical profile of {variable.name} at {loclonlat}"
-                f"\n(window = {variable.window})"
-            )
+        # Format the plot
+        ax.set_ylim(y.min(), y.max())
+        ax.legend()
+        ax.set_xlabel(f"{variable.name} ({ds.units_mpl(variable.name)})")
+        ax.set_ylabel(f"{array_y.name} ({ds.units_mpl(variable_z_axis)})")
+        lon_formatted = f"{abs(lon)}{'E' if lon > 0 else 'W'}"
+        lat_formatted = f"{abs(lat)}{'N' if lat > 0 else 'S'}"
+        loclonlat = f"{location.name} ({lon_formatted}, {lat_formatted})"
+        ax.set_title(
+            f"Vertical profile of {variable.name} at {loclonlat}"
+            f"\n(window = {variable.window})"
+        )
 
         # Finalize the page
-        pdf.savefig()
+        loclonlat = f"{location.name}_{lon_formatted}_{lat_formatted}"
+        varwindow = f"{variable.name}_{variable.window}"
+        filename = f"{basename}_{varwindow}_{loclonlat}.png"
+        plt.savefig(os.path.join(args.output_dir, filename), dpi=300)
         plt.close()
 
 # Close connections to wrfout files
