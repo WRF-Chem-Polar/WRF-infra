@@ -101,6 +101,7 @@ used_in_derived_vars=(
     "PH"
     "PHB"
     "QCLOUD"
+    "QICE"
     "QVAPOR"
     "RAINC"
     "RAINNC"
