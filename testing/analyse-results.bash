@@ -22,7 +22,7 @@ docstring=$(cat <<'EOF'
 This script runs our default analysis on one or more WRF-Chem simulations.
 
 This script is intended to be used on the directory produced by the
-script plot-vertical-profiles.py.
+script test-case-multi-wrf.py.
 
 Options:
 
@@ -35,6 +35,12 @@ Options:
 
      - outputs_1/wrf.blablabla
      - outputs_2/wrf.blablabla
+
+--output-dir (default=current directory)
+    The directory where the results of the analysis will be stored.
+
+--license (default=CC-BY-SA-4.0)
+    The license of the outputs produced by this script.
 
 EOF
 )
@@ -53,6 +59,8 @@ function log {
 #------------------------#
 
 dir_work="$(pwd)"
+dir_output="$(pwd)"
+license="CC-BY-SA-4.0"
 for ((i = 1; i <= $#; i++)); do
     arg="${!i}"
     if [[ "${arg}" == "--help" ]]; then
@@ -61,6 +69,12 @@ for ((i = 1; i <= $#; i++)); do
     elif [[ "${arg}" == "--work-dir" && $i < $# ]]; then
         i=$((i+1))
         dir_work="${!i}"
+    elif [[ "${arg}" == "--output-dir" && $i < $# ]]; then
+        i=$((i+1))
+        dir_output="${!i}"
+    elif [[ "${arg}" == "--license" && $i < $# ]]; then
+        i=$((i+1))
+        license="${!i}"
     else
         log "error: could not parse command-line arguments."
         exit 1
@@ -135,6 +149,7 @@ for dir_outputs in ${dirs_outputs[*]}; do
 done
 
 # For each of these directories, concatenate the wrfout files
+commits=()
 wrfout_files=()
 for ((i = 0; i <= imax; i++)); do
 
@@ -142,24 +157,52 @@ for ((i = 0; i <= imax; i++)); do
     [[ ! " ${dirs_outputs[@]} " =~ " ${dir_outputs} " ]] && continue
     log "processing directory ${dir_outputs}"
 
+    # Get the commit hash of the corresponding WRF installation
+    commits+=($(git --no-pager -C "${dir_work}/WRF_${i}" \
+                    log -n 1 --no-decorate --pretty=oneline | cut -d" " -f1))
+
     # Find the name of the directory that contains the wrfout files
     cd "${dir_outputs}"
     dir_wrf=$(find . -maxdepth 1 -regex "^./${re_dir_wrfout}\$")
     if [[ -z "${dir_wrf}" || $(echo "${dir_wrf}" | grep -c "") != 1 ]]; then
-        log "error: could not find wrf output directory in ${dir_outputs}."
+        log "error: could not find WRF output directory in ${dir_outputs}."
         exit 1
     fi
 
     # Concatenate wrfout files into a single file
     cd "${dir_wrf}"
-    ncrcat -O \
-           -v "${keep_variables}" \
-           wrfout_d01_????-??-??_??\:??\:?? \
-           wrfout_d01.nc
+    # ncrcat -O \
+    #        -v "${keep_variables}" \
+    #        wrfout_d01_????-??-??_??\:??\:?? \
+    #        wrfout_d01.nc
 
     wrfout_files+=("$(pwd)/wrfout_d01.nc")
     cd "${dir_work}"
 
+done
+
+#---------------------------------#
+# Prepare the main README.md file #
+#---------------------------------#
+
+mkdir -p "${dir_output}"
+
+file_readme="${dir_output}/README.md"
+if [[ -f "${file_readme}" ]]; then
+    log "error: ${file_readme} already exists."
+    exit 1
+fi
+
+function to_readme {
+    # Add text to README.md file, with a newline at the end.
+    echo -e "${@%$'\n'}" >> "${file_readme}"
+}
+
+to_readme "License: ${license}."
+to_readme "\n# Results of the WRF-infra multi-version testing suite"
+to_readme "\nCommits tested:"
+for commit in "${commits[@]}"; do
+    to_readme " #. ${commit}"
 done
 
 #--------------------------#
