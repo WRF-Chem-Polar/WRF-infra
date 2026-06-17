@@ -114,7 +114,7 @@ if not os.path.isdir(args.output_dir):
 
 with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
     f.write(f"License: {args.license}.\n")
-    f.write("\n# Vertical profiles\n")
+    f.write("\n# Boxes and whiskers\n")
 
     for variable in variables:
         print(f"Plotting whiskers for {variable}...")
