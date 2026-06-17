@@ -191,8 +191,9 @@ for i, wrf_commit in enumerate(wrf_commits, start=1):
 # Launch the job that analyzes the results of all the simulations
 dir_job = os.path.join(generic.path_of_repo(), "testing")
 jobscript = os.path.join(dir_job, "analyse-results.bash")
+dir_output = os.path.join(args.work_dir, "plots")
 dependencies = ",".join(f"afterok:{job_id}" for job_id in job_ids.values())
-cmd_run = ["sbatch", "-d", dependencies, jobscript]
+cmd_run = ["sbatch", "-d", dependencies, jobscript, "--output-dir", dir_output]
 last_job = "Analyze results"
 job_ids[last_job] = get_job_id(generic.run_stdout(cmd_run, cwd=dir_work))
 
