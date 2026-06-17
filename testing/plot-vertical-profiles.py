@@ -156,7 +156,7 @@ dont_drop_these_variables = (
     "QICE",
     "QSNOW",
     "QGRAUP",
-    "QHAIL"
+    "QHAIL",
     "RAINC",
     "RAINNC",
     "T",
@@ -214,7 +214,6 @@ if not os.path.isdir(args.output_dir):
     os.mkdir(args.output_dir)
 
 with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
-
     f.write(f"License: {args.license}\n.")
     f.write(f"\n# Vertical profiles\n")
 
