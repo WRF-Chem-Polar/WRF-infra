@@ -4,52 +4,12 @@
 
 """Make whisker plots of surface or single-level variables from WRF run(s)."""
 
+import os
 import argparse
 import datetime
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
 import wrfpp
-
-
-# Functions
-
-
-def new_page():
-    """Create a new A4 page in current document.
-
-    Returns
-    -------
-    matplotlib.Figure
-        Handle to the figure object that represents the new page.
-
-    """
-    cm2in = 0.393701
-    return plt.figure(figsize=(21 * cm2in, 29.7 * cm2in))
-
-
-def add_title_page(pdf, runs):
-    """Add title page to current document.
-
-    Parameters
-    ----------
-    pdf: handle to PDF backend.
-        The handle to the PDF backend.
-    runs: [dict]
-        The information about the runs.
-
-    """
-    ax = new_page().add_axes([0, 0, 1, 1])
-    title = "Distributions of surface-level or single-level variables"
-    ax.text(0.5, 0.8, title, ha="center", va="center")
-    y = 0.6
-    for i, run in enumerate(runs):
-        ax.text(0.1, y, f"Run {i + 1}: {run['ds'].encoding['source']}")
-        y -= 0.1
-    plt.axis("off")
-    pdf.savefig()
-    plt.close()
-
 
 # Command-line arguments
 
@@ -87,12 +47,16 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
-    "--output",
-    help="Path to output file. It must have the .pdf extension.",
-    default="whiskers-plots-of-2D-values.pdf",
+    "--output-dir",
+    help="Path to output directory.",
+    default=os.getcwd(),
+)
+parser.add_argument(
+    "--license",
+    help="License to use for the content created by this script.",
+    default="CC-BY-SA-4.0",
 )
 args = parser.parse_args()
-
 
 # Pre-process command-line arguments and run quality controls
 
@@ -101,10 +65,6 @@ if args.start is not None:
     args.start = datetime.datetime.strptime(args.start, "%Y-%m-%d")
 if args.end is not None:
     args.end = datetime.datetime.strptime(args.end, "%Y-%m-%d")
-if not args.output.endswith(".pdf"):
-    msg = "Parameter --output must have the .pdf extension."
-    raise ValueError(msg)
-
 
 # Open and prepare datasets
 
@@ -143,10 +103,18 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
 
     runs.append(run)
 
-# Create the PDF with the plots
+# Create the output markdown file and the plots
 
-with PdfPages(args.output) as pdf:
-    add_title_page(pdf, runs)
+basename = os.path.basename(__file__)[:-3]
+if basename.startswith("plot-") and len(basename) > 5:
+    basename = basename[5:]
+
+if not os.path.isdir(args.output_dir):
+    os.mkdir(args.output_dir)
+
+with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
+    f.write(f"License: {args.license}.\n")
+    f.write("\n# Vertical profiles\n")
 
     for variable in variables:
         print(f"Plotting whiskers for {variable}...")
@@ -166,17 +134,23 @@ with PdfPages(args.output) as pdf:
             tick_labels.append(f"Run {i_run + 1}")
 
         # Plot the data
-        fig = new_page()
+        fig = plt.figure()
         ax = fig.add_axes([0.2, 0.2, 0.7, 0.6])
         plt.boxplot(data, tick_labels=tick_labels)
 
         # Format the plot
+
+        # Finalize and save the plot
         units = ds.units_mpl(variable)
         ax.set_title(f"Surface values of {variable} ({units})")
-
-        # Finalize the page
-        pdf.savefig()
+        filename = f"{basename}_{variable}.png"
+        plt.savefig(os.path.join(args.output_dir, filename), dpi=300)
         plt.close()
+
+        # Add the plot to the markdown file
+        f.write(f"\n## {variable}\n")
+        alt_text = f"Box-and-whiskers plot of surface values of {variable}"
+        f.write(f"\n![{alt_text}](./{filename})\n")
 
 # Close connections to wrfout files
 
