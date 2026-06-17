@@ -112,6 +112,13 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
 
     runs.append(run)
 
+# Make sure that all datasets use the same cartographic projection
+
+for run in runs[1:]:
+    if run["ds"].crs_cartopy != runs[0]["ds"].crs_cartopy:
+        msg = "Datasets use different cartographic projections."
+        raise ValueError(msg)
+
 # Create the output markdown file and the plots
 
 basename = os.path.basename(__file__)[:-3]
@@ -146,7 +153,6 @@ with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
         vmin = np.amin(minvals)
         vmax = np.amax(maxvals)
 
-        # Here we assume that all files use the same projection
         fig, axes = plt.subplots(
             ncols=len(runs), subplot_kw={"projection": ds.crs}
         )
