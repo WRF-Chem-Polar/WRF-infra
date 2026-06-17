@@ -171,10 +171,10 @@ for ((i = 0; i <= imax; i++)); do
 
     # Concatenate wrfout files into a single file
     cd "${dir_wrf}"
-    # ncrcat -O \
-    #        -v "${keep_variables}" \
-    #        wrfout_d01_????-??-??_??\:??\:?? \
-    #        wrfout_d01.nc
+    ncrcat -O \
+           -v "${keep_variables}" \
+           wrfout_d01_????-??-??_??\:??\:?? \
+           wrfout_d01.nc
 
     wrfout_files+=("$(pwd)/wrfout_d01.nc")
     cd "${dir_work}"
@@ -200,10 +200,11 @@ function to_readme {
 
 to_readme "License: ${license}."
 to_readme "\n# Results of the WRF-infra multi-version testing suite"
-to_readme "\nCommits tested:"
+to_readme "\nCommits tested:\n"
 for commit in "${commits[@]}"; do
     to_readme " #. ${commit}"
 done
+to_readme "\nPlots:\n"
 
 #--------------------------#
 # Run the plotting scripts #
@@ -229,11 +230,14 @@ variables=(
 locations=(
     "NorthPole:0:90"
 )
+dir_plots="vertical-profiles_non-cloud"
 ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --locations=$(IFS=, ; echo "${locations[*]}") \
-              --output="${dir_work}/vertical-profiles_non-clouds.pdf"
+              --output-dir="${dir_output}/${dir_plots}"
+to_readme " - Vertical profiles"
+to_readme "   * [Non-cloud variables](./${dir_plots}/vertical-profiles.md)"
 
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
@@ -245,11 +249,13 @@ locations=(
     "OpenOcean:-29:55"
     "Siberia:108:60"
 )
+dir_plots="vertical-profiles_cloud"
 ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --locations=$(IFS=, ; echo "${locations[*]}") \
-              --output="${dir_work}/vertical-profiles_clouds.pdf"
+              --output-dir="${dir_output}/${dir_plots}"
+to_readme "   * [Cloud variables](./${dir_plots}/vertical-profiles.md)"
 
 # Plot surface maps
 variables=(
@@ -261,8 +267,10 @@ metrics=(
     "min"
     "max"
 )
+dir_plots="surface-maps"
 ${cmd_python} "${dir_infra}/testing/plot-surface-maps.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --metrics=$(IFS=, ; echo "${metrics[*]}") \
-              --output="${dir_work}/surface-maps.pdf"
+              --output-dir="${dir_output}/${dir_plots}"
+to_readme " - [Surface maps](./${dir_plots}/surface-maps.md)"
