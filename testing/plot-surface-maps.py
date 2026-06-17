@@ -74,9 +74,6 @@ if args.start is not None:
 if args.end is not None:
     args.end = datetime.datetime.strptime(args.end, "%Y-%m-%d")
 metrics = [metric.strip() for metric in args.metrics.split(",")]
-if not args.output.endswith(".pdf"):
-    msg = "Parameter --output must have the .pdf extension."
-    raise ValueError(msg)
 
 # Hard-coded graphical parameters
 
@@ -191,9 +188,8 @@ with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
             ax.set_title(f"Run {i_run + 1}")
             axes.append(ax)
 
-        title = f"{metric} of {variable}"
-        title[0] = title[0].upper()
-        plt.title()
+        title = f"{metric[0].upper()}{metric[1:]} of {variable}"
+        plt.title(title)
         plt.colorbar(
             plot,
             ax=axes,
