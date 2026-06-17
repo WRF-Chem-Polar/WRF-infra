@@ -10,7 +10,6 @@ from itertools import product
 from collections import namedtuple
 import datetime
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
 import wrfpp
 
@@ -209,13 +208,15 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
 # Create the output markdown file and the plots
 
 basename = os.path.basename(__file__)[:-3]
+if basename.startswith("plot-") and len(basename) > 5:
+    basename = basename[5:]
 
 if not os.path.isdir(args.output_dir):
     os.mkdir(args.output_dir)
 
 with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
-    f.write(f"License: {args.license}\n.")
-    f.write(f"\n# Vertical profiles\n")
+    f.write(f"License: {args.license}.\n")
+    f.write("\n# Vertical profiles\n")
 
     for variable, location in product(variables, locations):
         print(f"Plotting {variable.name} at {location.name}...")
@@ -261,12 +262,17 @@ with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
             f"\n(window = {variable.window})"
         )
 
-        # Finalize the page
+        # Finalize and save the plot
         loclonlat = f"{location.name}_{lon_formatted}_{lat_formatted}"
         varwindow = f"{variable.name}_{variable.window}"
         filename = f"{basename}_{varwindow}_{loclonlat}.png"
         plt.savefig(os.path.join(args.output_dir, filename), dpi=300)
         plt.close()
+
+        # Add the plot to the markdown file
+        f.write(f"\n## {variable.name} at {location.name}\n")
+        alt_text = f"Vertical profile of {variable.name} at {location.name}"
+        f.write(f"\n![{alt_text}](./{filename})\n")
 
 # Close connections to wrfout files
 
