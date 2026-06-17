@@ -201,8 +201,10 @@ function to_readme {
 to_readme "License: ${license}."
 to_readme "\n# Results of the WRF-infra multi-version testing suite"
 to_readme "\nCommits tested:\n"
+i=0
 for commit in "${commits[@]}"; do
-    to_readme " #. ${commit}"
+    i=$((i+1))
+    to_readme " ${i}. ${commit}"
 done
 to_readme "\nPlots:\n"
 

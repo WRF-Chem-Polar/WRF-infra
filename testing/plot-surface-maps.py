@@ -75,13 +75,6 @@ if args.end is not None:
     args.end = datetime.datetime.strptime(args.end, "%Y-%m-%d")
 metrics = [metric.strip() for metric in args.metrics.split(",")]
 
-# Hard-coded graphical parameters
-
-fig_width = 0.7
-fig_height = 0.6
-fig_left = 0.15
-fig_bottom = 0.2
-
 # Open and prepare datasets
 
 runs = []
@@ -153,9 +146,10 @@ with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
         vmin = np.amin(minvals)
         vmax = np.amax(maxvals)
 
-        fig = plt.figure(figsize=(fig_width, fig_height))
-        ax_width = fig_width / len(runs)
-        axes = []
+        # Here we assume that all files use the same projection
+        fig, axes = plt.subplots(
+            ncols=len(runs), subplot_kw={"projection": ds.crs}
+        )
         for i_run, run in enumerate(runs):
             print(f"    Processing run {i_run + 1}...")
 
@@ -170,13 +164,8 @@ with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
             lon, lat = ds.lonlat_var(variable)
 
             # Prepare axes and plot
-            left = fig_left + ax_width * i_run
-            ax = fig.add_axes(
-                [left, fig_bottom, 0.95 * ax_width, fig_height],
-                projection=ds.crs,
-            )
-            ax.coastlines()
-            plot = ax.pcolormesh(
+            axes[i_run].coastlines()
+            plot = axes[i_run].pcolormesh(
                 lon,
                 lat,
                 data,
@@ -185,11 +174,10 @@ with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
                 vmax=vmax,
                 rasterized=True,
             )
-            ax.set_title(f"Run {i_run + 1}")
-            axes.append(ax)
+            axes[i_run].set_title(f"Run {i_run + 1}")
 
         title = f"{metric[0].upper()}{metric[1:]} of {variable}"
-        plt.title(title)
+        plt.suptitle(title)
         plt.colorbar(
             plot,
             ax=axes,
