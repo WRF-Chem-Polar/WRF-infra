@@ -1099,7 +1099,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         bin_bounds = np.append(lower_bin_bounds, highest_bound)
 
         # Express cutoff in m with same type as fortran bins
-        cutoff_m = np.float32(cutoff * 10**-6)
+        cutoff_m = np.float32(cutoff * 1e-6)
 
         # Position cutoff within bins
         cutoff_bin_index = np.searchsorted(bin_bounds, cutoff_m)
