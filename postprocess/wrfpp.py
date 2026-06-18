@@ -944,10 +944,10 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             # Constants that depend on whether we are looking at number conc.
             if spc == "num":
                 units = "/kg-dryair"
-                desc = f"Aerosol number concentration"
+                desc = "Aerosol number concentration"
             else:
                 units = "ug/kg-dryair"
-                desc = f"Aerosol mass concentration"
+                desc = "Aerosol mass concentration"
 
             # Quality checks on variables in the file
             for var_name in matches_a + matches_cw:
