@@ -1193,10 +1193,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         return ds_pmXX
 
-    def total_aer_pmXX(
-        self,
-        cutoff: float,
-    ):
+    def total_aer_pmXX(self, cutoff):
         """Extract the PMXX cutoff for the total aerosol number concentration.
 
         Parameters
