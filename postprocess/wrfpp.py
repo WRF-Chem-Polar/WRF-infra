@@ -1089,7 +1089,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         # Initialise
         wrf = self._dataset.wrf
         ds_binned = wrf.convert_set_of_aer_variables_to_binned_dataset(
-            species=species, total=total
+            species, total=total
         )
 
         # Extract bins characteristics
