@@ -2239,16 +2239,9 @@ class WRFAerBinsCharacteristics(DerivedVariable):
         dlower = np.zeros(shape=nbins, dtype=np.float32)
         dcenter = np.zeros(shape=nbins, dtype=np.float32)
         dhigher = np.zeros(shape=nbins, dtype=np.float32)
-        # Set first lower diameter and last upper diameter
-        dlower[0] = dlower_1
-        dhigher[-1] = dhigher_n
-        # Compute bin edges
-        for n in range(1, nbins):
-            dlower[n] = dlower[0] * np.exp(n * log_step)
-            dhigher[n - 1] = dlower[n]
-        # Compute bin centers
-        for n in range(nbins):
-            dcenter[n] = np.sqrt(dlower[n] * dhigher[n])
+        dlower = dlower_1 * np.exp(np.arange(nbins) * log_step)
+        dhigher = np.concatenate([dlower[1:], [dhigher_n]])
+        dcenter = np.sqrt(dlower * dhigher)
 
         # Define the characteristics' array
         bins_charac = np.array(
