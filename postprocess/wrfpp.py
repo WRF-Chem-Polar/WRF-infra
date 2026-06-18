@@ -2235,10 +2235,7 @@ class WRFAerBinsCharacteristics(DerivedVariable):
         # Calculate logarithmic spacing factor
         log_step = np.log(dhigher_n / dlower_1) / nbins
 
-        # Initialize arrays
-        dlower = np.zeros(shape=nbins, dtype=np.float32)
-        dcenter = np.zeros(shape=nbins, dtype=np.float32)
-        dhigher = np.zeros(shape=nbins, dtype=np.float32)
+        # Compute bin edges and centers
         dlower = dlower_1 * np.exp(np.arange(nbins) * log_step)
         dhigher = np.concatenate([dlower[1:], [dhigher_n]])
         dcenter = np.sqrt(dlower * dhigher)
