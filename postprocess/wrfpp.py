@@ -632,6 +632,22 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 raise ValueError(msg)
         return lon[0, :, :], lat[0, :, :]
 
+    # Aerosols
+
+    @property
+    def aer_nbins(self):
+        """The number of aerosol size bins."""
+        # We use the number concentration of non-activated aerosol to determine
+        # the number of bins
+        pattern = re.compile("num_cw[0-9]+")
+        matches = [v for v in self._dataset.variables if pattern.fullmatch(v)]
+        nbins = len(matches)
+        bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
+        if sorted(matches) != [f"num_cw{b}" for b in bins_str]:
+            msg = "Could not determine the number of bins."
+            raise ValueError(msg)
+        return nbins
+
     # Interpolation
 
     def _delaunay_xy(self, var):
@@ -920,7 +936,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         """
         out = xr.Dataset()
-        nbins = self.aer_nbins.values
+        nbins = self.aer_nbins
         bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
 
         for spc in species:
@@ -1387,11 +1403,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
     def fraction_activated_aerosol(self):
         """The DerivedVariable object to calculate the fraction of activated aerosol."""
         return WRFFractionActivatedAerosol(self._dataset)
-
-    @property
-    def aer_nbins(self):
-        """The DerivedVariable object to return the number of aerosols' size bins."""
-        return WRFAerNbins(self._dataset)
 
     @property
     def aer_bins_charac(self):
@@ -2067,71 +2078,6 @@ class WRFFractionActivatedAerosol(DerivedVariable):
         )
 
 
-class WRFAerNbins(DerivedVariable):
-    """The DerivedVariable object to return the aerosols' size bins."""
-
-    def __getitem__(self, *args):
-        """Return the number of bins for aerosols' size distributions, if any.
-
-        Parameters
-        ----------
-        *args: slice
-            Slice of interest in the WRF output.
-
-        Return
-        ------
-        xarray.DataArray
-            The number of bins for aerosols' size distributions (dimensionless).
-
-        """
-        ds = self._dataset
-
-        # We use the total number concentration of non-activated aerosol to see if it is a binned aer output
-        pattern = re.compile("num_cw[0-9]+")
-        matching_variables_names = [
-            var_name
-            for var_name in ds.variables
-            if pattern.fullmatch(var_name)
-        ]
-
-        # Check if any num_cwXX found
-        if matching_variables_names:
-            size_bins = [
-                var_name.split("_cw")[1]
-                for var_name in matching_variables_names
-            ]
-
-            # MOSAIC 4 BINS
-            if size_bins == ["01", "02", "03", "04"]:
-                nbins = 4
-                return xr.DataArray(
-                    nbins,
-                    name="Number of bins for aerosols",
-                    attrs=dict(
-                        long_name="Number of bins for aerosols' size distributions",
-                        units=None,
-                    ),
-                )
-            # MOSAIC 8 BINS
-            if size_bins == ["01", "02", "03", "04", "05", "06", "07", "08"]:
-                nbins = 8
-                return xr.DataArray(
-                    nbins.__getitem__(*args),
-                    name="Number of bins for aerosols",
-                    attrs=dict(
-                        long_name="Number of bins for aerosols' size distributions",
-                        units=None,
-                    ),
-                )
-
-        # Raise not binned aer output error
-        else:
-            msg = (
-                "num_cwXX variable not found : presuming not binned aer output"
-            )
-            raise KeyError(msg)
-
-
 class WRFAerBinsCharacteristics(DerivedVariable):
     """The DerivedVariable object to return the bins' characteristics for the size distributions of aerosols."""
 
@@ -2157,7 +2103,7 @@ class WRFAerBinsCharacteristics(DerivedVariable):
         # Last bin upper diameter in meters (10 µm)
         dhigher_n = 10.0e-6
         # Get number of bins for given output
-        nbins = wrf.aer_nbins.__getitem__(*args).values
+        nbins = wrf.aer_nbins
         # Calculate logarithmic spacing factor
         log_step = np.log(dhigher_n / dlower_1) / nbins
 
