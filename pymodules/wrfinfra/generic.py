@@ -49,7 +49,8 @@ def identify_host_platform():
         The identity of the host platform.
 
     """
-    known_plateforms = {
+    known_platforms = {
+        "dahu": "dahu",
         "jean-zay1": "jeanzay",
         "jean-zay2": "jeanzay",
         "jean-zay3": "jeanzay",
@@ -60,7 +61,7 @@ def identify_host_platform():
     }
     nodename = os.uname().nodename
     try:
-        platform = known_plateforms[nodename]
+        platform = known_platforms[nodename]
     except KeyError:
         msg = f"Unknown host platform: {nodename}."
         raise NotImplementedError(msg)
