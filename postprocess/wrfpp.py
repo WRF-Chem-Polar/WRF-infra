@@ -33,6 +33,12 @@ import xarray as xr
 
 _optional_imports = dict()
 try:
+    import pandas
+except ImportError:
+    _optional_imports["pandas"] = False
+else:
+    _optional_imports["pandas"] = True
+try:
     import pyproj
 except ImportError:
     _optional_imports["pyproj"] = False
@@ -632,22 +638,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 raise ValueError(msg)
         return lon[0, :, :], lat[0, :, :]
 
-    # Aerosols
-
-    @property
-    def aer_nbins(self):
-        """The number of aerosol size bins."""
-        # We use the number concentration of non-activated aerosol to determine
-        # the number of bins
-        pattern = re.compile("num_cw[0-9]+")
-        matches = [v for v in self._dataset.variables if pattern.fullmatch(v)]
-        nbins = len(matches)
-        bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
-        if sorted(matches) != [f"num_cw{b}" for b in bins_str]:
-            msg = "Could not determine the number of bins."
-            raise ValueError(msg)
-        return nbins
-
     # Interpolation
 
     def _delaunay_xy(self, var):
@@ -914,7 +904,52 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         j, i = np.unravel_index(np.argmin(dists), wrflons.shape)
         return i, j
 
-    # Aerosols methods
+    # Aerosols
+
+    @property
+    def aer_nbins(self):
+        """The number of aerosol size bins."""
+        # We use the number concentration of non-activated aerosol to determine
+        # the number of bins
+        pattern = re.compile("num_cw[0-9]+")
+        matches = [v for v in self._dataset.variables if pattern.fullmatch(v)]
+        nbins = len(matches)
+        bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
+        if sorted(matches) != [f"num_cw{b}" for b in bins_str]:
+            msg = "Could not determine the number of bins."
+            raise ValueError(msg)
+        return nbins
+
+    @property
+    @_chech_optional_imports("pandas")
+    def aer_bins_limits(self):
+        """The bounds of the aerosol bins.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The values of the lower bound, the upper bound, the center, and the
+            width of each aerosol bin, in meters.
+
+        """
+        # The calculation mimicks the one found in upstream WRF in
+        # chem/module_mosaic_driver.F. It is therefore only valid if the
+        # underlying WRF-Chem output file was generated using MOSAIC
+        # (cf. https://github.com/WRF-Chem-Polar/WRF-infra/issues/232)
+        nbins = self.aer_nbins
+        lower_bound = 0.0390625e-6
+        upper_bound = 10.0e-6
+        log_step = np.log(upper_bound / lower_bound) / nbins
+        lower = lower_bound * np.exp(np.arange(nbins) * log_step)
+        upper = np.concatenate([lower[1:], [upper_bound]])
+        return pandas.DataFrame(
+            {
+                "lower": lower,
+                "upper": upper,
+                "center": np.sqrt(lower * upper),
+                "width": upper - lower
+            }
+        )
 
     def binned_aer_dataset(self, species, total=True):
         """Return a dataset of aerosol concentrations with a 'bin' dimension.
@@ -990,13 +1025,13 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 out[spc_cw].attrs["desc"] = f"{desc} of activated {spc}"
 
         # Add metadata to dataset and return
-        bins_info = self.aer_bins_charac.values
+        bins_limits = self.aer_bins_limits
         out = out.assign_coords(
             {
-                "dlower": ("bin", bins_info[:, 0]),
-                "dcenter": ("bin", bins_info[:, 1]),
-                "dhigher": ("bin", bins_info[:, 2]),
-                "dlength": ("bin", bins_info[:, 2] - bins_info[:, 0]),
+                "dlower": ("bin", bins_limits.lower),
+                "dupper": ("bin", bins_limits.upper),
+                "dcenter": ("bin", bins_limits.center),
+                "dwidth": ("bin", bins_limits.width),
             }
         )
         out.attrs["name"] = "Aerosol concentrations by bins"
@@ -1403,11 +1438,6 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
     def fraction_activated_aerosol(self):
         """The DerivedVariable object to calculate the fraction of activated aerosol."""
         return WRFFractionActivatedAerosol(self._dataset)
-
-    @property
-    def aer_bins_charac(self):
-        """The DerivedVariable object to return the bins' characteristics for the size distributions of the number concentration of aerosols"""
-        return WRFAerBinsCharacteristics(self._dataset)
 
 
 class DerivedVariable(ABC):
@@ -2075,60 +2105,4 @@ class WRFFractionActivatedAerosol(DerivedVariable):
             / wrf.aer_number_conc_total.__getitem__(*args),
             name=name,
             attrs=dict(long_name=name, units=None),
-        )
-
-
-class WRFAerBinsCharacteristics(DerivedVariable):
-    """The DerivedVariable object to return the bins' characteristics for the size distributions of aerosols."""
-
-    def __getitem__(self, *args):
-        """Return the bins' characteristics for the size distributions of aerosols.
-
-        Parameters
-        ----------
-        *args: slice
-            Slice of interest in the WRF output.
-
-        Return
-        ------
-        xarray.DataArray
-            The characteristics [lower, center, higher] of each bin for the size distribution of aerosols.
-
-        """
-        wrf = self._dataset.wrf
-
-        # Constants (from WRF-Chem logic)
-        # First bin lower diameter in meters (0.0390625 nm)
-        dlower_1 = 3.90625e-8
-        # Last bin upper diameter in meters (10 µm)
-        dhigher_n = 10.0e-6
-        # Get number of bins for given output
-        nbins = wrf.aer_nbins
-        # Calculate logarithmic spacing factor
-        log_step = np.log(dhigher_n / dlower_1) / nbins
-
-        # Compute bin edges and centers
-        dlower = dlower_1 * np.exp(np.arange(nbins) * log_step)
-        dhigher = np.concatenate([dlower[1:], [dhigher_n]])
-        dcenter = np.sqrt(dlower * dhigher)
-
-        # Define the characteristics' array
-        bins_charac = np.array(
-            [
-                [dlower_ii, dcenter_ii, dhigher_ii]
-                for dlower_ii, dcenter_ii, dhigher_ii in zip(
-                    dlower, dcenter, dhigher
-                )
-            ]
-        )
-
-        return xr.DataArray(
-            bins_charac.__getitem__(*args),
-            name="Aerosols' bins characteristics",
-            dims=["bin_index", "edge_index"],
-            attrs=dict(
-                long_name="Characteristics of each bin for the size distribution of aerosols",
-                units="m",
-                description="[lower, center, higher]",
-            ),
         )
