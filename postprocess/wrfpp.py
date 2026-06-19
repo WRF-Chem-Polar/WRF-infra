@@ -947,7 +947,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 "lower": lower,
                 "upper": upper,
                 "center": np.sqrt(lower * upper),
-                "width": upper - lower
+                "width": upper - lower,
             }
         )
 
