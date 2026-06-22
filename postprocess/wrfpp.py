@@ -941,7 +941,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         upper_bound = 10.0e-6
         log_step = np.log(upper_bound / lower_bound) / nbins
         lower = lower_bound * np.exp(np.arange(nbins) * log_step)
-        upper = np.concatenate([lower[1:], [upper_bound]])
+        upper = np.append(lower[1:], upper_bound)
         return pandas.DataFrame(
             {
                 "lower": lower,
