@@ -60,6 +60,11 @@ parser.add_argument(
     default=os.getcwd(),
 )
 parser.add_argument(
+    "--markdown-file",
+    help="Name of the markdown file.",
+    default="surface-maps.md",
+)
+parser.add_argument(
     "--license",
     help="License to use for the content created by this script.",
     default="CC-BY-SA-4.0",
@@ -128,7 +133,7 @@ if basename.startswith("plot-") and len(basename) > 5:
 if not os.path.isdir(args.output_dir):
     os.mkdir(args.output_dir)
 
-with open(os.path.join(args.output_dir, f"{basename}.md"), mode="x") as f:
+with open(os.path.join(args.output_dir, args.markdown_file), mode="x") as f:
     f.write(f"License: {args.license}.\n")
     f.write("\n# Surface maps\n")
 

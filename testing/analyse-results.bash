@@ -237,9 +237,10 @@ ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --locations=$(IFS=, ; echo "${locations[*]}") \
-              --output-dir="${dir_output}/${dir_plots}"
+              --output-dir="${dir_output}/${dir_plots}" \
+              --markdown-file="README.md"
 to_readme " - Vertical profiles"
-to_readme "   * [Non-cloud variables](./${dir_plots}/vertical-profiles.md)"
+to_readme "   * [Non-cloud variables](./${dir_plots}/README.md)"
 
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
@@ -256,8 +257,9 @@ ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --locations=$(IFS=, ; echo "${locations[*]}") \
-              --output-dir="${dir_output}/${dir_plots}"
-to_readme "   * [Cloud variables](./${dir_plots}/vertical-profiles.md)"
+              --output-dir="${dir_output}/${dir_plots}" \
+              --markdown-file="README.md"
+to_readme "   * [Cloud variables](./${dir_plots}/README.md)"
 
 # Plot surface maps
 variables=(
@@ -274,5 +276,6 @@ ${cmd_python} "${dir_infra}/testing/plot-surface-maps.py" \
               --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
               --variables=$(IFS=, ; echo "${variables[*]}") \
               --metrics=$(IFS=, ; echo "${metrics[*]}") \
-              --output-dir="${dir_output}/${dir_plots}"
-to_readme " - [Surface maps](./${dir_plots}/surface-maps.md)"
+              --output-dir="${dir_output}/${dir_plots}" \
+              --markdown-file="README.md"
+to_readme " - [Surface maps](./${dir_plots}/README.md)"
