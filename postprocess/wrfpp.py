@@ -1077,7 +1077,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         # Go over all bins and add relevant contributions
         for i in range(self.aer_nbins):
-            bin_low, bin_up = bins_limits[i:i + 2]
+            bin_low, bin_up = bins_limits[i : i + 2]
             lower_in = lower >= bin_low and lower < bin_up
             upper_in = upper > bin_low and upper <= bin_up
             delta_bin = np.log(bin_up) - np.log(bin_low)
@@ -1100,7 +1100,7 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             [coord for coord in out.coords if coord.startswith("bin")],
             drop=True,
         )
-        name_supplement = f" over range [{lower*1e6}, {upper*1e6}] um"
+        name_supplement = f" over range [{lower * 1e6}, {upper * 1e6}] um"
         out.attrs["name"] = aer_binned.attrs["name"] + name_supplement
         return out
 
