@@ -922,8 +922,8 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
     @property
     @_chech_optional_imports("pandas")
-    def aer_bins_limits(self):
-        """The bounds of the aerosol bins.
+    def aer_bins_info(self):
+        """Information about the aerosol bins.
 
         Returns
         -------
@@ -1025,13 +1025,13 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
                 out[spc_cw].attrs["desc"] = f"{desc} of activated {spc}"
 
         # Add metadata to dataset and return
-        bins_limits = self.aer_bins_limits
+        bins_info = self.aer_bins_info
         out = out.assign_coords(
             {
-                "bins_lower": ("bin", bins_limits.lower),
-                "bins_upper": ("bin", bins_limits.upper),
-                "bins_center": ("bin", bins_limits.center),
-                "bins_width": ("bin", bins_limits.width),
+                "bins_lower": ("bin", bins_info.lower),
+                "bins_upper": ("bin", bins_info.upper),
+                "bins_center": ("bin", bins_info.center),
+                "bins_width": ("bin", bins_info.width),
             }
         )
         out.attrs["name"] = "Aerosol concentrations by bins"
