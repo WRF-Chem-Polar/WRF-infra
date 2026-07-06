@@ -951,18 +951,18 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
             }
         )
 
-    def binned_aer_dataset(self, species, total=True):
+    def aer_binned(self, species, total=True):
         """Return a dataset of aerosol concentrations with a 'bin' dimension.
 
         Parameters
         ----------
         species: list[str]
             The list of species of interest as named in MOSAIC chemistry
-            WRF outputs. For example, use "na" for na_aXX and na_cwXX.
+            WRF outputs. For example, use "na" for na_a## and na_cw##.
 
         total: bool
-            Whether to sum non-activated and activate contributions or to keep
-            them as separate species.
+            Whether to sum non-activated and activated contributions or to
+            keep them as separate species.
 
         Returns
         -------
@@ -1006,10 +1006,10 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
             # Create arrays with a new "bin" dimension
             array_a = self[species_a].to_dataarray(dim="bin")
-            array_a["bin"] = np.arange(1, nbins + 1)
+            array_a["bin"] = np.arange(nbins)
 
             array_cw = self[species_cw].to_dataarray(dim="bin")
-            array_cw["bin"] = np.arange(1, nbins + 1)
+            array_cw["bin"] = np.arange(nbins)
 
             # Add data arrays to output dataset
             if total:
@@ -1028,314 +1028,81 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         bins_limits = self.aer_bins_limits
         out = out.assign_coords(
             {
-                "dlower": ("bin", bins_limits.lower),
-                "dupper": ("bin", bins_limits.upper),
-                "dcenter": ("bin", bins_limits.center),
-                "dwidth": ("bin", bins_limits.width),
+                "bins_lower": ("bin", bins_limits.lower),
+                "bins_upper": ("bin", bins_limits.upper),
+                "bins_center": ("bin", bins_limits.center),
+                "bins_width": ("bin", bins_limits.width),
             }
         )
         out.attrs["name"] = "Aerosol concentrations by bins"
         return out
 
-    def cutoff_wrf_aerosols_bins(
-        self,
-        cutoff: float,
-        species: list[str],
-        total: bool = True,
-    ):
-        """Extract the PMXX cutoff for a set of aerosols' concentration variables defined per size bins.
+    def aer_conc(self, species, lower=None, upper=None, total=True):
+        """Calculate aerosol concentration in given size range.
 
         Parameters
         ----------
-        cutoff : float
-            Define the cutoff (in um).
-
-        species : list[str]
-            The list of species of interest as called in MOSAIC chemistry outputs.
-            For example, for na_aXX and na_cwXX, the user should provide "na".
-
-        total : bool, optional
-            This option defines whether the total value (non-activated + activated) is given, by default True.
-            If set to false, the activated and non-activated aerosols are considered as independent species.
+        species: list[str]
+            The list of species of interest as named in MOSAIC chemistry
+            WRF outputs. For example, use "na" for na_a## and na_cw##.
+        lower: None | numeric
+            The lower limit of the size range (in um). If None, consider
+            particles down to the smallest.
+        upper: None | numeric
+            The upper limit of the size range (in um). If None, consider
+            particles up to the largest.
+        total: bool
+            Whether to sum non-activated and activated contributions or to
+            keep them as separate species.
 
         Returns
         -------
         xr.Dataset
-            The dataset holding the variables on which the cutoff was realised.
+            A new dataset with concentrations integrated over [lower, upper].
+
         """
-        # Initialise
-        wrf = self._dataset.wrf
-        ds_binned = wrf.convert_set_of_aer_variables_to_binned_dataset(
-            species, total=total
+        # Preliminary information
+        aer_binned = self.aer_binned(species, total=total)
+        bins_limits = np.append(
+            aer_binned.coords["bins_lower"].values,
+            aer_binned.coords["bins_upper"].values[-1],
         )
+        lower = bins_limits[0] if lower is None else lower * 1e-6
+        upper = bins_limits[-1] if upper is None else upper * 1e-6
 
-        # Extract bins characteristics
-        nbins = wrf.aer_nbins.values
-        lower_bin_bounds = ds_binned.dlower.values
-        highest_bound = ds_binned.dhigher.values[-1]
-        bin_bounds = np.append(lower_bin_bounds, highest_bound)
-
-        # Express cutoff in m with same type as fortran bins
-        cutoff_m = np.float32(cutoff * 1e-6)
-
-        # Position cutoff within bins
-        cutoff_bin_index = np.searchsorted(bin_bounds, cutoff_m)
-        # Cutoff smaller than lowest bound
-        if cutoff_bin_index < 1:
-            msg = "Cutoff too small for output bins."
-            raise ValueError(msg)
-        # Cutoff greater than highest bound
-        elif cutoff_bin_index > nbins:
-            # Sum all bins
-            ds_pmXX = ds_binned.sum(dim="bin")
-        # Cutoff within bins' range
-        else:
-            # Previous bins summed
-            ds_pmXX = ds_binned.sel(bin=slice(0, cutoff_bin_index - 1)).sum(
-                dim="bin"
-            )
-
-            # Add fraction of cutoff_bin containing
-            # [lower_bound_cutoff_bin, cutoff] in log scale
-            log_step = (np.log(bin_bounds[-1] / bin_bounds[0])) / nbins
-            log_dist_cutoff_lower_bound = np.log(
-                cutoff_m / bin_bounds[cutoff_bin_index - 1]
-            )
-            fraction = log_dist_cutoff_lower_bound / log_step
-
-            ds_pmXX = ds_pmXX + (
-                fraction * ds_binned.sel(bin=cutoff_bin_index, drop=True)
-            )
-
-        # Set DataArray attributes by looping over the species
-        for species_name in species:
-            # Add attributes according to total option
-            if total:
-                if species_name == "num":
-                    ds_pmXX[species_name].attrs["description"] = (
-                        "Total aerosols' number concentration for sizes smaller than "
-                        + str(cutoff)
-                        + " um"
-                    )
-
-                else:
-                    ds_pmXX[species_name].attrs["description"] = (
-                        "Total mass concentration of "
-                        + species_name
-                        + " for sizes smaller than "
-                        + str(cutoff)
-                        + " um"
-                    )
-
-            else:
-                if species_name == "num":
-                    ds_pmXX[species_name + "_a"].attrs["description"] = (
-                        "Non-activated aerosols' number concentration  for sizes smaller than "
-                        + str(cutoff)
-                        + " um"
-                    )
-
-                    ds_pmXX[species_name + "_cw"].attrs["description"] = (
-                        "Activated aerosols' number concentration for sizes smaller than "
-                        + str(cutoff)
-                        + " um"
-                    )
-                else:
-                    ds_pmXX[species_name + "_a"].attrs["description"] = (
-                        "Mass concentration of non-activated "
-                        + species_name
-                        + " for sizes smaller than "
-                        + str(cutoff)
-                        + " um"
-                    )
-
-                    ds_pmXX[species_name + "_cw"].attrs["description"] = (
-                        "Mass concentration of activated "
-                        + species_name
-                        + " for sizes smaller than "
-                        + str(cutoff)
-                        + " um"
-                    )
-
-        # Set Dataset attributes
-        ds_pmXX.attrs["name"] = (
-            "Subset of WRF aerosols' concentrations for sizes smaller than "
-            + str(cutoff)
-            + " um"
-        )
-
-        # Add cutoff as a variable
-        ds_pmXX["cutoff"] = cutoff
-        ds_pmXX["cutoff"].attrs["units"] = "um"
-
-        return ds_pmXX
-
-    def total_aer_pmXX(self, cutoff):
-        """Extract the PMXX cutoff for the total aerosol number concentration.
-
-        Parameters
-        ----------
-        cutoff : float
-            Define the cutoff (in um).
-
-        Returns
-        -------
-        xr.Dataset
-            The dataset holding the PMXX cutoff for the total aerosol number concentration as well as the cutoff value.
-        """
-        pmXX_total_aer = self.cutoff_wrf_aerosols_bins(
-            cutoff=cutoff, species=["num"], total=True
-        )
-
-        # Set Dataset attributes
-        pmXX_total_aer.attrs["name"] = (
-            "Total aerosol number concentration for sizes smaller than "
-            + str(cutoff)
-            + " um"
-        )
-
-        return pmXX_total_aer
-
-    def range_within_wrf_aerosols_bins(
-        self,
-        lower_bnd: float,
-        higher_bnd: float,
-        species: list[str],
-        total: bool = True,
-    ):
-        """Extract a given [lower_bnd, higher_bnd] interval for a set of aerosols' concentration variables defined per size bins.
-
-        Parameters
-        ----------
-        lower_bnd : float
-            Define the lower boundary (in um).
-
-        higher_bnd : float
-            Define the higher boundary (in um).
-
-        species : list[str]
-            The list of species of interest as called in MOSAIC chemistry outputs.
-            For example, for na_aXX and na_cwXX, the user should provide "na".
-
-        total : bool, optional
-            This option defines whether the total value (non-activated + activated) is given, by default True.
-            If set to false, the activated and non-activated aerosols are considered as independent species.
-
-        Returns
-        -------
-        xr.Dataset
-            The dataset holding the concentration variables values for the [lower_bnd, higher_bnd] interval.
-        """
-        # Check sanity of inputs
-        if lower_bnd >= higher_bnd:
-            msg = "The lower boundary needs to be smaller than the higher one"
+        # Quality controls
+        if lower >= upper or lower < bins_limits[0] or upper > bins_limits[-1]:
+            msg = "Bad value(s) for lower and/or upper bound(s)."
             raise ValueError(msg)
 
-        else:
-            ds_pmXX_lower_bnd = self.cutoff_wrf_aerosols_bins(
-                cutoff=lower_bnd, species=species, total=total
-            )
-            ds_pmXX_higher_bnd = self.cutoff_wrf_aerosols_bins(
-                cutoff=higher_bnd, species=species, total=total
-            )
-            ds_interval = ds_pmXX_higher_bnd - ds_pmXX_lower_bnd
+        # Go over all bins and add relevant contributions
+        for i in range(self.aer_nbins):
+            bin_low, bin_up = bins_limits[i:i + 2]
+            lower_in = lower >= bin_low and lower < bin_up
+            upper_in = upper > bin_low and upper <= bin_up
+            delta_bin = np.log(bin_up) - np.log(bin_low)
+            if lower_in and upper_in:
+                frac = (np.log(upper) - np.log(lower)) / delta_bin
+                out = frac * aer_binned.sel(bin=i)
+                break
+            elif lower_in:
+                frac = (np.log(bin_up) - np.log(lower)) / delta_bin
+                out = frac * aer_binned.sel(bin=i)
+            elif upper_in:
+                frac = (np.log(upper) - np.log(bin_low)) / delta_bin
+                out += frac * aer_binned.sel(bin=i)
+                break
+            elif lower < bin_low and upper > bin_up:
+                out += aer_binned.sel(bin=i)
 
-            # Set DataArray attributes by looping over the species
-            for species_name in species:
-                # Add attributes according to total option
-                if total:
-                    if species_name == "num":
-                        ds_interval[species_name].attrs["description"] = (
-                            "Total aerosols' number concentration for sizes smaller than "
-                            + str(higher_bnd)
-                            + " um"
-                            + " and higher than "
-                            + str(lower_bnd)
-                            + " um"
-                        )
-
-                    else:
-                        ds_interval[species_name].attrs["description"] = (
-                            "Total mass concentration of "
-                            + species_name
-                            + " for sizes smaller than "
-                            + str(higher_bnd)
-                            + " um"
-                            + " and higher than "
-                            + str(lower_bnd)
-                            + " um"
-                        )
-
-                else:
-                    if species_name == "num":
-                        ds_interval[species_name + "_a"].attrs[
-                            "description"
-                        ] = (
-                            "Non-activated aerosols' number concentration  for sizes smaller than "
-                            + str(higher_bnd)
-                            + " um"
-                            + " and higher than "
-                            + str(lower_bnd)
-                            + " um"
-                        )
-
-                        ds_interval[species_name + "_cw"].attrs[
-                            "description"
-                        ] = (
-                            "Activated aerosols' number concentration for sizes smaller than "
-                            + str(higher_bnd)
-                            + " um"
-                            + " and higher than "
-                            + str(lower_bnd)
-                            + " um"
-                        )
-                    else:
-                        ds_interval[species_name + "_a"].attrs[
-                            "description"
-                        ] = (
-                            "Mass concentration of non-activated "
-                            + species_name
-                            + " for sizes smaller than "
-                            + str(higher_bnd)
-                            + " um"
-                            + " and higher than "
-                            + str(lower_bnd)
-                            + " um"
-                        )
-
-                        ds_interval[species_name + "_cw"].attrs[
-                            "description"
-                        ] = (
-                            "Mass concentration of activated "
-                            + species_name
-                            + " for sizes smaller than "
-                            + str(higher_bnd)
-                            + " um"
-                            + " and higher than "
-                            + str(lower_bnd)
-                            + " um"
-                        )
-
-            # Rename the "cutoff" variable
-            ds_interval = ds_interval.rename_vars({"cutoff": "interval_range"})
-
-            # Add the interval characteristics
-            ds_interval["lower_bnd"] = lower_bnd
-            ds_interval["lower_bnd"].attrs["units"] = "um"
-            ds_interval["higher_bnd"] = higher_bnd
-            ds_interval["higher_bnd"].attrs["units"] = "um"
-
-            # Set Dataset attributes
-            ds_interval.attrs["name"] = (
-                "Subset of WRF aerosols' concentrations for sizes smaller than "
-                + str(higher_bnd)
-                + " um"
-                + " and higher than "
-                + str(lower_bnd)
-                + " um"
-            )
-
-        return ds_interval
+        # Fix metadata before returning
+        out.reset_coords(
+            [coord for coord in out.coords if coord.startswith("bin")],
+            drop=True,
+        )
+        name_supplement = f" over range [{lower*1e6}, {upper*1e6}] um"
+        out.attrs["name"] = aer_binned.attrs["name"] + name_supplement
+        return out
 
     # Derived variables
 
