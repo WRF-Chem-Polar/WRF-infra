@@ -911,11 +911,11 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
         """The number of aerosol size bins."""
         # We use the number concentration of non-activated aerosol to determine
         # the number of bins
-        pattern = re.compile("num_cw[0-9]+")
+        pattern = re.compile("num_a[0-9]+")
         matches = [v for v in self._dataset.variables if pattern.fullmatch(v)]
         nbins = len(matches)
         bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
-        if sorted(matches) != [f"num_cw{b}" for b in bins_str]:
+        if sorted(matches) != [f"num_a{b}" for b in bins_str]:
             msg = "Could not determine the number of bins."
             raise ValueError(msg)
         return nbins
