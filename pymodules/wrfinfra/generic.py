@@ -10,10 +10,12 @@ import argparse
 import subprocess
 
 URL_GITHUB = "https://github.com"
-URL_GROUP_WRF = "%s/wrf-model" % URL_GITHUB
-URL_WPS = "%s/WPS.git" % URL_GROUP_WRF
-URL_GROUP_POLAR = "%s/WRF-Chem-Polar" % URL_GITHUB
-URL_WRFCHEMPOLAR = "%s/WRF-Chem-Polar.git" % URL_GROUP_POLAR
+URL_GROUP_WRF = f"{URL_GITHUB}/wrf-model"
+URL_WPS = f"{URL_GROUP_WRF}/WPS.git"
+URL_GROUP_POLAR = f"{URL_GITHUB}/WRF-Chem-Polar"
+URL_WRFCHEMPOLAR = f"{URL_GROUP_POLAR}/WRF-Chem-Polar.git"
+URL_GROUP_NCAR = f"{URL_GITHUB}/NCAR"
+URL_WRFCHEMPREPROC = f"{URL_GROUP_NCAR}/WRF-Chem-Preprocessing-Tools.git"
 
 
 class ConvertToBoolean(argparse.Action):

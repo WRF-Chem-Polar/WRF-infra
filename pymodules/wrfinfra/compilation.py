@@ -15,8 +15,8 @@ def prepare_argparser(which):
 
     Parameters
     ----------
-    which: "WPS" | "WRF"
-        Which model are we trying to compile here?
+    which: "WPS" | "WRF" | "WRF-Chem-Preprocessing-Tools"
+        What are we trying to compile here?
 
     Returns
     -------
@@ -37,6 +37,10 @@ def prepare_argparser(which):
         patches = os.path.join(
             generic.path_of_repo(), "compile", "patches", "WRF"
         )
+    elif which == "WRF-Chem-Preprocessing-Tools":
+        repository = generic.URL_WRFCHEMPREPROC
+        commit = "main"
+        patches = None
     else:
         msg = f"Invalid choice: {which}."
         raise RuntimeError(msg)
@@ -53,7 +57,7 @@ def prepare_argparser(which):
     )
     parser.add_argument(
         "--repository",
-        help="Git repository containing the WRF model code.",
+        help="Git repository containing the code.",
         default=repository,
     )
     parser.add_argument(
@@ -122,7 +126,7 @@ def prepare_argparser(which):
             help="A comma-separated list of extra WRF components to compile.",
             default="kpp,chem",
         )
-    else:
+    elif which != "WRF-Chem-Preprocessing-Tools":
         msg = f"Invalid choice: {which}."
         raise ValueError(msg)
 
