@@ -33,6 +33,12 @@ import xarray as xr
 
 _optional_imports = dict()
 try:
+    import pandas
+except ImportError:
+    _optional_imports["pandas"] = False
+else:
+    _optional_imports["pandas"] = True
+try:
     import pyproj
 except ImportError:
     _optional_imports["pyproj"] = False
@@ -897,6 +903,206 @@ class WRFDatasetAccessor(GenericDatasetAccessor):
 
         j, i = np.unravel_index(np.argmin(dists), wrflons.shape)
         return i, j
+
+    # Aerosols
+
+    @property
+    def aer_nbins(self):
+        """The number of aerosol size bins."""
+        # We use the number concentration of non-activated aerosol to determine
+        # the number of bins
+        pattern = re.compile("num_a[0-9]+")
+        matches = [v for v in self._dataset.variables if pattern.fullmatch(v)]
+        nbins = len(matches)
+        bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
+        if sorted(matches) != [f"num_a{b}" for b in bins_str]:
+            msg = "Could not determine the number of bins."
+            raise ValueError(msg)
+        return nbins
+
+    @property
+    @_chech_optional_imports("pandas")
+    def aer_bins_info(self):
+        """Information about the aerosol bins.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The values of the lower bound, the upper bound, the center, and the
+            width of each aerosol bin, in meters.
+
+        """
+        # The calculation mimicks the one found in upstream WRF in
+        # chem/module_mosaic_driver.F. It is therefore only valid if the
+        # underlying WRF-Chem output file was generated using MOSAIC
+        # (cf. https://github.com/WRF-Chem-Polar/WRF-infra/issues/232)
+        nbins = self.aer_nbins
+        lower_bound = 0.0390625e-6
+        upper_bound = 10.0e-6
+        log_step = np.log(upper_bound / lower_bound) / nbins
+        lower = lower_bound * np.exp(np.arange(nbins) * log_step)
+        upper = np.append(lower[1:], upper_bound)
+        return pandas.DataFrame(
+            {
+                "lower": lower,
+                "upper": upper,
+                "center": np.sqrt(lower * upper),
+                "width": upper - lower,
+            }
+        )
+
+    def aer_binned(self, species, total=True):
+        """Return a dataset of aerosol concentrations with a 'bin' dimension.
+
+        Parameters
+        ----------
+        species: list[str]
+            The list of species of interest as named in MOSAIC chemistry
+            WRF outputs. For example, use "na" for na_a## and na_cw##.
+
+        total: bool
+            Whether to sum non-activated and activated contributions or to
+            keep them as separate species.
+
+        Returns
+        -------
+        xr.Dataset
+            The new dataset with a "bin" dimension.
+
+        """
+        out = xr.Dataset()
+        nbins = self.aer_nbins
+        bins_str = [str(i + 1).zfill(2) for i in range(nbins)]
+
+        for spc in species:
+            spc_a = f"{spc}_a"
+            spc_cw = f"{spc}_cw"
+            species_a = [f"{spc_a}{bin_}" for bin_ in bins_str]
+            species_cw = [f"{spc_cw}{bin_}" for bin_ in bins_str]
+
+            # Make sure that the lists of species in the file are as expected
+            pattern_a = re.compile(f"{spc_a}[0-9]+")
+            matches_a = [v for v in self.variables if pattern_a.fullmatch(v)]
+            if sorted(matches_a) != species_a:
+                msg = "Unexpected list of non-activated species."
+                raise ValueError(msg)
+            pattern_cw = re.compile(f"{spc_cw}[0-9]+")
+            matches_cw = [v for v in self.variables if pattern_cw.fullmatch(v)]
+            if sorted(matches_cw) != species_cw:
+                msg = "Unexpected list of activated species."
+                raise ValueError(msg)
+
+            # Constants that depend on whether we are looking at number conc.
+            if spc == "num":
+                units = "/kg-dryair"
+                desc = "Aerosol number concentration"
+            else:
+                units = "ug/kg-dryair"
+                desc = "Aerosol mass concentration"
+
+            # Quality checks on variables in the file
+            for var_name in matches_a + matches_cw:
+                self.check_units(var_name, units)
+
+            # Create arrays with a new "bin" dimension
+            array_a = self[species_a].to_dataarray(dim="bin")
+            array_a["bin"] = np.arange(nbins)
+
+            array_cw = self[species_cw].to_dataarray(dim="bin")
+            array_cw["bin"] = np.arange(nbins)
+
+            # Add data arrays to output dataset
+            if total:
+                out[spc] = array_a + array_cw
+                out[spc].attrs["units"] = units
+                out[spc].attrs["desc"] = f"{desc} of {spc}"
+            else:
+                out[spc_a] = array_a
+                out[spc_cw] = array_cw
+                out[spc_a].attrs["units"] = units
+                out[spc_cw].attrs["units"] = units
+                out[spc_a].attrs["desc"] = f"{desc} of non-activated {spc}"
+                out[spc_cw].attrs["desc"] = f"{desc} of activated {spc}"
+
+        # Add metadata to dataset and return
+        bins_info = self.aer_bins_info
+        out = out.assign_coords(
+            {
+                "bins_lower": ("bin", bins_info.lower),
+                "bins_upper": ("bin", bins_info.upper),
+                "bins_center": ("bin", bins_info.center),
+                "bins_width": ("bin", bins_info.width),
+            }
+        )
+        out.attrs["name"] = "Aerosol concentrations by bins"
+        return out
+
+    def aer_conc(self, species, lower=None, upper=None, total=True):
+        """Calculate aerosol concentration in given size range.
+
+        Parameters
+        ----------
+        species: list[str]
+            The list of species of interest as named in MOSAIC chemistry
+            WRF outputs. For example, use "na" for na_a## and na_cw##.
+        lower: None | numeric
+            The lower limit of the size range (in um). If None, consider
+            particles down to the smallest.
+        upper: None | numeric
+            The upper limit of the size range (in um). If None, consider
+            particles up to the largest.
+        total: bool
+            Whether to sum non-activated and activated contributions or to
+            keep them as separate species.
+
+        Returns
+        -------
+        xr.Dataset
+            A new dataset with concentrations integrated over [lower, upper].
+
+        """
+        # Preliminary information
+        aer_binned = self.aer_binned(species, total=total)
+        bins_limits = np.append(
+            aer_binned.coords["bins_lower"].values,
+            aer_binned.coords["bins_upper"].values[-1],
+        )
+        lower = bins_limits[0] if lower is None else lower * 1e-6
+        upper = bins_limits[-1] if upper is None else upper * 1e-6
+
+        # Quality controls
+        if lower >= upper or lower < bins_limits[0] or upper > bins_limits[-1]:
+            msg = "Bad value(s) for lower and/or upper bound(s)."
+            raise ValueError(msg)
+
+        # Go over all bins and add relevant contributions
+        for i in range(self.aer_nbins):
+            bin_low, bin_up = bins_limits[i : i + 2]
+            lower_in = lower >= bin_low and lower < bin_up
+            upper_in = upper > bin_low and upper <= bin_up
+            delta_bin = np.log(bin_up) - np.log(bin_low)
+            if lower_in and upper_in:
+                frac = (np.log(upper) - np.log(lower)) / delta_bin
+                out = frac * aer_binned.sel(bin=i)
+                break
+            elif lower_in:
+                frac = (np.log(bin_up) - np.log(lower)) / delta_bin
+                out = frac * aer_binned.sel(bin=i)
+            elif upper_in:
+                frac = (np.log(upper) - np.log(bin_low)) / delta_bin
+                out += frac * aer_binned.sel(bin=i)
+                break
+            elif lower < bin_low and upper > bin_up:
+                out += aer_binned.sel(bin=i)
+
+        # Fix metadata before returning
+        out.reset_coords(
+            [coord for coord in out.coords if coord.startswith("bin")],
+            drop=True,
+        )
+        name_supplement = f" over range [{lower * 1e6}, {upper * 1e6}] um"
+        out.attrs["name"] = aer_binned.attrs["name"] + name_supplement
+        return out
 
     # Derived variables
 
