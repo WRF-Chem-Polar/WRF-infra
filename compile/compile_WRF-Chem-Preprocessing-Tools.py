@@ -4,8 +4,14 @@
 
 """Compile the WRF-Chem Preprocessing Tools."""
 
+import os
+import sys
+import configparser
+from wrfinfra import generic, compilation
+
 host = generic.identify_host_platform()
-opts = compilation.get_options("WRF-Chem-Preprocessing-Tools")
+prog = "WRF-Chem-Preprocessing-Tools"
+opts = compilation.get_options(prog)
 config = configparser.ConfigParser()
 config.read(os.path.join(generic.path_of_repo(), "env", f"{host}.config"))
 
@@ -19,20 +25,26 @@ with open(script, mode="x") as f:
 
     # Write the job header
     if opts.scheduler:
-        f.write(prepare_scheduler_header(opts, config, which) + "\n")
+        header = compilation.prepare_scheduler_header(opts, config, prog)
+        f.write(f"{header}\n")
 
     # Write the plateform-specific environment
-    section_names = (
-        "common",
-        "compile.all",
-        "compile.WRF-Chem-Preprocessing-Tools",
-    )
+    section_names = ("common", "compile.all", f"compile.{prog}")
     for section_name in section_names:
         try:
             shell = config[section_name]["shell"]
         except KeyError:
             continue
         f.write(shell + "\n")
+
+    # Write the instuctions that compile the tools
+    lines = [
+        "current_dir=$(pwd)",
+        "cd fire_emiss/src",
+        "make",
+        "cd $current_dir",
+    ]
+    f.write("\n".join(lines) + "\n")
 
 os.chmod(script, 0o744)
 

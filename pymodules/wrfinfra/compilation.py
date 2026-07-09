@@ -29,18 +29,20 @@ def prepare_argparser(which):
         repository = generic.URL_WPS
         commit = "master"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "WPS", "v4.6.0"
+            generic.path_of_repo(), "compile", "patches", which, "v4.6.0"
         )
     elif which == "WRF":
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "WRF"
+            generic.path_of_repo(), "compile", "patches", which
         )
     elif which == "WRF-Chem-Preprocessing-Tools":
         repository = generic.URL_WRFCHEMPREPROC
         commit = "main"
-        patches = None
+        patches = os.path.join(
+            generic.path_of_repo(), "compile", "patches", which
+        )
     else:
         msg = f"Invalid choice: {which}."
         raise RuntimeError(msg)
@@ -190,7 +192,7 @@ def prepare_scheduler_header(opts, config, which):
         The pre-processed user-defined installation options.
     config: Namespace
         The parsed plateform-dependent configuration.
-    which: "WRF" | "WPS"
+    which: "WRF" | "WPS" | "WRF-Chem-Preprocessing-Tools"
         The program being compiled.
 
     Returns
@@ -200,7 +202,7 @@ def prepare_scheduler_header(opts, config, which):
 
     """
     # Quality checks on input arguments
-    if which not in ("WRF", "WPS"):
+    if which not in ("WRF", "WPS", "WRF-Chem-Preprocessing-Tools"):
         msg = f"Bad value of which ({which})."
         raise ValueError(msg)
 
