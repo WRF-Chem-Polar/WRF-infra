@@ -17,6 +17,7 @@ config.read(os.path.join(generic.path_of_repo(), "env", f"{host}.config"))
 
 generic.run([opts.git, "clone", opts.repository, opts.destination])
 generic.run([opts.git, "checkout", opts.commit], cwd=opts.destination)
+os.mkdir(os.path.join(opts.destination, "bin"), mode=0o750)
 compilation.write_options(opts)
 
 script = os.path.join(opts.destination, "compile.job")
@@ -38,13 +39,19 @@ with open(script, mode="x") as f:
         f.write(shell + "\n")
 
     # Write the instuctions that compile the tools
-    lines = [
-        "current_dir=$(pwd)",
-        "cd fire_emiss/src",
-        "make",
-        "cd $current_dir",
+    f.write("current_dir=$(pwd)\n")
+    to_compile = [
+        ("fire_emiss/src", "fire_emis"),
+        ("megan_bio_emiss", "megan_bio_emiss"),
     ]
-    f.write("\n".join(lines) + "\n")
+    for dirname, execname in to_compile:
+        lines = [
+            f"cd $current_dir/{dirname}",
+            "make",
+            "cd $current_dir/bin",
+            f"ln -sf ../{os.path.join(dirname, execname)} ./{execname}",
+        ]
+        f.write("\n".join(lines) + "\n")
 
 os.chmod(script, 0o744)
 
