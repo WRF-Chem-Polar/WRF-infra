@@ -27,7 +27,7 @@ with open(script, mode="x") as f:
     # Write the job header
     if opts.scheduler:
         header = compilation.prepare_scheduler_header(opts, config, prog)
-        f.write(f"{header}\n")
+        f.write(f"\n{header}\n")
 
     # Write the plateform-specific environment
     section_names = ("common", "compile.all", f"compile.{prog}")
@@ -36,22 +36,25 @@ with open(script, mode="x") as f:
             shell = config[section_name]["shell"]
         except KeyError:
             continue
-        f.write(shell + "\n")
+        f.write(f"\n{shell}\n")
 
     # Write the instuctions that compile the tools
     f.write("current_dir=$(pwd)\n")
     to_compile = [
-        ("fire_emiss/src", "fire_emis"),
-        ("megan_bio_emiss", "megan_bio_emiss"),
+        ("fire_emiss/src", ("fire_emis",)),
+        ("megan_bio_emiss", ("megan_bio_emiss",)),
+        ("mozbc", ("mozbc",)),
+        ("wes_coldens", ("wesely", "exo_coldens")),
     ]
-    for dirname, execname in to_compile:
-        lines = [
-            f"cd $current_dir/{dirname}",
-            "make",
-            "cd $current_dir/bin",
-            f"ln -sf ../{os.path.join(dirname, execname)} ./{execname}",
-        ]
-        f.write("\n".join(lines) + "\n")
+    for dirname, exenames in to_compile:
+        f.write(f"\n# {dirname}\n")
+        f.write(f"cd $current_dir/{dirname}\n")
+        for exe in exenames:
+            f.write(f"make {exe}\n")
+        f.write("cd $current_dir/bin\n")
+        for exe in exenames:
+            f.write(f"ln -sf ../{os.path.join(dirname, exe)} ./{exe}\n")
+    f.write("\n")
 
 os.chmod(script, 0o744)
 
