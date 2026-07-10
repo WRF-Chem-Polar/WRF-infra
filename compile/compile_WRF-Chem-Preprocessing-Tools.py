@@ -40,20 +40,19 @@ with open(script, mode="x") as f:
 
     # Write the instuctions that compile the tools
     f.write("current_dir=$(pwd)\n")
-    to_compile = [
-        ("fire_emiss/src", ("fire_emis",)),
-        ("megan_bio_emiss", ("megan_bio_emiss",)),
-        ("mozbc", ("mozbc",)),
-        ("wes_coldens", ("wesely", "exo_coldens")),
-    ]
-    for dirname, exenames in to_compile:
-        f.write(f"\n# {dirname}\n")
-        f.write(f"cd $current_dir/{dirname}\n")
-        for exe in exenames:
-            f.write(f"make {exe}\n")
+    for exe in [p.strip() for p in opts.preprocessors.split(",")]:
+        dir_ = {
+            "fire_emis": os.path.join("fire_emiss", "src"),
+            "megan_bio_emiss": "megan_bio_emiss",
+            "mozbc": "mozbc",
+            "wesely": "wes_coldens",
+            "exo_coldens": "wes_coldens",
+        }[exe]
+        f.write(f"\n# {exe}\n")
+        f.write(f"cd $current_dir/{dir_}\n")
+        f.write(f"make {exe}\n")
         f.write("cd $current_dir/bin\n")
-        for exe in exenames:
-            f.write(f"ln -sf ../{os.path.join(dirname, exe)} ./{exe}\n")
+        f.write(f"ln -sfv ../{os.path.join(dir_, exe)} ./{exe}\n")
     f.write("\n")
 
 os.chmod(script, 0o744)

@@ -128,7 +128,13 @@ def prepare_argparser(which):
             help="A comma-separated list of extra WRF components to compile.",
             default="kpp,chem",
         )
-    elif which != "WRF-Chem-Preprocessing-Tools":
+    elif which == "WRF-Chem-Preprocessing-Tools":
+        parser.add_argument(
+            "--preprocessors",
+            help="A comma-separated list preprocessors to compile.",
+            default="fire_emis,megan_bio_emiss,mozbc,wesely,exo_coldens",
+        )
+    else:
         msg = f"Invalid choice: {which}."
         raise ValueError(msg)
 
