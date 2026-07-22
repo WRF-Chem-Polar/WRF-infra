@@ -15,7 +15,7 @@ URL_WPS = f"{URL_GROUP_WRF}/WPS.git"
 URL_GROUP_POLAR = f"{URL_GITHUB}/WRF-Chem-Polar"
 URL_WRFCHEMPOLAR = f"{URL_GROUP_POLAR}/WRF-Chem-Polar.git"
 URL_GROUP_NCAR = f"{URL_GITHUB}/NCAR"
-URL_WRFCHEMPREPROC = f"{URL_GROUP_NCAR}/WRF-Chem-Preprocessing-Tools.git"
+URL_WRFCHEMPREPROC = f"{URL_GROUP_POLAR}/WRF-Chem-Preprocessing-Tools.git"
 
 
 class ConvertToBoolean(argparse.Action):
