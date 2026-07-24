@@ -6,11 +6,11 @@
 
 import argparse
 import datetime
+
 import matplotlib.pyplot as plt
+import wrfpp
 from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
-import wrfpp
-
 
 # Functions
 

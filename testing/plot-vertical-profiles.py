@@ -5,13 +5,14 @@
 """Plot vertical profiles at specific locations for WRF run(s)."""
 
 import argparse
-from itertools import product
-from collections import namedtuple
 import datetime
+from collections import namedtuple
+from itertools import product
+
 import matplotlib.pyplot as plt
+import wrfpp
 from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
-import wrfpp
 
 # Types and functions
 
