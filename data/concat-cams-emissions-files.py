@@ -97,7 +97,7 @@ for i, nc_in in enumerate(nc_in_all):
             dtype = float if varname == "time" else var_in.dtype
             args, kwargs = [varname, dtype, var_in.dimensions], {}
             if "_FillValue" in var_in.ncattrs():
-                kwargs["fill_value"] = getattr(var_in, "_FillValue")
+                kwargs["fill_value"] = var_in._FillValue
             var_out = nc_out.createVariable(*args, **kwargs)
             for attr in [a for a in var_in.ncattrs() if a != "_FillValue"]:
                 setattr(var_out, attr, getattr(var_in, attr))
@@ -229,8 +229,8 @@ except AttributeError:
 else:
     history += " ; "
 now = datetime.datetime.now(datetime.UTC)
-history += f"{str(now)}: {script_name} {' '.join(sys.argv[1:])}"
-setattr(nc_out, "history", history)
+history += f"{now!s}: {script_name} {' '.join(sys.argv[1:])}"
+nc_out.history = history
 
 # Close all open connections
 nc_out.close()

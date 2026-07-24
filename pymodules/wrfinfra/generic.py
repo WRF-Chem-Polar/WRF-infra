@@ -41,7 +41,7 @@ class ConvertToBoolean(argparse.Action):
         setattr(namespace, option_string, values)
 
 
-@functools.lru_cache()
+@functools.lru_cache()  # noqa: UP011
 def identify_host_platform():
     """Return the identity of the host platform.
 
