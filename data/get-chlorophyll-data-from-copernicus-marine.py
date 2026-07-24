@@ -16,9 +16,10 @@ This script is made to fit our typical usage for WRF-Chem-Polar, namely:
 
 """
 
-import os
 import argparse
 import datetime
+import os
+
 import copernicusmarine
 
 # Command-line arguments

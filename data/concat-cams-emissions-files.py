@@ -11,10 +11,11 @@ difficult. This script handles properly this situation.
 
 """
 
-import os
-import sys
 import argparse
 import datetime
+import os
+import sys
+
 import numpy as np
 from netCDF4 import Dataset
 
