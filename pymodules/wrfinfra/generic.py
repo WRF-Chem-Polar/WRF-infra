@@ -4,9 +4,9 @@
 
 """Common Python resources for WRF-infra: generic resources."""
 
-import os
-import functools
 import argparse
+import functools
+import os
 import subprocess
 
 URL_GITHUB = "https://github.com"
