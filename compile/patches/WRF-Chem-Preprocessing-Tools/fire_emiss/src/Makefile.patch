@@ -1,0 +1,4 @@
+28c28
+<   FFLAGS += -O0 -ffree-line-length-none
+---
+>   FFLAGS += -O0 -ffree-line-length-none -fallow-argument-mismatch

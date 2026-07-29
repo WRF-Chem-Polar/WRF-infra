@@ -98,34 +98,38 @@ re_dir_wrfout="wrf\\..+\\..+\\..+\\.$d$d$d$d-$d$d-$d${d}Z\\.$d+"
 
 # Variables that should be kept when concatenating wrfout files
 essential_vars=(
-    XLONG
-    XLAT
-    XLONG_U
-    XLAT_U
-    XLONG_V
-    XLAT_V
+    "XLONG"
+    "XLAT"
+    "XLONG_U"
+    "XLAT_U"
+    "XLONG_V"
+    "XLAT_V"
 )
 used_in_derived_vars=(
-    HGT
-    MAPFAC_M
-    P
-    PB
-    PH
-    PHB
-    QCLOUD
-    QVAPOR
-    RAINC
-    RAINNC
-    T
+    "HGT"
+    "MAPFAC_M"
+    "^num_a[0-9]+\$"
+    "^num_cw[0-9]+\$"
+    "P"
+    "PB"
+    "PH"
+    "PHB"
+    "QCLOUD"
+    "QICE"
+    "QVAPOR"
+    "RAINC"
+    "RAINNC"
+    "T"
 )
 plotted_vars=(
-    o3
-    PM2_5_DRY
-    PM10
-    QCLOUD
-    T2
+    "T2"
+    "o3"
+    "PM2_5_DRY"
+    "PM10"
+    "AOD2D_OUT"
+    "CLDFRA"
+    "CLT"
 )
-
 
 # Process hard-coded parameters
 essential_vars=$(IFS=, ; echo "${essential_vars[*]}")
@@ -228,9 +232,12 @@ variables=(
     "o3:1"
     "PM2_5_DRY:1"
     "PM10:1"
+    "aer_number_conc_total"
 )
 locations=(
     "NorthPole:0:90"
+    "Summit:-38.48:72.58"
+    "Pallas:24.12:67.97"
 )
 dir_plots="vertical-profiles_non-cloud"
 ${cmd_python} "${dir_infra}/testing/plot-vertical-profiles.py" \
@@ -245,7 +252,10 @@ to_readme "   * [Non-cloud variables](./${dir_plots}/README.md)"
 # Plot a second series of vertical profiles for cloud variables,
 # using a larger window
 variables=(
+    "CLDFRA:9"
     "QCLOUD:9"
+    "QICE:9"
+    "fraction_activated_aerosol:9"
 )
 locations=(
     "SeaIce:170:84"
@@ -264,18 +274,33 @@ to_readme "   * [Cloud variables](./${dir_plots}/README.md)"
 # Plot surface maps
 variables=(
     "T2"
+    "o3"
     "PM2_5_DRY"
+    "PM10"
+    "aer_number_conc_total"
+    "AOD2D_OUT"
+    "CLT"
+    "accumulated_precipitation"
 )
 metrics=(
     "mean"
     "min"
     "max"
 )
-dir_plots="surface-maps"
-${cmd_python} "${dir_infra}/testing/plot-surface-maps.py" \
-              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\
-              --variables=$(IFS=, ; echo "${variables[*]}") \
-              --metrics=$(IFS=, ; echo "${metrics[*]}") \
-              --output-dir="${dir_output}/${dir_plots}" \
-              --markdown-file="README.md"
-to_readme " - [Surface maps](./${dir_plots}/README.md)"
+dir_plots="surface-maps"                                                        
+${cmd_python} "${dir_infra}/testing/plot-surface-maps.py" \                     
+              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\                   
+              --variables=$(IFS=, ; echo "${variables[*]}") \                   
+              --metrics=$(IFS=, ; echo "${metrics[*]}") \                       
+              --output-dir="${dir_output}/${dir_plots}" \                       
+              --markdown-file="README.md"                                       
+to_readme " - [Surface maps](./${dir_plots}/README.md)"                         
+                                                                                
+# Whisker plots of these variables                                              
+dir_plots="whiskers-of-2D-values"                                               
+${cmd_python} "${dir_infra}/testing/plot-whiskers-of-2D-values.py" \            
+              --wrfouts=$(IFS=, ; echo "${wrfout_files[*]}")\                   
+              --variables=$(IFS=, ; echo "${variables[*]}") \                   
+              --output-dir="${dir_output}/${dir_plots}" \                       
+              --markdown-file="README.md"                                       
+to_readme " - [Boxes and whiskers](./${dir_plots}/README.md)"
