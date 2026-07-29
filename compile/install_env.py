@@ -10,10 +10,11 @@ repository's pyproject.toml file.
 
 """
 
-import os
 import argparse
 import datetime
+import os
 import tomllib
+
 from wrfinfra import generic
 
 # Command-line arguments

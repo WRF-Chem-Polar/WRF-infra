@@ -6,12 +6,13 @@
 
 import os
 import argparse
-from itertools import product
-from collections import namedtuple
 import datetime
+from collections import namedtuple
+from itertools import product
+
 import matplotlib.pyplot as plt
-from wrfinfra import generic
 import wrfpp
+from wrfinfra import generic
 
 # Types and functions
 

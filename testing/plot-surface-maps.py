@@ -6,13 +6,13 @@
 
 import os
 import argparse
-import itertools
 import datetime
-import numpy as np
-import matplotlib.pyplot as plt
+import itertools
+
 import cartopy.crs as ccrs
-from wrfinfra import generic
+import matplotlib.pyplot as plt
 import wrfpp
+from wrfinfra import generic
 
 # Command-line arguments
 

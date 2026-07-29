@@ -7,9 +7,10 @@
 import os
 import argparse
 import datetime
+
 import matplotlib.pyplot as plt
-from wrfinfra import generic
 import wrfpp
+from wrfinfra import generic
 
 # Command-line arguments
 

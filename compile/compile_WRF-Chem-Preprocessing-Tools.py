@@ -4,10 +4,11 @@
 
 """Compile the WRF-Chem Preprocessing Tools."""
 
+import configparser
 import os
 import sys
-import configparser
-from wrfinfra import generic, compilation
+
+from wrfinfra import compilation, generic
 
 host = generic.identify_host_platform()
 prog = "WRF-Chem-Preprocessing-Tools"
