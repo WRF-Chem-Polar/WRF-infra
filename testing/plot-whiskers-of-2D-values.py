@@ -4,9 +4,9 @@
 
 """Make whisker plots of surface or single-level variables from WRF run(s)."""
 
-import os
 import argparse
 import datetime
+import os
 
 import matplotlib.pyplot as plt
 import wrfpp

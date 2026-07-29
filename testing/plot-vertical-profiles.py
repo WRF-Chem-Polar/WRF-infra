@@ -4,9 +4,9 @@
 
 """Plot vertical profiles at specific locations for WRF run(s)."""
 
-import os
 import argparse
 import datetime
+import os
 from collections import namedtuple
 from itertools import product
 

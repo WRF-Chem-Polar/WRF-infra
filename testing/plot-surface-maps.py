@@ -4,10 +4,10 @@
 
 """Plot surface (or otherwise single-level) maps of variables from WRF run(s)."""
 
-import os
 import argparse
 import datetime
 import itertools
+import os
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
