@@ -20,7 +20,17 @@ dev = [
     "vim",
 ]
 data = [
-    "copernicusmarine"
+    "cdsapi",
+    "copernicusmarine",
+]
+wrfpp = [
+    "pandas",
+    "scipy",
+    "pyproj",
+    "cartopy",
+]
+performance = [
+    "dask",
 ]
 
 [tool.ruff]
