@@ -5,15 +5,15 @@
 """Plot surface (or otherwise single-level) maps of variables from WRF run(s)."""
 
 import argparse
-import itertools
 import datetime
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-import cartopy.crs as ccrs
-from wrfinfra import generic
-import wrfpp
+import itertools
 
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+import numpy as np
+import wrfpp
+from matplotlib.backends.backend_pdf import PdfPages
+from wrfinfra import generic
 
 # Functions
 

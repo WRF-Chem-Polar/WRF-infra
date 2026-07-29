@@ -4,10 +4,11 @@
 
 """Compile WPS."""
 
-import sys
-import os.path
 import configparser
-from wrfinfra import generic, compilation
+import os.path
+import sys
+
+from wrfinfra import compilation, generic
 
 host = generic.identify_host_platform()
 opts = compilation.get_options("WPS")

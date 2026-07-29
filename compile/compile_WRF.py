@@ -4,10 +4,11 @@
 
 """Compile WRF."""
 
-import sys
-import os
 import configparser
-from wrfinfra import generic, compilation
+import os
+import sys
+
+from wrfinfra import compilation, generic
 
 host = generic.identify_host_platform()
 opts = compilation.get_options("WRF")

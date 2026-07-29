@@ -4,9 +4,10 @@
 
 """Common Python resources for WRF-infra: resources for compilation."""
 
-import os
 import argparse
 import json
+import os
+
 from . import generic
 
 
