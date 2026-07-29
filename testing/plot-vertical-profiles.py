@@ -5,13 +5,14 @@
 """Plot vertical profiles at specific locations for WRF run(s)."""
 
 import argparse
-from itertools import product
-from collections import namedtuple
 import datetime
+from collections import namedtuple
+from itertools import product
+
 import matplotlib.pyplot as plt
+import wrfpp
 from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
-import wrfpp
 
 # Types and functions
 
@@ -169,24 +170,28 @@ markers = ("o", "^", "v", "*", "+", "s")
 
 variable_z_axis = "altitude_agl_c"
 dont_drop_these_variables = (
-    "XLONG",
-    "XLAT",
-    "XLONG_U",
-    "XLAT_U",
-    "XLONG_V",
-    "XLAT_V",
-    # Variables listed below are used in the calculation of derived variables
-    "HGT",
-    "MAPFAC_M",
-    "P",
-    "PB",
-    "PH",
-    "PHB",
-    "QCLOUD",
-    "QVAPOR",
-    "RAINC",
-    "RAINNC",
-    "T",
+    (
+        "XLONG",
+        "XLAT",
+        "XLONG_U",
+        "XLAT_U",
+        "XLONG_V",
+        "XLAT_V",
+        # Those listed below are used in the calculation of derived variables
+        "HGT",
+        "MAPFAC_M",
+        "P",
+        "PB",
+        "PH",
+        "PHB",
+        "QCLOUD",
+        "QVAPOR",
+        "RAINC",
+        "RAINNC",
+        "T",
+    )
+    + tuple(f"num_a{i:02d}" for i in range(1, 100))
+    + tuple(f"num_cw{i:02d}" for i in range(1, 100))
 )
 
 # Open and prepare datasets

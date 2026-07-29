@@ -12,13 +12,6 @@ preprocess = [
     "nco",
     "cdo",
 ]
-wrfpp = [
-    "pyproj",
-    "netcdf4",
-    "scipy",
-    "xarray",
-    "cartopy",
-]
 # We add Emacs and Vim to our "dev" dependencies to benefit from modern
 # features such as "auto format with ruff on save"
 dev = [
@@ -33,3 +26,9 @@ data = [
 [tool.ruff]
 
 line-length = 79
+
+[tool.ruff.lint]
+
+extend-select = [
+    "I001" # Sort imports
+]
