@@ -128,6 +128,23 @@ for group in groups:
 
 generic.run(cmd)
 
+# Install wrfpp inside that environment
+
+cmd = [
+    os.path.expanduser(args.conda),
+    "run",
+    "--root-prefix",
+    args.env_root_prefix,
+    "--name",
+    args.env_name,
+    "python",
+    "-m",
+    "pip",
+    "install",
+    "wrfpp[all]@git+https://github.com/WRF-Chem-Polar/wrfpp.git",
+]
+generic.run(cmd)
+
 # Fix permissions:
 #  - To current user and group members: read and execute acces.
 #  - To others: no rights.
@@ -152,6 +169,8 @@ def exec_chmod(chmod, perm):
     """
     return ["-exec", chmod, perm, "{}", ";"]
 
+
+print("Installation complete. Fixing permissions... this may take a while...")
 
 # Executable files
 generic.run_stdout(
