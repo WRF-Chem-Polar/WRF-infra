@@ -1,3 +1,7 @@
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+
 # Creates WRF grid file for CDO remapcon i.e. cdo_wrfgrid.txt in:
 #   cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
 #
