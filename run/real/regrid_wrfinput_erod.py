@@ -12,7 +12,6 @@ import numpy as np
 import os
 import sys
 
-# Plots
 # NetCDF file manipulation
 from netCDF4 import Dataset
 

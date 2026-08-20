@@ -143,13 +143,7 @@ def wrf_llij(lat, lon, wrf_proj):
         # -------- Lambert conformal projection --------
         # Subroutines set_lc, lc_cone and llij_lc from WPS: geogrid/src/module_map_utils.f90
 
-        # ---- Subroutine to compute the cone factor of a Lambert Conformal projection
-
-        # Input Args
-        # REAL, INTENT(IN)             :: wrf_proj.truelat1  # (-90 -> 90 degrees N)
-        # REAL, INTENT(IN)             :: wrf_proj.truelat2  #   "   "  "   "     "
-        # Output Args
-        # REAL, INTENT(OUT)            :: cone
+        # Copied from subroutine lc_cone in geogrid/src/module_map_utils.f90:
 
         # First, see if this is a secant or tangent projection.  For tangent
         # projections, wrf_proj.truelat1 = wrf_proj.truelat2 and the cone is tangent to the
@@ -177,6 +171,8 @@ def wrf_llij(lat, lon, wrf_proj):
 
         # ---- Initialize the remaining items in the proj structure for a
         # ---- lambert conformal grid.
+
+        # Copied from subroutine set_lc in geogrid/src/module_map_utils.f90:
 
         # Compute longitude differences and ensure we stay out of the
         # forbidden "cut zone"
@@ -217,16 +213,7 @@ def wrf_llij(lat, lon, wrf_proj):
         )
         polej = wrf_proj.hemi * wrf_proj.ref_j + rsw * np.cos(arg)
 
-        # ---- Subroutine to compute the geographical latitude and longitude values
-        # ---- to the cartesian x/y on a Lambert Conformal projection.
-
-        # Input Args
-        # REAL, INTENT(IN)              :: lat      # Latitude (-90->90 deg N)
-        # REAL, INTENT(IN)              :: lon      # Longitude (-180->180 E)
-
-        # Output Args
-        # REAL, INTENT(OUT)             ::wrfi       # Cartesian X coordinate
-        # REAL, INTENT(OUT)             :: wrfj        # Cartesian Y coordinate
+        # Copied from subroutine llij_lc in geogrid/src/module_map_utils.f90:
 
         # ---- Compute deltalon between known longitude and standard lon and ensure
         # it is not in the cut zone
@@ -270,6 +257,10 @@ def wrf_llij(lat, lon, wrf_proj):
 
     elif wrf_proj.map_proj == 2:
         # -------- Polar stereographic projection --------
+        # Subroutines set_ps and llij_ps from WPS: geogrid/src/module_map_utils.f90
+
+        # Copied from subroutine set_ps in geogrid/src/module_map_utils.f90:
+
         # Compute the reference longitude by rotating 90 degrees to the east
         # to find the longitude line parallel to the positive x-axis.
         reflon = wrf_proj.stdlon + 90.0
@@ -289,6 +280,9 @@ def wrf_llij(lat, lon, wrf_proj):
         alo1 = (wrf_proj.ref_lon - reflon) * rad_per_deg
         polei = wrf_proj.ref_i - rsw * np.cos(alo1)
         polej = wrf_proj.ref_j - wrf_proj.hemi * rsw * np.sin(alo1)
+
+        # Copied from subroutine llij_ps in geogrid/src/module_map_utils.f90:
+
         # Find radius to desired point
         ala = lat * rad_per_deg
         rm = (
@@ -348,7 +342,9 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         # -------- Lambert conformal projection --------
         # Subroutines from WPS: geogrid/src/module_map_utils.f90
 
-        # ---- Compute the cone factor of a Lambert Conformal projection, from WPS lc_cone
+        # ---- Compute the cone factor of a Lambert Conformal projection
+        # Copied from subroutine lc_cone in geogrid/src/module_map_utils.f90:
+
         # First, see if this is a secant or tangent projection.  For tangent
         # projections, wrf_proj.truelat1 = wrf_proj.truelat2 and the cone is tangent to the
         # Earth's surface at this latitude.  For secant projections, the cone
@@ -374,7 +370,8 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
             cone = np.sin(np.abs(wrf_proj.truelat1) * rad_per_deg)
 
         # ---- Initialize the remaining items in the proj structure for a
-        # lambert conformal grid, from set_lc
+        # lambert conformal grid
+        # Copied from subroutine set_lc in geogrid/src/module_map_utils.f90:
 
         # Compute longitude differences and ensure we stay out of the
         # forbidden "cut zone"
@@ -417,7 +414,8 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         )
         polej = wrf_proj.hemi * wrf_proj.ref_j + rsw * np.cos(arg)
 
-        # ---- Begin Lambert Code, from WPS ijll_lc
+        # ---- Begin Lambert Code
+        # Copied from subroutine ijll_lc in geogrid/src/module_map_utils.f90:
         chi1 = (90.0 - wrf_proj.hemi * wrf_proj.truelat1) * rad_per_deg
         chi2 = (90.0 - wrf_proj.hemi * wrf_proj.truelat2) * rad_per_deg
 
@@ -464,6 +462,9 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
 
     elif wrf_proj.map_proj == 2:
         # -------- Polar stereographic projection --------
+
+        # Copied from subroutine set_ps in geogrid/src/module_map_utils.f90:
+
         # Compute the reference longitude by rotating 90 degrees to the east
         # to find the longitude line parallel to the positive x-axis.
         reflon = wrf_proj.stdlon + 90.0
@@ -484,6 +485,9 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         alo1 = (wrf_proj.ref_lon - reflon) * rad_per_deg
         polei = wrf_proj.ref_i - rsw * np.cos(alo1)
         polej = wrf_proj.ref_j - wrf_proj.hemi * rsw * np.sin(alo1)
+
+        # Copied from subroutine ijll_ps in geogrid/src/module_map_utils.f90:
+
         # Compute radius to point of interest
         xx = wrfi - polei
         yy = (wrfj - polej) * wrf_proj.hemi
@@ -510,16 +514,19 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
             )
     elif wrf_proj.map_proj == 3:
         # -------- Mercator projection --------
-        # From module_map_utils.f90
+        # Copied from subroutine set_merc in geogrid/src/module_map_utils.f90:
+
         clain = np.cos(rad_per_deg * wrf_proj.truelat1)
         dlon = 1.0 / (rebydx * clain)
-        #! Compute distance from equator to origin
+        # Compute distance from equator to origin
         rsw = 0.0
         if wrf_proj.ref_lat != 0.0:
             rsw = (
                 np.log(np.tan(0.5 * ((wrf_proj.ref_lat + 90.0) * rad_per_deg)))
             ) / dlon
 
+        # Copied from subroutine ijll_merc in geogrid/src/module_map_utils.f90:
+        
         wrflat = (
             2.0
             * np.arctan(np.exp(dlon * (rsw + wrfj - wrf_proj.ref_j)))
