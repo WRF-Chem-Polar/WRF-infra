@@ -246,7 +246,8 @@
  bio_emiss_opt                       = <bio_emiss_opt>, <bio_emiss_opt>, <bio_emiss_opt>,
  ne_area                             = 432
  bioemdt                             = 0, 0, 0,
- dust_opt                            = 13
+ dust_opt                            = 6
+ dust_erod_opt                       = 1
  seas_opt                            = 6
  seas_oa_opt                         = 1
  seas_so4_opt                        = 1
