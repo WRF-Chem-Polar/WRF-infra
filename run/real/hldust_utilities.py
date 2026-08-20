@@ -526,7 +526,7 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
             ) / dlon
 
         # Copied from subroutine ijll_merc in geogrid/src/module_map_utils.f90:
-        
+
         wrflat = (
             2.0
             * np.arctan(np.exp(dlon * (rsw + wrfj - wrf_proj.ref_j)))
