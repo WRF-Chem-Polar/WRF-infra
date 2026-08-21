@@ -323,7 +323,7 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
 
     Parameters
     ----------
-    wrfi, wrfj: scalars
+    wrfi, wrfj: scalars, lists or arrays
         The indices to extract
     wrf_proj: WRFProjection instance
         The projection of the WRF grid
