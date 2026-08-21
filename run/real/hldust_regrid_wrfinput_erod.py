@@ -48,36 +48,37 @@ if maxlon > 175.0:
     maxlon = 180.0
 
 # ---- CDO conservative regridding of erodibility to WRF grid
-cdo_wrfgrid_file = "{}/cdo_wrfgrid.txt".format(os.path.dirname(WRFINPUT_SRC))
-erodfile_regrid = "{}_erod".format(WRFINPUT_SRC)
-os.system('rm -f "{}"'.format(cdo_wrfgrid_file))
-os.system('rm -f "{}"'.format(erodfile_regrid))
+cdo_wrfgrid_file = os.path.join(os.path.dirname(wrfinput_src), "cdo_wrfgrid.txt")
+erodfile_regrid = f"{wrfinput_src}_erod"
+for file in (cdo_wrfgrid_file, erodfile_regrid):
+    try:
+        os.remove(file)
+    except FileNotFoundError:
+        pass
 
 create_cdo_wrfgridfile(wrfinput_src)
 # Extract subset
-print("Extract subset from {}".format(ERODFILE))
-print(
-    "cdo sellonlatbox,{},{},{},{} {} ERODFILE_subset.nc".format(
-        minlon, maxlon, minlat, maxlat, ERODFILE
-    )
-)
-os.system(
-    "cdo sellonlatbox,{},{},{},{} {} ERODFILE_subset.nc".format(
-        minlon, maxlon, minlat, maxlat, ERODFILE
-    )
-)
+cmd = [
+    "cdo",
+    f"sellonlatbox,{minlon},{maxlon},{minlat},{maxlat}",
+    erodfile,
+    "ERODFILE_subset.nc",
+]
+print(f"Extract subset from {erodfile}:", " ".join(cmd))
+if subprocess.run(cmd).returncode:
+    msg = "CDO sellonlatbox command failed."
+    raise RuntimeError(msg)
 # Regrid
-print("Regrid file to WRF grid")
-print(
-    "cdo remapcon,{} ERODFILE_subset.nc {}".format(
-        cdo_wrfgrid_file, erodfile_regrid
-    )
-)
-error_code = os.system(
-    "cdo remapcon,{} ERODFILE_subset.nc {}".format(
-        cdo_wrfgrid_file, erodfile_regrid
-    )
-)
+cmd = [
+    "cdo",
+    f"remapcon,{cdo_wrfgrid_file}",
+    "ERODFILE_subset.nc",
+    erodfile_regrid,
+]
+print("Regrid file to WRF grid:", " ".join(cmd))
+if subprocess.run(cmd).returncode:
+    msg = "CDO remapcon command failed."
+    raise RuntimeError(msg)
 
 # ---- Write regridded data to wrfinput file
 # Open the erodibility data from the regridded file
@@ -90,13 +91,12 @@ wrf_erod[wrf_xland > 1.5] = 0.0
 wrf_erod[wrf_erod > 1.0] = 1.0
 wrf_erod[wrf_erod < 0.0] = 0.0
 # Write to wrfinput
-print("Write new erodibility data to " + WRFINPUT_SRC)
-# Create variable EROD_HL and metadata
-with Dataset(WRFINPUT_SRC, "a") as ncfile:
+print(f"Write new erodibility data to {wrfinput_src}")
+with Dataset(wrfinput_src, "a") as ncfile:
     ncfile.variables["EROD_HL"][0, :, :] = wrf_erod[:, :]
-# Delete temp files
-os.system(
-    'rm -f "{}" "{}" "ERODFILE_subset.nc"'.format(
-        erodfile_regrid, cdo_wrfgrid_file
-    )
-)
+# Delete temporary files
+for file in (erodfile_regrid, cdo_wrfgrid_file, "ERODFILE_subset.nc"):
+    try:
+        os.remove(file)
+    except FileNotFoundError:
+        pass

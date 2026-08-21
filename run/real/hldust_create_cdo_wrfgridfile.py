@@ -50,10 +50,8 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
 
     # Create WRF grid description file for CDO conservative regridding
     print("Create CDO WRF grid file for remapcon")
-    cdo_wrfgrid_file = os.path.dirname(WRFOUT_DOMAIN_FILE) + "/cdo_wrfgrid.txt"
-    if os.path.isfile(cdo_wrfgrid_file):
-        os.remove(cdo_wrfgrid_file)
-    with open(cdo_wrfgrid_file, "a") as file:
+    cdo_wrfgrid_file = os.path.join(os.path.dirname(wrfout_domain_file), "cdo_wrfgrid.txt")
+    with open(cdo_wrfgrid_file, mode="w") as file:
         file.write(
             "# WRF grid for CDO remapcon, from file "
             + WRFOUT_DOMAIN_FILE
