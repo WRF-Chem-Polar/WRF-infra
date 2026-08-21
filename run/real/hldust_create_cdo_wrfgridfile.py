@@ -2,18 +2,27 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-# Creates WRF grid file for CDO remapcon i.e. cdo_wrfgrid.txt in:
-#   cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
-#
-# Louis Marelle, 2022/03/16
-#
+"""Create WRF grid file for the CDO remapcon operator, i.e. cdo_wrfgrid.txt in:
+
+   cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
+
+"""
 
 
-def create_cdo_wrfgridfile(WRFOUT_DOMAIN_FILE):
-    """Creates WRF grid file for CDO remapcon i.e. cdo_wrfgrid.txt in:
+def create_cdo_wrfgridfile(wrfout_domain_file):
+    """Create WRF grid file for the CDO remapcon operator.
+    
+    This function creates a file named cdo_wrfgrid.txt in the same directory
+    as the input file. The created file can be used as the grid file when using
+    the CDO remapcon operator, for instance:
+    
     cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
-    Input:
-     - WRFOUT_DOMAIN_FILE: full path to wrfout file
+    
+    Parameters
+    ----------
+    wrfout_domain_file: str
+        Path to the wrfout file.
+    
     """
 
     # -------- Import required packages --------
@@ -37,9 +46,8 @@ def create_cdo_wrfgridfile(WRFOUT_DOMAIN_FILE):
     # WRF utilities
     from wrf_utilities import get_wrf_proj, wrf_ijll
 
-    # -------- Initialize --------
-    # Open the domain file to get file dimensions
-    with Dataset(WRFOUT_DOMAIN_FILE) as ncfile:
+    # Get grid information
+    with Dataset(wrfout_domain_file) as ncfile:
         if "XLAT" in ncfile.variables:
             wrf_xlat = np.squeeze(ncfile.variables["XLAT"][:])
         else:
@@ -48,9 +56,8 @@ def create_cdo_wrfgridfile(WRFOUT_DOMAIN_FILE):
             wrf_xlong = np.squeeze(ncfile.variables["XLONG"][:])
         else:
             wrf_xlong = np.squeeze(ncfile.variables["XLONG_M"][:])
-    wrf_proj = get_wrf_proj(WRFOUT_DOMAIN_FILE)
+    wrf_proj = get_wrf_proj(wrfout_domain_file)
 
-    # -------- Create cdo_wrfgrid.txt  --------
     # Create WRF grid description file for CDO conservative regridding
     print("Create CDO WRF grid file for remapcon")
     cdo_wrfgrid_file = os.path.dirname(WRFOUT_DOMAIN_FILE) + "/cdo_wrfgrid.txt"

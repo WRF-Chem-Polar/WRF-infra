@@ -2,9 +2,12 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-# Create the variavle EROD_HL containing the S-function/dust erodibility data
-# including High-Latitude sources, to use instead of the EROD variable in
-# wrfinput
+"""Create the variable EROD_HL in wrfinput file.
+
+This variable contains the S-function/dust erodibility data including high-latitude sources,
+to use instead of the EROD variable.
+
+"""
 
 
 # -------- Imports --------
@@ -20,12 +23,8 @@ from wrf_utilities import get_wrf_proj, calc_wrf_grid_edges
 from create_cdo_wrfgridfile import create_cdo_wrfgridfile
 
 
-# -------- Input --------
-WRFINPUT_SRC = sys.argv[1]
-
-
-# -------- Parameters --------
-ERODFILE = "/proju/wrf-chem/input-data/natural_emissions/terrestrial/dust/sfunc_0_1deg.nc"
+wrfinput_src = sys.argv[1]
+erodfile = "/proju/wrf-chem/input-data/natural_emissions/terrestrial/dust/sfunc_0_1deg.nc"
 
 
 # -------- Initialize --------
@@ -58,7 +57,7 @@ erodfile_regrid = "{}_erod".format(WRFINPUT_SRC)
 os.system('rm -f "{}"'.format(cdo_wrfgrid_file))
 os.system('rm -f "{}"'.format(erodfile_regrid))
 
-create_cdo_wrfgridfile(WRFINPUT_SRC)
+create_cdo_wrfgridfile(wrfinput_src)
 # Extract subset
 print("Extract subset from {}".format(ERODFILE))
 print(
