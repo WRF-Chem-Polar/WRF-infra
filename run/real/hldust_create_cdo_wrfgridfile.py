@@ -86,10 +86,8 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
                     [ii + 1 + 0.5], [jj + 1 + 0.5], wrf_proj
                 )
                 file.write(
-                    (
-                        f"{wrflon_lr[0]:.5f} {wrflon_ur[0]:.5f} "
-                        f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
-                    )
+                    f"{wrflon_lr[0]:.5f} {wrflon_ur[0]:.5f} "
+                    f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
                 )
                 valindex += 1
                 if valindex == 1:
