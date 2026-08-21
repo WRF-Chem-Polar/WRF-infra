@@ -602,5 +602,3 @@ def calc_wrf_grid_edges(wrf_proj):
         )
     return wrf_lat_edge, wrf_lon_edge
 
-
-# -----------------------------------------------------------------------------
