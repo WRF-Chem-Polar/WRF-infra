@@ -284,6 +284,14 @@ if ((month_start < 5 || month_start > 11)); then
   ncap2 -s 'where(SEAICE>0. && XLAT>65.) SNOWC=1.;' wrfinput_d01 -O wrfinput_d01
 fi
 
+#--------------------------------------#
+# Erodability pre-processor for HLdust #
+#--------------------------------------#
+echo " "
+echo "-------- $SLURM_JOB_NAME: Use high-latitude erodibility data --------"
+echo " "
+${cmd_python} hldust_regrid_wrfinput_erod.py ./wrfinput_d01
+
 #----------#
 # Finalize #
 #----------#
