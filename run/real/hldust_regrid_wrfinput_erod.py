@@ -16,6 +16,7 @@ import sys
 from netCDF4 import Dataset
 from hldust_utilities import get_wrf_proj, calc_wrf_grid_edges
 from hldust_create_cdo_wrfgridfile import create_cdo_wrfgridfile
+import subprocess
 
 
 wrfinput_src = sys.argv[1]
