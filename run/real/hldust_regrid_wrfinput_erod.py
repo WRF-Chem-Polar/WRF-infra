@@ -9,7 +9,6 @@ to use instead of the EROD variable.
 
 """
 
-
 # -------- Imports --------
 import numpy as np
 import os
@@ -52,7 +51,9 @@ if maxlon > 175:
     maxlon = 180
 
 # ---- CDO conservative regridding of erodibility to WRF grid
-cdo_wrfgrid_file = os.path.join(os.path.dirname(wrfinput_src), "cdo_wrfgrid.txt")
+cdo_wrfgrid_file = os.path.join(
+    os.path.dirname(wrfinput_src), "cdo_wrfgrid.txt"
+)
 erodfile_regrid = f"{wrfinput_src}_erod"
 for file in (cdo_wrfgrid_file, erodfile_regrid):
     try:

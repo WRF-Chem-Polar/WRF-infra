@@ -4,7 +4,7 @@
 
 """Create WRF grid file for the CDO remapcon operator, i.e. cdo_wrfgrid.txt in:
 
-   cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
+cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
 
 """
 
@@ -22,18 +22,18 @@ from hldust_utilities import get_wrf_proj, wrf_ijll
 
 def create_cdo_wrfgridfile(wrfout_domain_file):
     """Create WRF grid file for the CDO remapcon operator.
-    
+
     This function creates a file named cdo_wrfgrid.txt in the same directory
     as the input file. The created file can be used as the grid file when using
     the CDO remapcon operator, for instance:
-    
+
     cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
-    
+
     Parameters
     ----------
     wrfout_domain_file: str
         Path to the wrfout file.
-    
+
     """
 
     # Get grid information
@@ -50,9 +50,13 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
 
     # Create WRF grid description file for CDO conservative regridding
     print("Create CDO WRF grid file for remapcon")
-    cdo_wrfgrid_file = os.path.join(os.path.dirname(wrfout_domain_file), "cdo_wrfgrid.txt")
+    cdo_wrfgrid_file = os.path.join(
+        os.path.dirname(wrfout_domain_file), "cdo_wrfgrid.txt"
+    )
     with open(cdo_wrfgrid_file, mode="w") as file:
-        file.write(f"# WRF grid for CDO remapcon, from file {wrfout_domain_file}\n")
+        file.write(
+            f"# WRF grid for CDO remapcon, from file {wrfout_domain_file}\n"
+        )
         file.write("gridtype  = curvilinear\n")
         file.write(f"gridsize = {wrf_proj.imax * wrf_proj.jmax}\n")
         file.write(f"xsize    = {wrf_proj.imax}\n")
@@ -84,10 +88,12 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
                 wrflat_ur, wrflon_ur = wrf_ijll(
                     [ii + 1 + 0.5], [jj + 1 + 0.5], wrf_proj
                 )
-                file.write((
-                    f"{wrflon_lr[0]:.5f} {wrflon_ur[0]:.5f} "
-                    f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
-                ))
+                file.write(
+                    (
+                        f"{wrflon_lr[0]:.5f} {wrflon_ur[0]:.5f} "
+                        f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
+                    )
+                )
                 valindex += 1
                 if valindex == 1:
                     file.write("\n             ")
@@ -122,10 +128,12 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
                 wrflat_ur, wrflon_ur = wrf_ijll(
                     [ii + 1 + 0.5], [jj + 1 + 0.5], wrf_proj
                 )
-                file.write((
-                    f"{wrflat_lr[0]:.5f} {wrflat_ur[0]:.5f} "
-                    f"{wrflat_ul[0]:.5f} {wrflat_ll[0]:.5f}"
-                ))
+                file.write(
+                    (
+                        f"{wrflat_lr[0]:.5f} {wrflat_ur[0]:.5f} "
+                        f"{wrflat_ul[0]:.5f} {wrflat_ll[0]:.5f}"
+                    )
+                )
                 valindex += 1
                 if valindex == 1:
                     file.write("\n             ")
