@@ -90,15 +90,19 @@ def get_wrf_proj(wrf_filename):
         pole_lon = ncfile.POLE_LON
         mminlu = ncfile.MMINLU
         try:
-            eta_u = ncfile.variables["ZNU"][0].data.tolist()
-        except:
+            var = ncfile.variables["ZNU"]
+        except KeyError:
             eta_u = ""
             print("Warning: get_wrf_proj: could not find ZNU")
+        else:
+            eta_u = var[0].data.tolist()
         try:
-            p_top = ncfile.variables["P_TOP"][0]
-        except:
+            var = ncfile.variables["P_TOP"]
+        except KeyError:
             p_top = ""
             print("Warning: get_wrf_proj: could not find P_TOP")
+        else:
+            p_top = var[0]
     ref_i = float((imax + 1.0) / 2.0)
     ref_j = float((jmax + 1.0) / 2.0)
     if truelat1 > 0:
