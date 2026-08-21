@@ -8,6 +8,17 @@
 
 """
 
+# Imports
+# -------
+import numpy as np
+import os
+import math
+import pandas as pd
+from netCDF4 import Dataset
+import glob
+import re
+from hldust_utilities import get_wrf_proj, wrf_ijll
+
 
 def create_cdo_wrfgridfile(wrfout_domain_file):
     """Create WRF grid file for the CDO remapcon operator.
@@ -24,27 +35,6 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
         Path to the wrfout file.
     
     """
-
-    # -------- Import required packages --------
-    import numpy as np
-    import os
-    import math
-
-    # Dates
-    # import datetime
-    import pandas as pd
-
-    # NetCDF manipulation
-    from netCDF4 import Dataset
-
-    # File listing
-    import glob
-
-    # Regular expressions, pattern matching
-    import re
-
-    # WRF utilities
-    from wrf_utilities import get_wrf_proj, wrf_ijll
 
     # Get grid information
     with Dataset(wrfout_domain_file) as ncfile:

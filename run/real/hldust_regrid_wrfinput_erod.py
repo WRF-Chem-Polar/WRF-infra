@@ -14,13 +14,9 @@ to use instead of the EROD variable.
 import numpy as np
 import os
 import sys
-
-# NetCDF file manipulation
 from netCDF4 import Dataset
-
-# WRF model handling
-from wrf_utilities import get_wrf_proj, calc_wrf_grid_edges
-from create_cdo_wrfgridfile import create_cdo_wrfgridfile
+from hldust_utilities import get_wrf_proj, calc_wrf_grid_edges
+from hldust_create_cdo_wrfgridfile import create_cdo_wrfgridfile
 
 
 wrfinput_src = sys.argv[1]

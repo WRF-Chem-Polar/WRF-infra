@@ -4,6 +4,11 @@
 
 """Contains functions for WRF data analysis steps required in the HLdust pre-processing workflow"""
 
+# Imports
+# -------
+from netCDF4 import Dataset
+import numpy as np
+import math
 
 def get_wrf_proj(wrf_filename):
     """Return WRF grid projection info for a given WRF file.
@@ -14,8 +19,6 @@ def get_wrf_proj(wrf_filename):
         Name of WRF output file to read projection from
 
     """
-    # Imports
-    from netCDF4 import Dataset
 
     # Define custom wrf_projection class
     class wrf_projection:
@@ -137,8 +140,6 @@ def wrf_llij(lat, lon, wrf_proj):
         The projection of the WRF grid
 
     """
-    import numpy as np
-    import math
 
     wrfi = []
     wrfj = []
@@ -328,8 +329,6 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         The projection of the WRF grid
 
     """
-    import numpy as np
-    import math
 
     if np.shape(wrfi) != np.shape(wrfj):
         print("Error, np.shape(wrfi) != np.shape(wrfj)")
@@ -583,7 +582,6 @@ def calc_wrf_grid_edges(wrf_proj):
         The projection of the WRF grid
 
     """
-    import numpy as np
 
     wrf_i_edge = np.linspace(0.5, wrf_proj.imax + 0.5, wrf_proj.imax + 1)
     wrf_j_edge = np.linspace(0.5, wrf_proj.jmax + 0.5, wrf_proj.jmax + 1)
