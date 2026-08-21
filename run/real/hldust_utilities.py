@@ -105,7 +105,6 @@ def get_wrf_proj(wrf_filename):
         hemi = 1.0
     else:
         hemi = -1.0
-    # Create WRFProjection instance wrf_proj
     wrf_proj = WRFProjection(
         map_proj,
         imax,
@@ -128,11 +127,7 @@ def get_wrf_proj(wrf_filename):
         eta_u,
         p_top,
     )
-    # Return wrf_proj
     return wrf_proj
-
-
-# -----------------------------------------------------------------------------
 
 
 def wrf_llij(lat, lon, wrf_proj):
@@ -319,9 +314,6 @@ def wrf_llij(lat, lon, wrf_proj):
         )
 
     return wrfi, wrfj
-
-
-# -----------------------------------------------------------------------------
 
 
 def wrf_ijll(wrfi, wrfj, wrf_proj):
@@ -574,9 +566,6 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         wrflon[wrflon < -180.0] = wrflon[wrflon < -180.0] + 360.0
 
     return wrflat, wrflon
-
-
-# -----------------------------------------------------------------------------
 
 
 def calc_wrf_grid_edges(wrf_proj):
