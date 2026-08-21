@@ -564,9 +564,8 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         ) * dlon * deg_per_rad + wrf_proj.ref_lon
 
     else:
-        raise ValueError(
-            "wrf_proj.map_proj={} invalid".format(wrf_proj.map_proj)
-        )
+        msg = f"wrf_proj.map_proj={wrf_proj.map_proj} invalid."
+        raise ValueError(msg)
 
     # Convert to a -180 -> 180 East convention
     if np.any(wrflon > 180.0):
