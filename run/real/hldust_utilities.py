@@ -74,37 +74,38 @@ def get_wrf_proj(wrf_filename):
 
     # Open NetCDF and get WRF projection attribute values
     with Dataset(wrf_filename) as ncfile:
-        map_proj = ncfile.__getattribute__("MAP_PROJ")
-        imax = ncfile.__getattribute__("WEST-EAST_GRID_DIMENSION") - 1
-        jmax = ncfile.__getattribute__("SOUTH-NORTH_GRID_DIMENSION") - 1
-        kmax = ncfile.__getattribute__("BOTTOM-TOP_GRID_DIMENSION") - 1
-        dx = ncfile.__getattribute__("DX") / 1000.0
-        dy = ncfile.__getattribute__("DY") / 1000.0
-        moad_cen_lat = ncfile.__getattribute__("MOAD_CEN_LAT")
-        truelat1 = ncfile.__getattribute__("TRUELAT1")
-        truelat2 = ncfile.__getattribute__("TRUELAT2")
-        stdlon = ncfile.__getattribute__("STAND_LON")
-        ref_lat = ncfile.__getattribute__("CEN_LAT")
-        ref_lon = ncfile.__getattribute__("CEN_LON")
-        pole_lat = ncfile.__getattribute__("POLE_LAT")
-        pole_lon = ncfile.__getattribute__("POLE_LON")
-        mminlu = ncfile.__getattribute__("MMINLU")
+        map_proj = ncfile.MAP_PROJ
+        imax = getattr(ncfile, "WEST-EAST_GRID_DIMENSION") - 1
+        jmax = getattr(ncfile, "SOUTH-NORTH_GRID_DIMENSION") - 1
+        kmax = getattr(ncfile, "BOTTOM-TOP_GRID_DIMENSION") - 1
+        dx = ncfile.DX / 1000
+        dy = ncfile.DY / 1000
+        moad_cen_lat = ncfile.MOAD_CEN_LAT
+        truelat1 = ncfile.TRUELAT1
+        truelat2 = ncfile.TRUELAT2
+        stdlon = ncfile.STAND_LON
+        ref_lat = ncfile.CEN_LAT
+        ref_lon = ncfile.CEN_LON
+        pole_lat = ncfile.POLE_LAT
+        pole_lon = ncfile.POLE_LON
+        mminlu = ncfile.MMINLU
         try:
-            eta_u = ncfile.variables["ZNU"][0].data.tolist()
-        except:
+            var = ncfile.variables["ZNU"]
+        except KeyError:
             eta_u = ""
             print("Warning: get_wrf_proj: could not find ZNU")
+        else:
+            eta_u = var[0].data.tolist()
         try:
-            p_top = ncfile.variables["P_TOP"][0]
-        except:
+            var = ncfile.variables["P_TOP"]
+        except KeyError:
             p_top = ""
             print("Warning: get_wrf_proj: could not find P_TOP")
+        else:
+            p_top = var[0]
     ref_i = float((imax + 1.0) / 2.0)
     ref_j = float((jmax + 1.0) / 2.0)
-    if truelat1 > 0:
-        hemi = 1.0
-    else:
-        hemi = -1.0
+    hemi = 1 if truelat1 > 0 else -1
     wrf_proj = WRFProjection(
         map_proj,
         imax,
@@ -329,24 +330,14 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
     """
 
     if np.shape(wrfi) != np.shape(wrfj):
-        print("Error, np.shape(wrfi) != np.shape(wrfj)")
-        exit
+        msg = "Shapes of input arrays wrfi and wrfj mismatch."
+        raise ValueError(msg)
 
     # Convert lists to numpy arrays
-    if np.shape(wrfi) == ():
-        wrfi = [wrfi]
-        wrfj = [wrfj]
-    wrfi = np.asarray(wrfi)
-    wrfj = np.asarray(wrfj)
-    wrflat = np.empty((np.shape(wrfi)))
-    wrflon = np.empty((np.shape(wrfj)))
-    if np.shape(wrflat) == ():
-        wrflat = [wrflat]
-        wrflon = [wrflon]
-    wrflat = np.asarray(wrflat)
-    wrflon = np.asarray(wrflon)
-    wrflat[:] = np.nan
-    wrflon[:] = np.nan
+    wrfi = np.array(wrfi)
+    wrfj = np.array(wrfj)
+    wrflat = np.full(np.shape(wrfi), np.nan)
+    wrflon = np.full(np.shape(wrfj), np.nan)
 
     # Earth radius in kilometers divided by dx
     rebydx = 6370.0 / wrf_proj.dx
@@ -555,9 +546,8 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         ) * dlon * deg_per_rad + wrf_proj.ref_lon
 
     else:
-        raise ValueError(
-            "wrf_proj.map_proj={} invalid".format(wrf_proj.map_proj)
-        )
+        msg = f"wrf_proj.map_proj={wrf_proj.map_proj} invalid."
+        raise ValueError(msg)
 
     # Convert to a -180 -> 180 East convention
     if np.any(wrflon > 180.0):
@@ -590,5 +580,3 @@ def calc_wrf_grid_edges(wrf_proj):
         )
     return wrf_lat_edge, wrf_lon_edge
 
-
-# -----------------------------------------------------------------------------
