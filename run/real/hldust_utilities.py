@@ -338,8 +338,8 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
     """
 
     if np.shape(wrfi) != np.shape(wrfj):
-        print("Error, np.shape(wrfi) != np.shape(wrfj)")
-        exit
+        msg = "Shapes of input arrays wrfi and wrfj mismatch."
+        raise ValueError(msg)
 
     # Convert lists to numpy arrays
     if np.shape(wrfi) == ():
