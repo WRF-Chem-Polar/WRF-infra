@@ -342,20 +342,10 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         raise ValueError(msg)
 
     # Convert lists to numpy arrays
-    if np.shape(wrfi) == ():
-        wrfi = [wrfi]
-        wrfj = [wrfj]
-    wrfi = np.asarray(wrfi)
-    wrfj = np.asarray(wrfj)
-    wrflat = np.empty((np.shape(wrfi)))
-    wrflon = np.empty((np.shape(wrfj)))
-    if np.shape(wrflat) == ():
-        wrflat = [wrflat]
-        wrflon = [wrflon]
-    wrflat = np.asarray(wrflat)
-    wrflon = np.asarray(wrflon)
-    wrflat[:] = np.nan
-    wrflon[:] = np.nan
+    wrfi = np.array(wrfi)
+    wrfj = np.array(wrfj)
+    wrflat = np.full(np.shape(wrfi), np.nan)
+    wrflon = np.full(np.shape(wrfj), np.nan)
 
     # Earth radius in kilometers divided by dx
     rebydx = 6370.0 / wrf_proj.dx
