@@ -2,16 +2,18 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-# --------  Functions for WRF data analysis -------
-#
-# Louis Marelle, 2022/10/24
-#
-
-# -----------------------------------------------------------------------------
+"""Contains functions for WRF data analysis steps required in the HLdust pre-processing workflow"""
 
 
-def get_wrf_proj(WRF_FILENAME):
-    """Returns WRF grid projection info wrf_proj for WRF file WRF_FILENAME"""
+def get_wrf_proj(wrf_filename):
+    """Return WRF grid projection info for a given WRF file.
+
+    Parameters
+    ----------
+    wrf_filename: str
+        Name of WRF output file to read projection from
+
+    """
     # Imports
     from netCDF4 import Dataset
 
@@ -62,7 +64,7 @@ def get_wrf_proj(WRF_FILENAME):
             self.p_top = p_top
 
     # Open NetCDF and get WRF projection attribute values
-    with Dataset(WRF_FILENAME) as ncfile:
+    with Dataset(wrf_filename) as ncfile:
         map_proj = ncfile.__getattribute__("MAP_PROJ")
         imax = ncfile.__getattribute__("WEST-EAST_GRID_DIMENSION") - 1
         jmax = ncfile.__getattribute__("SOUTH-NORTH_GRID_DIMENSION") - 1
@@ -125,7 +127,16 @@ def get_wrf_proj(WRF_FILENAME):
 
 
 def wrf_llij(lat, lon, wrf_proj):
-    """Convert lat and lon into WRF i,j for the WRF grid defined in wrf_proj"""
+    """Convert lat and lon into i and j indices for a WRF grid.
+
+    Parameters
+    ----------
+    lat, lon: scalars
+        The values of latitude and longitude
+    wrf_proj: wrf_projection instance
+        The projection of the WRF grid
+
+    """
     import numpy as np
     import math
 
@@ -307,7 +318,16 @@ def wrf_llij(lat, lon, wrf_proj):
 
 
 def wrf_ijll(wrfi, wrfj, wrf_proj):
-    """Convert WRF i,j into lat and lon for the WRF grid defined in wrf_proj"""
+    """Convert i and j indices for a WRF grid into lat and lon
+
+    Parameters
+    ----------
+    wrfi, wrfj: scalars
+        The indices to extract
+    wrf_proj: wrf_projection instance
+        The projection of the WRF grid
+
+    """
     import numpy as np
     import math
 
@@ -662,8 +682,14 @@ def wrf_interp2(model_x, model_y, model_var, x, y):
 
 
 def calc_wrf_grid_edges(wrf_proj):
-    """Return the latitude and longitude of the grid cell edges for the WRF grid
-    defined in wrf_proj"""
+    """Calculate the latitude and longitude of the grid cell edges of a WRF grid
+
+    Parameters
+    ----------
+    wrf_proj: wrf_projection instance
+        The projection of the WRF grid
+
+    """
     import numpy as np
 
     wrf_i_edge = np.linspace(0.5, wrf_proj.imax + 0.5, wrf_proj.imax + 1)
