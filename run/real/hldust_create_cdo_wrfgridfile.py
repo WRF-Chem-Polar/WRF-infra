@@ -52,25 +52,18 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
     print("Create CDO WRF grid file for remapcon")
     cdo_wrfgrid_file = os.path.join(os.path.dirname(wrfout_domain_file), "cdo_wrfgrid.txt")
     with open(cdo_wrfgrid_file, mode="w") as file:
-        file.write(
-            "# WRF grid for CDO remapcon, from file "
-            + WRFOUT_DOMAIN_FILE
-            + "\n"
-        )
+        file.write(f"# WRF grid for CDO remapcon, from file {wrfout_domain_file}\n")
         file.write("gridtype  = curvilinear\n")
-        file.write(
-            "gridsize  = " + str((wrf_proj.imax) * (wrf_proj.jmax)) + "\n"
-        )
-        file.write("xsize     = " + str(wrf_proj.imax) + "\n")
-        file.write("ysize     = " + str(wrf_proj.jmax) + "\n")
+        file.write(f"gridsize = {wrf_proj.imax * wrf_proj.jmax}\n")
+        file.write(f"xsize    = {wrf_proj.imax}\n")
+        file.write(f"ysize    = {wrf_proj.jmax}\n")
         # Write xvals (lon)
         valindex = 0
         file.write("xvals     =  ")
         for jj in range(wrf_proj.jmax):
             for ii in range(wrf_proj.imax):
-                wrf_lon_str = "{:.5f}".format(wrf_xlong[jj, ii])
-                file.write(wrf_lon_str + "  ")
-                valindex = valindex + 1
+                file.write(f"{wrf_xlong[jj, ii]:.5f}  ")
+                valindex += 1
                 if valindex == 10:
                     file.write("\n             ")
                     valindex = 0
@@ -91,20 +84,11 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
                 wrflat_ur, wrflon_ur = wrf_ijll(
                     [ii + 1 + 0.5], [jj + 1 + 0.5], wrf_proj
                 )
-                wrflon_ll_str = "{:.5f}".format(wrflon_ll[0])
-                wrflon_lr_str = "{:.5f}".format(wrflon_lr[0])
-                wrflon_ul_str = "{:.5f}".format(wrflon_ul[0])
-                wrflon_ur_str = "{:.5f}".format(wrflon_ur[0])
-                file.write(
-                    wrflon_lr_str
-                    + " "
-                    + wrflon_ur_str
-                    + " "
-                    + wrflon_ul_str
-                    + " "
-                    + wrflon_ll_str
-                )
-                valindex = valindex + 1
+                file.write((
+                    f"{wrflon_lr[0]:.5f} {wrflon_ur[0]:.5f} "
+                    f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
+                ))
+                valindex += 1
                 if valindex == 1:
                     file.write("\n             ")
                     valindex = 0
@@ -113,10 +97,9 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
         file.write("yvals     =  ")
         for jj in range(wrf_proj.jmax):
             for ii in range(wrf_proj.imax):
-                wrf_lat_str = "{:.5f}".format(wrf_xlat[jj, ii])
-                file.write(wrf_lat_str + "  ")
-                valindex = valindex + 1
-                if (ii == wrf_proj.imax) and (jj == wrf_proj.jmax):
+                file.write(f"{wrf_xlat[jj, ii]:.5f}  ")
+                valindex += 1
+                if ii == wrf_proj.imax and jj == wrf_proj.jmax:
                     file.write("\n")
                     valindex = 0
                 elif valindex == 10:

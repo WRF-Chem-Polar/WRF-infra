@@ -25,9 +25,8 @@ erodfile = "/proju/wrf-chem/input-data/natural_emissions/terrestrial/dust/sfunc_
 
 # -------- Initialize --------
 # ---- Open WRF grid
-wrf_domain_file = WRFINPUT_SRC
-wrf_proj = get_wrf_proj(wrf_domain_file)
-with Dataset(wrf_domain_file) as ncfile:
+wrf_proj = get_wrf_proj(wrfinput_src)
+with Dataset(wrfinput_src) as ncfile:
     ncfile.set_auto_mask(False)
     wrf_xland = np.squeeze(ncfile.variables["XLAND"][:])
     wrf_xice = np.squeeze(ncfile.variables["SEAICE"][:])
@@ -38,14 +37,14 @@ minlat = np.min(wrf_lat_edge) - 1.0
 maxlat = np.max(wrf_lat_edge) + 1.0
 minlon = np.min(wrf_lon_edge) - 1.0
 maxlon = np.max(wrf_lon_edge) + 1.0
-if minlat < -85.0:
-    minlat = -90.0
-if maxlat > 85.0:
-    maxlat = 90.0
-if minlon < -175.0:
-    minlon = -180.0
-if maxlon > 175.0:
-    maxlon = 180.0
+if minlat < -85:
+    minlat = -90
+if maxlat > 85:
+    maxlat = 90
+if minlon < -175:
+    minlon = -180
+if maxlon > 175:
+    maxlon = 180
 
 # ---- CDO conservative regridding of erodibility to WRF grid
 cdo_wrfgrid_file = os.path.join(os.path.dirname(wrfinput_src), "cdo_wrfgrid.txt")
@@ -87,9 +86,9 @@ with Dataset(erodfile_regrid) as ncfile:
     erod_regrid = ncfile.variables["sfunc"][:]
 wrf_erod = np.copy(erod_regrid)
 # Remove invalid data
-wrf_erod[wrf_xland > 1.5] = 0.0
-wrf_erod[wrf_erod > 1.0] = 1.0
-wrf_erod[wrf_erod < 0.0] = 0.0
+wrf_erod[wrf_xland > 1.5] = 0
+wrf_erod[wrf_erod > 1] = 1
+wrf_erod[wrf_erod < 0] = 0
 # Write to wrfinput
 print(f"Write new erodibility data to {wrfinput_src}")
 with Dataset(wrfinput_src, "a") as ncfile:
