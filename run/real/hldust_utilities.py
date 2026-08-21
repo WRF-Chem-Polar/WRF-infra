@@ -74,21 +74,21 @@ def get_wrf_proj(wrf_filename):
 
     # Open NetCDF and get WRF projection attribute values
     with Dataset(wrf_filename) as ncfile:
-        map_proj = ncfile.__getattribute__("MAP_PROJ")
-        imax = ncfile.__getattribute__("WEST-EAST_GRID_DIMENSION") - 1
-        jmax = ncfile.__getattribute__("SOUTH-NORTH_GRID_DIMENSION") - 1
-        kmax = ncfile.__getattribute__("BOTTOM-TOP_GRID_DIMENSION") - 1
-        dx = ncfile.__getattribute__("DX") / 1000.0
-        dy = ncfile.__getattribute__("DY") / 1000.0
-        moad_cen_lat = ncfile.__getattribute__("MOAD_CEN_LAT")
-        truelat1 = ncfile.__getattribute__("TRUELAT1")
-        truelat2 = ncfile.__getattribute__("TRUELAT2")
-        stdlon = ncfile.__getattribute__("STAND_LON")
-        ref_lat = ncfile.__getattribute__("CEN_LAT")
-        ref_lon = ncfile.__getattribute__("CEN_LON")
-        pole_lat = ncfile.__getattribute__("POLE_LAT")
-        pole_lon = ncfile.__getattribute__("POLE_LON")
-        mminlu = ncfile.__getattribute__("MMINLU")
+        map_proj = ncfile.MAP_PROJ
+        imax = getattr(ncfile, "WEST-EAST_GRID_DIMENSION") - 1
+        jmax = getattr(ncfile, "SOUTH-NORTH_GRID_DIMENSION") - 1
+        kmax = getattr(ncfile, "BOTTOM-TOP_GRID_DIMENSION") - 1
+        dx = ncfile.DX / 1000
+        dy = ncfile.DY / 1000
+        moad_cen_lat = ncfile.MOAD_CEN_LAT
+        truelat1 = ncfile.TRUELAT1
+        truelat2 = ncfile.TRUELAT2
+        stdlon = ncfile.STAND_LON
+        ref_lat = ncfile.CEN_LAT
+        ref_lon = ncfile.CEN_LON
+        pole_lat = ncfile.POLE_LAT
+        pole_lon = ncfile.POLE_LON
+        mminlu = ncfile.MMINLU
         try:
             eta_u = ncfile.variables["ZNU"][0].data.tolist()
         except:
