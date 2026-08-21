@@ -131,6 +131,8 @@ def get_wrf_proj(wrf_filename):
     return wrf_proj
 
 
+# We should adopt the convention: lon before lat
+# cf. https://github.com/WRF-Chem-Polar/WRF-infra/issues/250
 def wrf_llij(lat, lon, wrf_proj):
     """Convert lat and lon into i and j indices for a WRF grid.
 
