@@ -2,7 +2,14 @@
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
-"""Contains functions for WRF data analysis steps required in the HLdust pre-processing workflow"""
+"""Contains functions for WRF data analysis steps required in the HLdust pre-processing workflow
+
+References:
+ - The WPS code can be found at:
+   https://github.com/wrf-model/WPS
+   (More persistent link: https://archive.softwareheritage.org/swh:1:dir:ef689d58a7182286302a369f8f41908ffe609910)
+
+"""
 
 # Imports
 # -------
