@@ -9,7 +9,6 @@ to use instead of the EROD variable.
 
 """
 
-# -------- Imports --------
 import numpy as np
 import os
 import sys

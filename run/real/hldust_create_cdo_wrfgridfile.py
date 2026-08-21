@@ -8,8 +8,6 @@ cdo remapcon,cdo_wrfgrid.txt input.nc output.nc
 
 """
 
-# Imports
-# -------
 import numpy as np
 import os
 import math

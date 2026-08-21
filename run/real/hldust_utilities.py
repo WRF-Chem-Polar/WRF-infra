@@ -11,14 +11,11 @@ References:
 
 """
 
-# Imports
-# -------
 from netCDF4 import Dataset
 import numpy as np
 import math
 
 
-# Define custom WRF projection class
 class WRFProjection:
     def __init__(
         self,
