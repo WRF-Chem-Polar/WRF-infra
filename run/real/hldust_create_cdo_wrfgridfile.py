@@ -90,7 +90,7 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
                 file.write(
                     (
                         f"{wrflon_lr[0]:.5f} {wrflon_ur[0]:.5f} "
-                        f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
+                        f"{wrflon_ul[0]:.5f} {wrflon_ll[0]:.5f}"
                     )
                 )
                 valindex += 1
