@@ -105,10 +105,7 @@ def get_wrf_proj(wrf_filename):
             p_top = var[0]
     ref_i = float((imax + 1.0) / 2.0)
     ref_j = float((jmax + 1.0) / 2.0)
-    if truelat1 > 0:
-        hemi = 1.0
-    else:
-        hemi = -1.0
+    hemi = 1 if truelat1 > 0 else -1
     # Create WRFProjection instance wrf_proj
     wrf_proj = WRFProjection(
         map_proj,
