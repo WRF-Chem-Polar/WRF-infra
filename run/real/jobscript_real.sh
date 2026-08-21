@@ -290,7 +290,7 @@ fi
 echo " "
 echo "-------- $SLURM_JOB_NAME: Use high-latitude erodibility data --------"
 echo " "
-${cmd_python} regrid_wrfinput_erod.py ./wrfinput_d01
+${cmd_python} hldust_regrid_wrfinput_erod.py ./wrfinput_d01
 
 #----------#
 # Finalize #
