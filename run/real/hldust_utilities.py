@@ -266,8 +266,8 @@ def wrf_llij(lat, lon, wrf_proj):
         # (what we assume) which is different than the original NCEP
         # algorithms which used the NE corner as the origin in the
         # southern hemisphere (left-hand vs. right-hand coordinate?)
-        wrfi = wrf_proj.hemi * wrfi
-        wrfj = wrf_proj.hemi * wrfj
+        wrfi *= wrf_proj.hemi
+        wrfj *= wrf_proj.hemi
 
     elif wrf_proj.map_proj == 2:
         # -------- Polar stereographic projection --------
@@ -310,9 +310,8 @@ def wrf_llij(lat, lon, wrf_proj):
         wrfj = polej + wrf_proj.hemi * rm * np.sin(alo)
 
     else:
-        raise ValueError(
-            "wrf_proj.map_proj={} invalid".format(wrf_proj.map_proj)
-        )
+        msg = f"wrf_proj.map_proj={wrf_proj.map_proj} invalid."
+        raise ValueError(msg)
 
     return wrfi, wrfj
 
@@ -550,10 +549,8 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
         raise ValueError(msg)
 
     # Convert to a -180 -> 180 East convention
-    if np.any(wrflon > 180.0):
-        wrflon[wrflon > 180.0] = wrflon[wrflon > 180.0] - 360.0
-    if np.any(wrflon > 180.0):
-        wrflon[wrflon < -180.0] = wrflon[wrflon < -180.0] + 360.0
+    wrflon[wrflon > 180.0] -= 360
+    wrflon[wrflon < -180.0] += 360
 
     return wrflat, wrflon
 
