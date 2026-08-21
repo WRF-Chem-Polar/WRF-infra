@@ -10,6 +10,53 @@ from netCDF4 import Dataset
 import numpy as np
 import math
 
+# Define custom WRF projection class
+class WRFProjection:
+    def __init__(
+        self,
+        map_proj,
+        imax,
+        jmax,
+        kmax,
+        dx,
+        dy,
+        moad_cen_lat,
+        truelat1,
+        truelat2,
+        stdlon,
+        ref_lat,
+        ref_lon,
+        ref_i,
+        ref_j,
+        pole_lat,
+        pole_lon,
+        hemi,
+        mminlu,
+        eta_u,
+        p_top,
+    ):
+        self.map_proj = map_proj
+        self.imax = imax
+        self.jmax = jmax
+        self.kmax = kmax
+        self.dx = dx
+        self.dy = dy
+        self.moad_cen_lat = moad_cen_lat
+        self.truelat1 = truelat1
+        self.truelat2 = truelat2
+        self.stdlon = stdlon
+        self.ref_lat = ref_lat
+        self.ref_lon = ref_lon
+        self.ref_i = ref_i
+        self.ref_j = ref_j
+        self.pole_lat = pole_lat
+        self.pole_lon = pole_lon
+        self.hemi = hemi
+        self.mminlu = mminlu
+        self.eta_u = eta_u
+        self.p_top = p_top
+
+
 def get_wrf_proj(wrf_filename):
     """Return WRF grid projection info for a given WRF file.
 
@@ -19,52 +66,6 @@ def get_wrf_proj(wrf_filename):
         Name of WRF output file to read projection from
 
     """
-
-    # Define custom wrf_projection class
-    class wrf_projection:
-        def __init__(
-            self,
-            map_proj,
-            imax,
-            jmax,
-            kmax,
-            dx,
-            dy,
-            moad_cen_lat,
-            truelat1,
-            truelat2,
-            stdlon,
-            ref_lat,
-            ref_lon,
-            ref_i,
-            ref_j,
-            pole_lat,
-            pole_lon,
-            hemi,
-            mminlu,
-            eta_u,
-            p_top,
-        ):
-            self.map_proj = map_proj
-            self.imax = imax
-            self.jmax = jmax
-            self.kmax = kmax
-            self.dx = dx
-            self.dy = dy
-            self.moad_cen_lat = moad_cen_lat
-            self.truelat1 = truelat1
-            self.truelat2 = truelat2
-            self.stdlon = stdlon
-            self.ref_lat = ref_lat
-            self.ref_lon = ref_lon
-            self.ref_i = ref_i
-            self.ref_j = ref_j
-            self.pole_lat = pole_lat
-            self.pole_lon = pole_lon
-            self.hemi = hemi
-            self.mminlu = mminlu
-            self.eta_u = eta_u
-            self.p_top = p_top
 
     # Open NetCDF and get WRF projection attribute values
     with Dataset(wrf_filename) as ncfile:
@@ -99,8 +100,8 @@ def get_wrf_proj(wrf_filename):
         hemi = 1.0
     else:
         hemi = -1.0
-    # Create wrf_projection instance wrf_proj
-    wrf_proj = wrf_projection(
+    # Create WRFProjection instance wrf_proj
+    wrf_proj = WRFProjection(
         map_proj,
         imax,
         jmax,
@@ -136,7 +137,7 @@ def wrf_llij(lat, lon, wrf_proj):
     ----------
     lat, lon: scalars
         The values of latitude and longitude
-    wrf_proj: wrf_projection instance
+    wrf_proj: WRFProjection instance
         The projection of the WRF grid
 
     """
@@ -325,7 +326,7 @@ def wrf_ijll(wrfi, wrfj, wrf_proj):
     ----------
     wrfi, wrfj: scalars
         The indices to extract
-    wrf_proj: wrf_projection instance
+    wrf_proj: WRFProjection instance
         The projection of the WRF grid
 
     """
@@ -578,7 +579,7 @@ def calc_wrf_grid_edges(wrf_proj):
 
     Parameters
     ----------
-    wrf_proj: wrf_projection instance
+    wrf_proj: WRFProjection instance
         The projection of the WRF grid
 
     """
