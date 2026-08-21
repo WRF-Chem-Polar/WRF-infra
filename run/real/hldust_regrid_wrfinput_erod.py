@@ -26,11 +26,16 @@ erodfile = "/proju/wrf-chem/input-data/natural_emissions/terrestrial/dust/sfunc_
 # -------- Initialize --------
 # ---- Open WRF grid
 wrf_proj = get_wrf_proj(wrfinput_src)
+
+# Define land points
 with Dataset(wrfinput_src) as ncfile:
     ncfile.set_auto_mask(False)
     wrf_xland = np.squeeze(ncfile.variables["XLAND"][:])
     wrf_xice = np.squeeze(ncfile.variables["SEAICE"][:])
+
+# Include sea ice as ocean, not land
 wrf_xland[wrf_xice > 0.0] = 2.0
+
 # Calculate WRF grid edges
 wrf_lat_edge, wrf_lon_edge = calc_wrf_grid_edges(wrf_proj)
 minlat = np.min(wrf_lat_edge) - 1.0
