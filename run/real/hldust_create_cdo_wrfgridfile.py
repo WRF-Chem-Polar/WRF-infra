@@ -122,20 +122,11 @@ def create_cdo_wrfgridfile(wrfout_domain_file):
                 wrflat_ur, wrflon_ur = wrf_ijll(
                     [ii + 1 + 0.5], [jj + 1 + 0.5], wrf_proj
                 )
-                wrflat_ll_str = "{:.5f}".format(wrflat_ll[0])
-                wrflat_lr_str = "{:.5f}".format(wrflat_lr[0])
-                wrflat_ul_str = "{:.5f}".format(wrflat_ul[0])
-                wrflat_ur_str = "{:.5f}".format(wrflat_ur[0])
-                file.write(
-                    wrflat_lr_str
-                    + " "
-                    + wrflat_ur_str
-                    + " "
-                    + wrflat_ul_str
-                    + " "
-                    + wrflat_ll_str
-                )
-                valindex = valindex + 1
+                file.write((
+                    f"{wrflat_lr[0]:.5f} {wrflat_ur[0]:.5f} "
+                    f"{wrflat_ul[0]:.5f} {wrflat_ll[0]:.5f}"
+                ))
+                valindex += 1
                 if valindex == 1:
                     file.write("\n             ")
                     valindex = 0
