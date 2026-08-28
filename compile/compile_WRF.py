@@ -32,8 +32,5 @@ compilation.process_extra_sources(opts)
 if opts.dry:
     sys.exit(0)
 
-if opts.scheduler:
-    cmd = [config["common"]["job-exe"], "compile.job"]
-else:
-    cmd = ["./compile.job"]
+cmd = compilation.prepare_compile_cmd(opts, config)
 generic.run(cmd, cwd=opts.destination)
