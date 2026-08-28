@@ -7,51 +7,12 @@
 import argparse
 import datetime
 import itertools
+import os
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-import numpy as np
 import wrfpp
-from matplotlib.backends.backend_pdf import PdfPages
 from wrfinfra import generic
-
-# Functions
-
-
-def new_page():
-    """Create a new A4 page in current document.
-
-    Returns
-    -------
-    matplotlib.Figure
-        Handle to the figure object that represents the new page.
-
-    """
-    cm2in = 0.393701
-    return plt.figure(figsize=(21 * cm2in, 29.7 * cm2in))
-
-
-def add_title_page(pdf, runs):
-    """Add title page to current document.
-
-    Parameters
-    ----------
-    pdf: handle to PDF backend.
-        The handle to the PDF backend.
-    runs: [dict]
-        The information about the runs.
-
-    """
-    ax = new_page().add_axes([0, 0, 1, 1])
-    ax.text(0.5, 0.8, "Surface maps", ha="center", va="center")
-    y = 0.6
-    for i, run in enumerate(runs):
-        ax.text(0.1, y, f"Run {i + 1}: {run['ds'].encoding['source']}")
-        y -= 0.1
-    plt.axis("off")
-    pdf.savefig()
-    plt.close()
-
 
 # Command-line arguments
 
@@ -94,12 +55,21 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
-    "--output",
-    help="Path to output file. It must have the .pdf extension.",
-    default="surface-maps.pdf",
+    "--output-dir",
+    help="Path to output directory.",
+    default=os.getcwd(),
+)
+parser.add_argument(
+    "--markdown-file",
+    help="Name of the markdown file.",
+    default="surface-maps.md",
+)
+parser.add_argument(
+    "--license",
+    help="License to use for the content created by this script.",
+    default="CC-BY-SA-4.0",
 )
 args = parser.parse_args()
-
 
 # Pre-process command-line arguments and run quality controls
 
@@ -109,10 +79,6 @@ if args.start is not None:
 if args.end is not None:
     args.end = datetime.datetime.strptime(args.end, "%Y-%m-%d")
 metrics = [metric.strip() for metric in args.metrics.split(",")]
-if not args.output.endswith(".pdf"):
-    msg = "Parameter --output must have the .pdf extension."
-    raise ValueError(msg)
-
 
 # Open and prepare datasets
 
@@ -151,18 +117,25 @@ for i_run, path in enumerate(args.wrfouts.split(",")):
 
     runs.append(run)
 
+# Make sure that all datasets use the same cartographic projection
 
-# Format parameters
-fig_width = 0.7
-fig_height = 0.6
-fig_left = 0.15
-fig_bottom = 0.2
+for run in runs[1:]:
+    if run["ds"].crs_cartopy != runs[0]["ds"].crs_cartopy:
+        msg = "Datasets use different cartographic projections."
+        raise ValueError(msg)
 
+# Create the output markdown file and the plots
 
-# Create the PDF with the plots
+basename = os.path.basename(__file__)[:-3]
+if basename.startswith("plot-") and len(basename) > 5:
+    basename = basename[5:]
 
-with PdfPages(args.output) as pdf:
-    add_title_page(pdf, runs)
+if not os.path.isdir(args.output_dir):
+    os.mkdir(args.output_dir)
+
+with open(os.path.join(args.output_dir, args.markdown_file), mode="x") as f:
+    f.write(f"License: {args.license}.\n")
+    f.write("\n# Surface maps\n")
 
     for metric, variable in itertools.product(metrics, variables):
         print(f"Plotting map: {metric} of {variable}...")
@@ -185,9 +158,9 @@ with PdfPages(args.output) as pdf:
         vmin = np.amin(minvals)
         vmax = np.amax(maxvals)
 
-        fig = new_page()
-        ax_width = fig_width / len(runs)
-        axes = []
+        fig, axes = plt.subplots(
+            ncols=len(runs), subplot_kw={"projection": ds.crs}
+        )
         for i_run, run in enumerate(runs):
             print(f"    Processing run {i_run + 1}...")
 
@@ -202,13 +175,8 @@ with PdfPages(args.output) as pdf:
             lon, lat = ds.lonlat_var(variable)
 
             # Prepare axes and plot
-            left = fig_left + ax_width * i_run
-            ax = fig.add_axes(
-                [left, fig_bottom, 0.95 * ax_width, fig_height],
-                projection=ds.crs,
-            )
-            ax.coastlines()
-            plot = ax.pcolormesh(
+            axes[i_run].coastlines()
+            plot = axes[i_run].pcolormesh(
                 lon,
                 lat,
                 data,
@@ -217,9 +185,10 @@ with PdfPages(args.output) as pdf:
                 vmax=vmax,
                 rasterized=True,
             )
-            ax.set_title(f"Run {i_run + 1}")
-            axes.append(ax)
+            axes[i_run].set_title(f"Run {i_run + 1}")
 
+        title = f"{metric[0].upper()}{metric[1:]} of {variable}"
+        plt.suptitle(title)
         plt.colorbar(
             plot,
             ax=axes,
@@ -227,9 +196,14 @@ with PdfPages(args.output) as pdf:
             orientation="horizontal",
         )
 
-        # Finalize the page
-        pdf.savefig()
+        # Finalize and save the plot
+        filename = f"{basename}_{variable}_{metric}.png"
+        plt.savefig(os.path.join(args.output_dir, filename), dpi=300)
         plt.close()
+
+        # Add the plot to the markdown file
+        f.write(f"\n## {title}\n")
+        f.write(f"\n![{title}](./{filename})\n")
 
 # Close connections to wrfout files
 
