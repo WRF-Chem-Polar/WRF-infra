@@ -46,6 +46,8 @@ Same as "compile.WRF" but for compiling WPS.
 
 # Section "run.all"
 
-This section is mandatory when running WPS or WRF.
+This section is mandatory when running WPS, real, or WRF.
+
+ - `cmd-mpirun` (mandatory): the wrapper command to start MPI-enabled programs.
 
  - `cmd-python` (mandatory): the command to execute Python.

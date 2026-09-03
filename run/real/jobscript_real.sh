@@ -37,6 +37,7 @@ eval "$(get_host_config_value common shell)"
 eval "$(get_host_config_value run.all shell)"
 eval "$(get_host_config_value run.real shell)"
 cmd_python=$(get_host_config_value run.all cmd-python yes)
+cmd_mpirun=$(get_host_config_value run.all cmd-mpirun yes)
 
 # Add WRF-Chem preprocessors to PATH
 PATH=/proju/wrf-chem/software/wrf-installs/WRF-Chem-Preprocessing-Tools/bin:$PATH
@@ -135,7 +136,7 @@ sed -i \
     -e "s/<xwavenum>/${xwavenum}/g" \
     -e "s/<ywavenum>/${ywavenum}/g"\
     namelist.input
-mpirun ./real.exe
+${cmd_mpirun} ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
 
@@ -169,7 +170,7 @@ echo " "
 sed -i \
     "s/[ \t]*bio_emiss_opt[ \t]*=.*/bio_emiss_opt = 3, 3, 3,/g" \
     namelist.input
-mpirun ./real.exe
+${cmd_mpirun} ./real.exe
 # Check the end of the log file in case real crashes
 tail -n20 rsl.error.0000
 
