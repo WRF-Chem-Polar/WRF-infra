@@ -6,11 +6,11 @@
 
 import pytest
 from namelist import (
-    Value,
     Namelist,
+    Value,
     _name_is_valid,
-    _process_value,
     _parse_key_values,
+    _process_value,
 )
 
 

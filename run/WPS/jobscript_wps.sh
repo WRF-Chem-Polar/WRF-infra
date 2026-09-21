@@ -50,6 +50,7 @@ eval "$(get_host_config_value common shell)"
 eval "$(get_host_config_value run.all shell)"
 eval "$(get_host_config_value run.WPS shell)"
 cmd_python=$(get_host_config_value run.all cmd-python yes)
+cmd_mpirun=$(get_host_config_value run.all cmd-mpirun yes)
 
 #-------------------------#
 # Sanity checks on inputs #
@@ -112,7 +113,7 @@ mkdir -v geogrid
 cp $dir_wps/geogrid/GEOGRID.TBL geogrid/GEOGRID.TBL
 echo "-------- Running geogrid.exe --------"
 cp $dir_wps/geogrid.exe .
-mpirun ./geogrid.exe
+${cmd_mpirun} ./geogrid.exe
 # Clean up
 rm -f geogrid.exe
 rm -rf geogrid
@@ -205,7 +206,7 @@ while (( $(utc -d "${date_s_met} +1 day" "+%s") <= $(utc -d "${date_end}" "+%s")
       namelist.wps
   # Run avg_tsfc and metgrid
   ./avg_tsfc.exe
-  mpirun ./metgrid.exe
+  ${cmd_mpirun} ./metgrid.exe
   date_s_met=$date_e_met
 done # While date < end date
 # Clean up

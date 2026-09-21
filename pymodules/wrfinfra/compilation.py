@@ -4,9 +4,10 @@
 
 """Common Python resources for WRF-infra: resources for compilation."""
 
-import os
 import argparse
 import json
+import os
+
 from . import generic
 
 
@@ -15,8 +16,8 @@ def prepare_argparser(which):
 
     Parameters
     ----------
-    which: "WPS" | "WRF"
-        Which model are we trying to compile here?
+    which: "WPS" | "WRF" | "WRF-Chem-Preprocessing-Tools"
+        What are we trying to compile here?
 
     Returns
     -------
@@ -29,13 +30,19 @@ def prepare_argparser(which):
         repository = generic.URL_WPS
         commit = "master"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "WPS", "v4.6.0"
+            generic.path_of_repo(), "compile", "patches", which, "v4.6.0"
         )
     elif which == "WRF":
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "WRF"
+            generic.path_of_repo(), "compile", "patches", which
+        )
+    elif which == "WRF-Chem-Preprocessing-Tools":
+        repository = generic.URL_WRFCHEMPREPROC
+        commit = "main"
+        patches = os.path.join(
+            generic.path_of_repo(), "compile", "patches", which
         )
     else:
         msg = f"Invalid choice: {which}."
@@ -53,7 +60,7 @@ def prepare_argparser(which):
     )
     parser.add_argument(
         "--repository",
-        help="Git repository containing the WRF model code.",
+        help="Git repository containing the code.",
         default=repository,
     )
     parser.add_argument(
@@ -122,6 +129,12 @@ def prepare_argparser(which):
             help="A comma-separated list of extra WRF components to compile.",
             default="kpp,chem",
         )
+    elif which == "WRF-Chem-Preprocessing-Tools":
+        parser.add_argument(
+            "--preprocessors",
+            help="A comma-separated list preprocessors to compile.",
+            default="fire_emis,megan_bio_emiss,mozbc,wesely,exo_coldens",
+        )
     else:
         msg = f"Invalid choice: {which}."
         raise ValueError(msg)
@@ -186,7 +199,7 @@ def prepare_scheduler_header(opts, config, which):
         The pre-processed user-defined installation options.
     config: Namespace
         The parsed plateform-dependent configuration.
-    which: "WRF" | "WPS"
+    which: "WRF" | "WPS" | "WRF-Chem-Preprocessing-Tools"
         The program being compiled.
 
     Returns
@@ -196,7 +209,7 @@ def prepare_scheduler_header(opts, config, which):
 
     """
     # Quality checks on input arguments
-    if which not in ("WRF", "WPS"):
+    if which not in ("WRF", "WPS", "WRF-Chem-Preprocessing-Tools"):
         msg = f"Bad value of which ({which})."
         raise ValueError(msg)
 

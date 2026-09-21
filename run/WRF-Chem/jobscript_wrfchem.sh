@@ -37,6 +37,7 @@ eval "$(get_host_config_value common shell)"
 eval "$(get_host_config_value run.all shell)"
 eval "$(get_host_config_value run.wrf shell)"
 cmd_python=$(get_host_config_value run.all cmd-python yes)
+cmd_mpirun=$(get_host_config_value run.all cmd-mpirun yes)
 
 #---------#
 # Prepare #
@@ -157,7 +158,7 @@ cp "$dir_shared_data/upper_boundary_chem/ubvals_b40.20th.track1_1996-2005.nc" "$
 echo " "
 echo "-------- $SLURM_JOB_NAME: run wrf.exe ---------"
 echo " "
-mpirun ./wrf.exe
+${cmd_mpirun} ./wrf.exe
 
 #----------#
 # Finalize #

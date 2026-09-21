@@ -4,16 +4,19 @@
 
 """Common Python resources for WRF-infra: generic resources."""
 
-import os
-import functools
 import argparse
+import functools
+import os
+import re
 import subprocess
 
 URL_GITHUB = "https://github.com"
-URL_GROUP_WRF = "%s/wrf-model" % URL_GITHUB
-URL_WPS = "%s/WPS.git" % URL_GROUP_WRF
-URL_GROUP_POLAR = "%s/WRF-Chem-Polar" % URL_GITHUB
-URL_WRFCHEMPOLAR = "%s/WRF-Chem-Polar.git" % URL_GROUP_POLAR
+URL_GROUP_WRF = f"{URL_GITHUB}/wrf-model"
+URL_WPS = f"{URL_GROUP_WRF}/WPS.git"
+URL_GROUP_POLAR = f"{URL_GITHUB}/WRF-Chem-Polar"
+URL_WRFCHEMPOLAR = f"{URL_GROUP_POLAR}/WRF-Chem-Polar.git"
+URL_GROUP_NCAR = f"{URL_GITHUB}/NCAR"
+URL_WRFCHEMPREPROC = f"{URL_GROUP_POLAR}/WRF-Chem-Preprocessing-Tools.git"
 
 
 class ConvertToBoolean(argparse.Action):
@@ -39,7 +42,7 @@ class ConvertToBoolean(argparse.Action):
         setattr(namespace, option_string, values)
 
 
-@functools.lru_cache()
+@functools.lru_cache()  # noqa: UP011
 def identify_host_platform():
     """Return the identity of the host platform.
 
@@ -51,21 +54,17 @@ def identify_host_platform():
     """
     known_platforms = {
         "dahu": "dahu",
-        "jean-zay1": "jeanzay",
-        "jean-zay2": "jeanzay",
-        "jean-zay3": "jeanzay",
-        "jed1": "jed",
-        "jed2": "jed",
-        "spirit1.ipsl.fr": "spirit",
-        "spirit2.ipsl.fr": "spirit",
+        "jean-zay[1-3]": "jeanzay",
+        "r[1-2]i[0-9]n[0-9]+": "jeanzay",
+        "jed[1-2]": "jed",
+        "spirit[1-2].ipsl.fr": "spirit",
     }
     nodename = os.uname().nodename
-    try:
-        platform = known_platforms[nodename]
-    except KeyError:
-        msg = f"Unknown host platform: {nodename}."
-        raise NotImplementedError(msg)
-    return platform
+    for pattern, platform in known_platforms.items():
+        if re.compile(pattern).fullmatch(nodename) is not None:
+            return platform
+    msg = f"Unknown host platform: {nodename}."
+    raise NotImplementedError(msg)
 
 
 def process_path(path):

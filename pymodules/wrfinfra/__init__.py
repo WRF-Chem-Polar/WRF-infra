@@ -4,6 +4,6 @@
 
 """Common Python resources for WRF-infra."""
 
-from . import generic, compilation
+from . import compilation, generic
 
 __all__ = [generic, compilation]
