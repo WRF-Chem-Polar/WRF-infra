@@ -1,6 +1,6 @@
 This directory contains the definitions of environments for compiling and running WPS and WRF/WRF-Chem on different machines.
 
-There is one file per supported machine. This file should be named `$host.config` (the value of `$host` is determined by the function `identify_host_platform` in `pymodules/wrfinfra/generic.py`).
+There is one file per supported machine. This file should be named `$host.config` (the value of `$host` is determined by the mapping defined in the `hosts` file).
 
 This file should follow the syntax of "config files" (also known as "INI files"). The reference for this syntax is Python's `configparser` module.
 
