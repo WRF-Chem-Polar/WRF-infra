@@ -1,0 +1,21 @@
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
+# This file maps values returned by the hostname command to more human-readable
+# names. Each line must have two values, separated by blank space:
+#
+# value-returned-by-hostname    more-human-readable-name
+#
+# Several hostname values can map to the same human-readable
+# value. Additionally, regular expressions can be used to describe more than
+# one hostname value at a time.
+#
+# Note that if two or more hostname rules match the same hostname and are
+# associated with two different human-readable names, the one listed first will
+# be used.
+
+jean-zay[1-3]          jeanzay
+r[1-2]i[0-9]n[0-9]+    jeanzay
+jed[1-2]               jed
+spirit[1-2].ipsl.fr    spirit

@@ -52,13 +52,16 @@ def identify_host_platform():
         The identity of the host platform.
 
     """
-    known_platforms = {
-        "dahu": "dahu",
-        "jean-zay[1-3]": "jeanzay",
-        "r[1-2]i[0-9]n[0-9]+": "jeanzay",
-        "jed[1-2]": "jed",
-        "spirit[1-2].ipsl.fr": "spirit",
-    }
+    # Read the list of known platforms
+    known_platforms = {}
+    with open(os.path.join(path_of_repo(), "env", "hosts")) as f:
+        for line in f:
+            strip = line.strip()
+            if len(strip) == 0 or strip.startswith("#"):
+                continue
+            key, value = strip.split()
+            known_platforms[key] = value
+    # Find the correct name for current platform
     nodename = os.uname().nodename
     for pattern, platform in known_platforms.items():
         if re.compile(pattern).fullmatch(nodename) is not None:
