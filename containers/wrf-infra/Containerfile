@@ -1,0 +1,22 @@
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
+# Image providing a GNU/Linux WRF-infra ready environment.
+#
+FROM docker.io/library/debian:latest
+RUN <<EOF
+
+# Update system
+apt-get -y update
+apt-get -y upgrade
+
+# Install basic dependencies
+apt-get -y install less emacs-nox vim git python3 python3-pip
+
+# Clone WRF-infra
+mkdir /wrf
+cd /wrf
+git clone https://github.com/WRF-Chem-Polar/WRF-infra.git ./infra
+
+EOF
