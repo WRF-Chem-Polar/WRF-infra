@@ -56,7 +56,8 @@ apt-get -y install \
     bison \
     flex \
     openmpi-bin \
-    libopenmpi-dev
+    libopenmpi-dev \
+    libtirpc-dev
 
 # Gather all required libraries and include files in a common location
 mkdir system
