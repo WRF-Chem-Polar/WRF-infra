@@ -52,9 +52,21 @@ apt-get -y install \
     gfortran \
     libnetcdf-dev \
     libnetcdff-dev \
+    csh \
     bison \
     flex \
     openmpi-bin \
     libopenmpi-dev
+
+# Gather all required libraries and include files in a common location
+mkdir system
+cd system
+mkdir lib
+mkdir include
+ln -s /usr/lib/$(uname -m)-linux-gnu/hdf5/serial/libhdf5* ./lib/
+ln -s /usr/include/hdf5/serial/* ./include/
+ln -s /usr/lib/$(uname -m)-linux-gnu/libnetcdf* ./lib/
+ln -s /usr/include/netcdf* ./include/
+ln -s /usr/lib/$(uname -m)-linux-gnu/libfl.* ./lib/
 
 EOF
