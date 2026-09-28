@@ -12,6 +12,8 @@ This section is mandatory only if a scheduler is used. It defines parameters tha
 
  - `job-exe` (mandatory for scheduler use): the executable of the scheduler.
 
+ - `job-exe-option-$n` (optional): command line options for the scheduler. To specify multiple options, use this parameter multiple times with n=1, 2, ...
+
  - `job-header-prefix` (mandatory for scheduler use): the prefix of the scheduler instruction lines in job scripts (eg. `#SBATCH --` if scheduler uses lines such as `#SBATCH --time=00:01:00`).
 
  - `job-header-separator` (mandatory for scheduler use): the character string that separates option names from option values in scheduler instruction lines in job scripts (typically an equal sign or a space character).

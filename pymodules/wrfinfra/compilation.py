@@ -236,6 +236,7 @@ def prepare_scheduler_header(opts, config, which):
     # Format and return the header
     pfx = config["common"]["job-header-prefix"]
     sep = config["common"]["job-header-separator"]
+    sep = " " if sep in ("' '", '" "') else sep
     header = [f"{pfx}{key}{sep}{value}" for key, value in options.items()]
     return "\n".join(header)
 
@@ -361,3 +362,34 @@ def process_extra_sources(opts):
     for src in sources:
         path_in_repo = os.path.join(opts.destination, src[n:])
         generic.run(["cp", "-v", src, path_in_repo])
+
+
+def prepare_compile_cmd(opts, config):
+    """Prepare the command that must be executed to compile the model.
+
+    Parameters
+    ----------
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+
+    Returns
+    -------
+    List of str
+        The command to run to compile the model (WRF or WPS).
+
+    """
+    if opts.scheduler:
+        cmd = [config["common"]["job-exe"]]
+        i = 1
+        while True:
+            try:
+                cmd.append(config["common"][f"job-exe-option-{i}"])
+            except KeyError:
+                break
+            i += 1
+    else:
+        cmd = []
+    cmd.append("./compile.job")
+    return cmd
