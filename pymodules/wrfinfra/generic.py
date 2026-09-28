@@ -12,6 +12,7 @@ import subprocess
 
 URL_GITHUB = "https://github.com"
 URL_GROUP_WRF = f"{URL_GITHUB}/wrf-model"
+URL_WRF = f"{URL_GROUP_WRF}/WRF.git"
 URL_WPS = f"{URL_GROUP_WRF}/WPS.git"
 URL_GROUP_POLAR = f"{URL_GITHUB}/WRF-Chem-Polar"
 URL_WRFCHEMPOLAR = f"{URL_GROUP_POLAR}/WRF-Chem-Polar.git"

@@ -36,7 +36,7 @@ def prepare_argparser(which):
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "polar", which
+            generic.path_of_repo(), "compile", "patches", which, "polar"
         )
     elif which == "WRF-Chem-Preprocessing-Tools":
         repository = generic.URL_WRFCHEMPREPROC
@@ -129,6 +129,12 @@ def prepare_argparser(which):
             help="A comma-separated list of extra WRF components to compile.",
             default="kpp,chem",
         )
+        parser.add_argument(
+            "--upstream",
+            help="If present, use default settings for upstream WRF.",
+            action="store_true",
+        )
+
     elif which == "WRF-Chem-Preprocessing-Tools":
         parser.add_argument(
             "--preprocessors",
@@ -138,6 +144,20 @@ def prepare_argparser(which):
     else:
         msg = f"Invalid choice: {which}."
         raise ValueError(msg)
+
+    # Adjust default values for upstream WRF is requested
+    if which == "WRF" and parser.parse_args().upstream:
+        parser.set_defaults(
+            repository=generic.URL_WRF,
+            commit="master",
+            patches=os.path.join(
+                generic.path_of_repo(),
+                "compile",
+                "patches",
+                which,
+                "upstream",
+            ),
+        )
 
     return parser
 
