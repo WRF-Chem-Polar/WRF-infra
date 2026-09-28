@@ -36,7 +36,7 @@ def prepare_argparser(which):
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
         patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", which
+            generic.path_of_repo(), "compile", "patches", "polar", which
         )
     elif which == "WRF-Chem-Preprocessing-Tools":
         repository = generic.URL_WRFCHEMPREPROC
