@@ -29,9 +29,7 @@ def prepare_argparser(which):
     if which == "WPS":
         repository = generic.URL_WPS
         commit = "master"
-        patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", which, "v4.6.0"
-        )
+        patches = None
     elif which == "WRF":
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
