@@ -24,16 +24,18 @@ function get_host_name {
         echo "commons.bash: get_host_name: does not accept any argument." >&2
         return 1
     fi
-    local full_name=$(hostname)
-    if [[ "${full_name}" == spirit* ]]; then
-        echo "spirit"
-    elif [[ "${full_name}" == jed* ]]; then
-        echo "jed"
-    else
-        echo "commons.bash: get_host_name: unknown host (${full_name})." >&2
-        return 2
-    fi
-    return 0
+    local the_host=$(hostname)
+    while IFS="" read -r line || [ -n "$line" ]; do
+        local beginning=$(echo "$line" | awk '{$1=$1;print}')
+        if [[ $beginning == "" || $beginning == \#* ]]; then
+            continue
+        elif [[ "$the_host" =~ $(echo "$line" | awk '{print $1}') ]]; then
+            echo "$line" | awk '{print $2}'
+            return 0
+        fi
+    done < "$(get_git_root_dir)/env/hosts"
+    echo "commons.bash: get_host_name: host not found in list." >&2
+    return 2
 }
 
 function check_paths {
