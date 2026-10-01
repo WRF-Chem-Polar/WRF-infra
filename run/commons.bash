@@ -199,6 +199,9 @@ function get_git_root_dir {
     # -----
     # If within a submodule, it gives the path of the super project repository.
     #
+    # This implementation uses the git command. If git is not available or if
+    # it is too old, we use the fallback get_git_root_dir_nogit instead.
+    #
     if [[ $# -eq 0 ]]; then
         local path=$(pwd)
     elif [[ $# -eq 1 ]]; then
@@ -207,11 +210,17 @@ function get_git_root_dir {
         echo "commons.bash: get_git_root_dir: need 0 or 1 argument." >&2
         return 1
     fi
+    if ! which git > /dev/null 2>&1 ; then
+        # Use fallback implementation
+        get_git_root_dir_nogit "$path"
+        return $?
+    fi
     local git_version=$(git --version | cut -d" " -f3)
     if awk "BEGIN {exit !(${git_version%.*} < 2.13)}"; then
-        # Git v2.13 introduces --show-superproject-working-tree used below
-        echo "commons.bash: get_git_root_dir: need git >= 2.13." >&2
-        return 2
+        # Git v2.13 introduces --show-superproject-working-tree which is used
+        # below. We use the fallback implementation if not available
+        get_git_root_dir_nogit "$path"
+        return $?
     fi
     local git_repo=$(git -C "${path}" rev-parse \
                          --show-superproject-working-tree --show-toplevel)
@@ -220,6 +229,46 @@ function get_git_root_dir {
         return 3
     fi
     echo "${git_repo}" | head -n 1
+}
+
+function get_git_root_dir_nogit {
+    # Same as get_git_root_dir but without using git commands.
+    #
+    # This implementation is probably not as robust as the one relying on git,
+    # so we keep both and we use this one as a fallback if git is absent or
+    # too old.
+    #
+    local name="get_git_root_dir_nogit"
+    if [[ $# -eq 0 ]]; then
+        local path=$(pwd)
+    elif [[ $# -eq 1 ]]; then
+        local path=$1
+    else
+        echo "commons.bash: $name: need 0 or 1 argument." >&2
+        return 1
+    fi
+    if [ ! -d "$path" ]; then
+        echo "commons.bash: $name: directory does not exist." >&2
+    fi
+    path=$(realpath $path)
+    while [ true ]; do
+        if [ -d "$path/.git" ]; then
+            echo $path
+            return 0
+        elif [ -f "$path/.git" ];then
+            if [ $(grep -cE "^gitdir: " "$path/.git") == 0 ]; then
+                # This does not look like a submodule
+                echo "commons.bash: $name: Unknown .git file." >&2
+                return 2
+            fi
+        elif [ "$path" == "/" ]; then
+            echo "commons.bash: $name: could not determine git root path." >&2
+            return 3
+        fi
+        path=$(dirname $path)
+    done
+    echo "commons.bash: $name: this case should be unreachable." >&2
+    return 4
 }
 
 function get_host_config_value {
