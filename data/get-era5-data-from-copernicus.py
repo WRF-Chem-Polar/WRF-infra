@@ -170,7 +170,7 @@ while loop_day <= end_date:
     year, month, day = loop_day.strftime("%Y-%m-%d").split("-")
 
     # Prepare the work directory
-    dir_data = os.path.join(dir_work, f"ERA_grib1_{year}")
+    dir_data = os.path.join(dir_work, f"ERA5_grib1_{year}")
     try:
         os.mkdir(dir_data)
     except FileExistsError:
