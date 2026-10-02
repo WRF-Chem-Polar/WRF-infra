@@ -1,5 +1,5 @@
 --- Makefile	2026-09-28 09:50:24.990467790 +0200
-+++ Makefile.new	2026-10-02 10:15:01.903879972 +0200
++++ Makefile.new	2026-10-02 11:01:25.647674898 +0200
 @@ -442,8 +442,6 @@
                \( ! -f noahmp/drivers/wrf/NoahmpIOVarInitMod.F90 \) -o \( ! -f noahmp/drivers/wrf/NoahmpIOVarType.F90 \) -o \
  	      \( ! -f noahmp/drivers/wrf/GroundWaterMmfMod.F90 \) -o \( ! -f noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.F90 \) -o \
@@ -19,7 +19,7 @@
 -	else \
 -		echo No action required for MMM-physics submodule ; \
 -	fi
-+	echo No action required for MMM-physics submodule ; \
++	echo No action required for MMM-physics submodule ;
  	@if [ \( ! -f module_bl_mynnedmf.F \) -o \( ! -f module_bl_mynnedmf_common.F \) -o \
  	      \( ! -f module_bl_mynnedmf_driver.F \) ] ; then \
 -	      	echo Pulling in MYNN-EDMF submodule ; \
