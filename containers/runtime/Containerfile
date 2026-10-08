@@ -29,23 +29,23 @@ dnf -y install git procps-ng
 echo -e "\n\n" | "${SHELL}" <(curl -L micro.mamba.pm)
 source ~/.bashrc
 
-# Prepare the micromamba entrypoint
-echo "#!/bin/bash" > /script_entrypoint.bash
-chmod 700 /script_entrypoint.bash
+# Prepare the micromamba entrypoint (/usr/local/bin/@ for convinience)
+echo "#!/bin/bash" > /usr/local/bin/@
+chmod 700 /usr/local/bin/@
 copy_line=false
 while IFS="" read -r line || [ -n "$line" ]; do
-    [[ "$copy_line" == "true" ]] && echo "$line" >> /script_entrypoint.bash
+    [[ "$copy_line" == "true" ]] && echo "$line" >> /usr/local/bin/@
     if [[ "$line" == "# >>> mamba initialize >>>" ]]; then
         copy_line=true
-        echo "$line" >> /script_entrypoint.bash
+        echo "$line" >> /usr/local/bin/@
     elif [[ "$line" == "# <<< mamba initialize <<<" ]]; then
         copy_line=false
     fi
 done < ~/.bashrc
 
 # Prepare the micromamba environment
-micromamba -y create -c $repo_conda -n runtime python>=3.14
-echo "micromamba run -n runtime \"\${@%\$'\\n'}\"" >> /script_entrypoint.bash
+micromamba -y create -c $repo_conda -n runtime "python>=3.14"
+echo "micromamba run -n runtime \"\${@%\$'\\n'}\"" >> /usr/local/bin/@
 micromamba activate runtime
 
 # Get WRF-infra
@@ -70,4 +70,4 @@ dnf -y autoremove
 
 EOF
 
-ENTRYPOINT ["/script_entrypoint.bash"]
+ENTRYPOINT ["/usr/local/bin/@"]
