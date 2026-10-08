@@ -1,0 +1,75 @@
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
+# This image provides a GNU/Linux environment for WRF-Chem-Polar at run-time,
+# for all the tools that WRF-Chem-Polar uses (for example the Python
+# pre-processors, cdo, nco), but not for WRF itself. Dependencies for WRF are
+# handled on a per-machine basis.
+#
+# Note: we use a separate container for snakemake.
+
+
+FROM registry.access.redhat.com/ubi9/ubi
+
+ARG github_wcp=https://github.com/WRF-Chem-Polar
+ARG dir_infra=/wrf-infra
+ARG dir_tools=/wrf-infra_tools
+ARG repo_conda=conda-forge
+
+COPY --chmod=400 requirements_from_pyproject.py $dir_tools/
+
+RUN <<EOF
+
+# Install system-wide prerequisites
+dnf -y update
+dnf -y install \
+    git \ # To clone repositories of course
+    procps-ng # The micromamba installer uses this
+
+# Install and configure micromamba
+echo -e "\n\n" | "${SHELL}" <(curl -L micro.mamba.pm)
+source ~/.bashrc
+
+# Prepare the micromamba entrypoint
+echo "#!/bin/bash" > /script_entrypoint.bash
+chmod 700 /script_entrypoint.bash
+copy_line=false
+while IFS="" read -r line || [ -n "$line" ]; do
+    [[ "$copy_line" == "true" ]] && echo "$line" >> /script_entrypoint.bash
+    if [[ "$line" == "# >>> mamba initialize >>>" ]]; then
+        copy_line=true
+        echo "$line" >> /script_entrypoint.bash
+    elif [[ "$line" == "# <<< mamba initialize <<<" ]]; then
+        copy_line=false
+    fi
+done < ~/.bashrc
+
+# Prepare the micromamba environment
+micromamba -y create -c $repo_conda -n runtime python>=3.14
+echo "micromamba run -n runtime \"\${@%\$'\\n'}\"" >> /script_entrypoint.bash
+micromamba activate runtime
+
+# Get WRF-infra
+git clone $github_wcp/WRF-infra.git $dir_infra
+
+# Install dependencies (sneak in some of wrfpp's dependencies)
+cd $dir_infra
+python $dir_tools/requirements_from_pyproject.py
+echo "scipy" >> requirements.txt
+echo "matplotlib" >> requirements.txt
+echo "cartopy" >> requirements.txt
+micromamba -y install -c $repo_conda -f requirements.txt
+
+# Install wrfpp
+python -m pip install wrfpp[all]@git+$github_wcp/wrfpp.git@v1.0
+
+# Remove things that are not needed at runtime
+micromamba deactivate
+micromamba -y clean -a
+dnf -y remove git procps-ng
+dnf -y autoremove
+
+EOF
+
+ENTRYPOINT ["/script_entrypoint.bash"]
