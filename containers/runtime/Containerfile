@@ -23,9 +23,7 @@ RUN <<EOF
 
 # Install system-wide prerequisites
 dnf -y update
-dnf -y install \
-    git \ # To clone repositories of course
-    procps-ng # The micromamba installer uses this
+dnf -y install git procps-ng
 
 # Install and configure micromamba
 echo -e "\n\n" | "${SHELL}" <(curl -L micro.mamba.pm)
