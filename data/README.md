@@ -7,9 +7,27 @@ It also contains a description of how data files should be organised in our shar
 ## Directories and files structure
 
 ```
-
-TBD
-
+met/
+    era5/
+    fnl/
+chem/
+    cam-chem/
+    cesm/
+    waccm/
+emissions/
+    anthropo/
+        cams/
+        eclipse/
+    natural/
+        land/
+            biogenic/
+                megan/
+            dust/
+            wildfires/
+        ocean/
+            dms/
+            chla/
+wps-static/
 ```
 
 ## ERA5 meteorological hourly data
