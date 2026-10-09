@@ -2,6 +2,16 @@
 
 This directory contains scripts to download and pre-process input data for our WRF-Chem-Polar runs.
 
+It also contains a description of how data files should be organised in our shared spaces on computing clusters.
+
+## Directories and files structure
+
+```
+
+TBD
+
+```
+
 ## ERA5 meteorological hourly data
 
 Prerequisites:
