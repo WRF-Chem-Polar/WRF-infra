@@ -172,16 +172,13 @@ while loop_day <= end_date:
     # Prepare the work directory
     dir_data_sfc = os.path.join(dir_work, f"{year}_sfc")
     dir_data_pl = os.path.join(dir_work, f"{year}_pl")
-    try:
-        os.mkdir(dir_data_sfc)
-        os.mkdir(dir_data_pl)
-    except FileExistsError:
-        if not os.path.isdir(dir_data_sfc):
-            msg = "Target {dir_data_sfc} exists but is not a directory."
-            raise FileExistsError(msg)
-        if not os.path.isdir(dir_data_pl):
-            msg = "Target {dir_data_pl} exists but is not a directory."
-            raise FileExistsError(msg)
+    for dir_data in (dir_data_sfc, dir_data_pl):
+        try:
+            os.mkdir(dir_data)
+        except FileExistsError:
+            if not os.path.isdir(dir_data):
+                msg = "Target {dir_data} exists but is not a directory."
+                raise FileExistsError(msg)
 
     # Prepare the request
     request["year"] = year
