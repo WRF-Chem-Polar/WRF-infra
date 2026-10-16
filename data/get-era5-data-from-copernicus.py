@@ -170,12 +170,17 @@ while loop_day <= end_date:
     year, month, day = loop_day.strftime("%Y-%m-%d").split("-")
 
     # Prepare the work directory
-    dir_data = os.path.join(dir_work, f"ERA5_grib1_{year}")
+    dir_data_sfc = os.path.join(dir_work, f"{year}_sfc")
+    dir_data_pl = os.path.join(dir_work, f"{year}_pl")
     try:
-        os.mkdir(dir_data)
+        os.mkdir(dir_data_sfc)
+        os.mkdir(dir_data_pl)
     except FileExistsError:
-        if not os.path.isdir(dir_data):
-            msg = "Target {dir_data} exists but is not a directory."
+        if not os.path.isdir(dir_data_sfc):
+            msg = "Target {dir_data_sfc} exists but is not a directory."
+            raise FileExistsError(msg)
+        if not os.path.isdir(dir_data_pl):
+            msg = "Target {dir_data_pl} exists but is not a directory."
             raise FileExistsError(msg)
 
     # Prepare the request
@@ -186,7 +191,7 @@ while loop_day <= end_date:
     # Retrieve data on pressure levels
     request["pressure_level"] = pressure_levels
     request["variable"] = variables_pressure_levels
-    filepath = os.path.join(dir_data, f"e5.pl.{year}{month}{day}.grib")
+    filepath = os.path.join(dir_data_pl, f"{month}-{day}.grib")
     if not os.path.lexists(filepath) or overwrite:
         print(f"    > Retrieving {filepath}...")
         client.retrieve(dataset_pressure_levels, request, filepath)
@@ -196,7 +201,7 @@ while loop_day <= end_date:
     # Retrieve single-level data
     request.pop("pressure_level")
     request["variable"] = variables_single_levels
-    filepath = os.path.join(dir_data, f"e5.sfc.{year}{month}{day}.grib")
+    filepath = os.path.join(dir_data_sfc, f"{month}-{day}.grib")
     if not os.path.lexists(filepath) or overwrite:
         print(f"    > Retrieving {filepath}...")
         client.retrieve(dataset_single_levels, request, filepath)
