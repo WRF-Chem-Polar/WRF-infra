@@ -1,9 +1,14 @@
-#!/usr/bin/env bash
-
+#!/bin/bash
+#
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
 # Merge daily CESM NetCDF files for ONE month.
 # Usage: bash merge_cesm_monthly.sh START_DATE END_DATE RAW_DIR OUTPUT_DIR
 # Full month:    YYYY-MM-CESM.nc
 # Partial month: YYYY-MM-CESM-STARTDAY-ENDDAY.nc (plus an error)
+#
 
 set -u
 

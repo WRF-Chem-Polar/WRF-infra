@@ -28,7 +28,7 @@ Or run interactively:
 bash download_cesm.sh 2022-01-01 2022-01-31 /scratch/$USER/cesm
 ```
 
-Dates are **inclusive**. Date ranges may cross months and years, including leap years. The output folder is created if needed.
+Dates are **inclusive**. Date ranges may cross months and years, including leap years. The output folder is created if needed. The data set covers **2001-01-01 to 2022-12-31**; other dates are not on the server. Daily files are about 2.4 GB, so one month needs about 75 GB of disk space, up to twice as much during processing. Only one run at a time may use an output directory.
 
 ## Output files
 

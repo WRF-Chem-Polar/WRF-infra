@@ -1,10 +1,18 @@
-#!/usr/bin/env bash
-#SBATCH --nodes=1
-#SBATCH --time=24:00:00
-
+#!/bin/bash
+#
+# Copyright (c) 2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+#
+# License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
+#
 # Download CESM daily files, then merge them into monthly NetCDF files.
 # Usage: sbatch download_cesm.sh START_DATE END_DATE OUTPUT_DIR
 # Example: sbatch download_cesm.sh 2022-01-01 2022-03-31 /scratch/$USER/cesm
+#
+# Add cluster-specific directives below if needed (eg. --account on Jean Zay).
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=24:00:00
 
 set -u
 
@@ -39,6 +47,10 @@ done
 [[ -f "$merge_script" ]] || { echo "ERROR: Missing $merge_script" >&2; exit 1; }
 mkdir -p "$raw_dir" || exit 1
 
+# Refuse to run if another instance is already using the output directory.
+exec 9>"$output_dir/.cesm.lock"
+flock -n 9 || { echo "ERROR: $output_dir is already in use by another run." >&2; exit 1; }
+
 errors=0
 current=$start
 
@@ -63,7 +75,7 @@ while [[ ! "$current" > "$end" ]]; do
 
             if [[ ! -s "$file" ]]; then
                 echo "Downloading $day"
-                if wget -c --tries=5 --timeout=60 -O "$file.part" "$url" && [[ -s "$file.part" ]]; then
+                if wget -nv -c --tries=5 --timeout=60 -O "$file.part" "$url" && [[ -s "$file.part" ]]; then
                     mv "$file.part" "$file"
                 else
                     echo "ERROR: Could not download $day" >&2

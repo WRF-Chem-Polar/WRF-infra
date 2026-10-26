@@ -54,3 +54,17 @@ For more documentation and a list of all available options:
 ```sh
 python get-chlorophyll-data-from-copernicus-marine.py --help
 ```
+
+## CESM data
+
+Prerequisites:
+
+ - Install `wget` and `cdo` (eg. from conda-forge). No account is needed.
+
+The `CESM/` subdirectory contains a script that downloads daily CESM files from the NCAR OSDF server and merges them into monthly NetCDF files. For example, for January to March 2022:
+
+```sh
+sbatch CESM/download_cesm.sh 2022-01-01 2022-03-31 /scratch/$USER/cesm
+```
+
+See `CESM/README_download_cesm.md` for details.
