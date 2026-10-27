@@ -50,6 +50,10 @@ mkdir -p "$raw_dir" || exit 1
 # Refuse to run if another instance is already using the output directory.
 exec 9>"$output_dir/.cesm.lock"
 flock -n 9 || { echo "ERROR: $output_dir is already in use by another run." >&2; exit 1; }
+# Remove the lock file on exit (the lock itself is released automatically);
+# a run must not leave temporary files behind.  Raw files of incomplete
+# months are the only exception, kept so that a retry can resume them.
+trap 'rm -f "$output_dir/.cesm.lock"' EXIT
 
 errors=0
 current=$start
