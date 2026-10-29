@@ -378,6 +378,7 @@ if __name__ == "__main__":
 
         with open(args.namelist, mode="w") as f:
             f.write(str(namelist))
+            f.write("\n")
 
     elif args.read:
         for read in args.read:
