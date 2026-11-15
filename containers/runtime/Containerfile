@@ -29,7 +29,7 @@ dnf -y install git procps-ng
 echo -e "\n\n" | "${SHELL}" <(curl -L micro.mamba.pm)
 source ~/.bashrc
 
-# Prepare the micromamba entrypoint (/usr/local/bin/@ for convinience)
+# Prepare the micromamba entrypoint (/usr/local/bin/@ for convenience)
 echo "#!/bin/bash" > /usr/local/bin/@
 chmod 700 /usr/local/bin/@
 copy_line=false
