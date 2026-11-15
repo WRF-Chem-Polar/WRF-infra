@@ -4,9 +4,10 @@
 
 """Common Python resources for WRF-infra: resources for compilation."""
 
-import os
 import argparse
 import json
+import os
+
 from . import generic
 
 
@@ -15,8 +16,8 @@ def prepare_argparser(which):
 
     Parameters
     ----------
-    which: "WPS" | "WRF"
-        Which model are we trying to compile here?
+    which: "WPS" | "WRF" | "WRF-Chem-Preprocessing-Tools"
+        What are we trying to compile here?
 
     Returns
     -------
@@ -28,13 +29,19 @@ def prepare_argparser(which):
     if which == "WPS":
         repository = generic.URL_WPS
         commit = "master"
-        patches = os.path.join(
-            generic.path_of_repo(), "compile", "patches", "WPS", "v4.6.0"
-        )
+        patches = None
     elif which == "WRF":
         repository = generic.URL_WRFCHEMPOLAR
         commit = "polar/main"
-        patches = None
+        patches = os.path.join(
+            generic.path_of_repo(), "compile", "patches", which
+        )
+    elif which == "WRF-Chem-Preprocessing-Tools":
+        repository = generic.URL_WRFCHEMPREPROC
+        commit = "main"
+        patches = os.path.join(
+            generic.path_of_repo(), "compile", "patches", which
+        )
     else:
         msg = f"Invalid choice: {which}."
         raise RuntimeError(msg)
@@ -51,7 +58,7 @@ def prepare_argparser(which):
     )
     parser.add_argument(
         "--repository",
-        help="Git repository containing the WRF model code.",
+        help="Git repository containing the code.",
         default=repository,
     )
     parser.add_argument(
@@ -74,6 +81,13 @@ def prepare_argparser(which):
         help="Whether or not to compile in a scheduled job.",
         action=generic.ConvertToBoolean,
         default=True,
+    )
+    parser.add_argument(
+        "--scheduler-opt",
+        help="Define a scheduler option (can be used multiple times).",
+        action="append",
+        nargs=2,
+        default=[],
     )
     parser.add_argument(
         "--patches",
@@ -102,12 +116,6 @@ def prepare_argparser(which):
             help="Directory where WRF is installed.",
             default="./WRF",
         )
-        parser.add_argument(
-            "--parallel",
-            help="Whether to compile with support for parallel computing.",
-            action=generic.ConvertToBoolean,
-            default=True,
-        )
     elif which == "WRF":
         parser.add_argument(
             "--executable",
@@ -118,6 +126,12 @@ def prepare_argparser(which):
             "--components",
             help="A comma-separated list of extra WRF components to compile.",
             default="kpp,chem",
+        )
+    elif which == "WRF-Chem-Preprocessing-Tools":
+        parser.add_argument(
+            "--preprocessors",
+            help="A comma-separated list preprocessors to compile.",
+            default="fire_emis,megan_bio_emiss,mozbc,wesely,exo_coldens",
         )
     else:
         msg = f"Invalid choice: {which}."
@@ -174,56 +188,114 @@ def get_options(which):
     return opts
 
 
-def format_shell_value(value):
-    """Format shell value.
+def prepare_scheduler_header(opts, config, which):
+    """Create the scheduler header.
 
     Parameters
     ----------
-    value: str | int
-        Value to format.
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+    which: "WRF" | "WPS" | "WRF-Chem-Preprocessing-Tools"
+        The program being compiled.
 
     Returns
     -------
     str
-        A version of value that is suitable to write in a shell script as
-        `my_variable=value`.
+        The scheduler header.
 
     """
-    if isinstance(value, str):
-        return f'"{value}"'
-    elif isinstance(value, int):
-        return str(value)
-    else:
-        msg = f"Unsupported type for input value: {type(value)}."
-        raise TypeError(msg)
+    # Quality checks on input arguments
+    if which not in ("WRF", "WPS", "WRF-Chem-Preprocessing-Tools"):
+        msg = f"Bad value of which ({which})."
+        raise ValueError(msg)
+
+    # Prepare options from platform-dependent config file
+    options = {}
+    for section_name in ("common", "compile.all", f"compile.{which}"):
+        try:
+            section = config[section_name]
+        except KeyError:
+            continue
+        for key, value in section.items():
+            if not key.startswith("job-header-option-"):
+                continue
+            name = key[len("job-header-option-") :]
+            if name == "":
+                msg = f"Invalid option ({key})."
+                raise ValueError(msg)
+            options[name] = value
+
+    # Update options with command-line arguments
+    for name, value in opts.scheduler_opt:
+        options[name] = value
+
+    # Format and return the header
+    pfx = config["common"]["job-header-prefix"]
+    sep = config["common"]["job-header-separator"]
+    sep = " " if sep in ("' '", '" "') else sep
+    header = [f"{pfx}{key}{sep}{value}" for key, value in options.items()]
+    return "\n".join(header)
 
 
-def prepare_slurm_options(time):
-    """Prepare slurm options.
+def write_job_script(opts, config, which):
+    """Create the job script.
 
     Parameters
     ----------
-    time: str
-        The wall time requested for the job with format HH:MM:SS.
-
-    Returns
-    -------
-    [str]
-        The lines of text that contain the slurm options.
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+    which: "WRF" | "WPS"
+        The program being compiled.
 
     """
-    host = generic.identify_host_platform()
-    slurm = {
-        "ntasks": "1",
-        "ntasks-per-node": "1",
-        "output": "compile.log",
-        "error": "compile.log",
-        "time": time,
-    }
-    if host == "spirit":
-        slurm["partition"] = "zen16"
-        slurm["mem"] = "12GB"
-    return [f"#SBATCH --{key}={value}" for key, value in slurm.items()]
+    script = os.path.join(opts.destination, "compile.job")
+    with open(script, mode="x") as f:
+        f.write("#!/bin/bash\n")
+
+        # Write the job header
+        if opts.scheduler:
+            f.write(prepare_scheduler_header(opts, config, which) + "\n")
+
+        # Write the plateform-specific environment
+        for section_name in ("common", "compile.all", f"compile.{which}"):
+            try:
+                shell = config[section_name]["shell"]
+            except KeyError:
+                continue
+            f.write(shell + "\n")
+
+        # Write the generic environment
+        f.write("export EM_CORE=1\nexport NMM_CORE=0\n")
+
+        # Write the model-dependent environment
+        opt = int(config[f"compile.{which}"]["configure-opt"])
+        if which == "WRF":
+            # Just using the chem and kpp options is not enough, one also has
+            # to explicitly set the corresponding environment variables
+            if "chem" in opts.components:
+                f.write("export WRF_CHEM=1\n")
+            if "kpp" in opts.components:
+                f.write("export WRF_KPP=1\n")
+            cmd = 'echo -e "%d\\n1" | ./configure' % opt
+            if opts.components:
+                cmd += " " + " ".join(opts.components)
+            f.write(cmd + f"\n./compile {opts.executable}\n")
+
+        elif which == "WPS":
+            f.write(f"export WRF_DIR={generic.process_path(opts.wrfdir)}\n")
+            f.write('echo -e "%d" | ./configure --build-grib2-libs\n' % opt)
+            f.write("./compile\n")
+
+        else:
+            msg = f"Invalid value for which (f{which})"
+            raise ValueError(msg)
+
+    # Make the script executable and we are done
+    os.chmod(script, 0o744)
 
 
 def write_options(opts):
@@ -288,3 +360,34 @@ def process_extra_sources(opts):
     for src in sources:
         path_in_repo = os.path.join(opts.destination, src[n:])
         generic.run(["cp", "-v", src, path_in_repo])
+
+
+def prepare_compile_cmd(opts, config):
+    """Prepare the command that must be executed to compile the model.
+
+    Parameters
+    ----------
+    opts: Namespace
+        The pre-processed user-defined installation options.
+    config: Namespace
+        The parsed plateform-dependent configuration.
+
+    Returns
+    -------
+    List of str
+        The command to run to compile the model (WRF or WPS).
+
+    """
+    if opts.scheduler:
+        cmd = [config["common"]["job-exe"]]
+        i = 1
+        while True:
+            try:
+                cmd.append(config["common"][f"job-exe-option-{i}"])
+            except KeyError:
+                break
+            i += 1
+    else:
+        cmd = []
+    cmd.append("./compile.job")
+    return cmd

@@ -1,6 +1,6 @@
 [project]
 
-requires-python = ">= 3.13"
+requires-python = ">=3.13"
 
 [project.optional-dependencies]
 
@@ -9,13 +9,8 @@ preprocess = [
     "netcdf4",
     "xarray",
     "shapely",
-]
-wrfpp = [
-    "pyproj",
-    "netcdf4",
-    "scipy",
-    "xarray",
-    "cartopy",
+    "nco",
+    "cdo",
 ]
 # We add Emacs and Vim to our "dev" dependencies to benefit from modern
 # features such as "auto format with ruff on save"
@@ -25,9 +20,25 @@ dev = [
     "vim",
 ]
 data = [
-    "copernicusmarine"
+    "cdsapi",
+    "copernicusmarine",
+]
+wrfpp = [
+    "pandas",
+    "scipy",
+    "pyproj",
+    "cartopy",
+]
+performance = [
+    "dask",
 ]
 
 [tool.ruff]
 
 line-length = 79
+
+[tool.ruff.lint]
+
+extend-select = [
+    "I001" # Sort imports
+]

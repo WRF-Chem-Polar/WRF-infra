@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025-now LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2025-2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
@@ -33,12 +33,16 @@ submit_dir=$(pwd)
 # Environment #
 #-------------#
 
-module purge
-module load /proju/wrf-chem/software/libraries/gcc-v11.2.0/netcdf-fortran-v4.6.2_netcdf-c-v4.9.3_hdf5-v1.14.6_zlib-v1.3.1.module
+eval "$(get_host_config_value common shell)"
+eval "$(get_host_config_value run.all shell)"
+eval "$(get_host_config_value run.wrf shell)"
+cmd_python=$(get_host_config_value run.all cmd-python yes)
+cmd_mpirun=$(get_host_config_value run.all cmd-mpirun yes)
 
 #---------#
 # Prepare #
 #---------#
+
 
 # Directory containing real output (e.g. wrfinput_d01, wrfbdy_d01 files)
 REALDIR="${dir_outputs}/real.${runid_wps}.${runid_real}.$(utc -d ${date_start} +%Y-%m-%dZ)"
@@ -78,13 +82,34 @@ cp "$dir_wrf/run/"* "$SCRATCH/"
 
 #  Copy and prepare the WRF namelist, set up run start and end dates
 cp -vf $submit_dir/$namelist_wrf namelist.input
+
 # Init spectral nudging parameters
 # We only nudge over the scale $nudging_scale in meters
 nudging_scale=1000000
-wrf_dx=$(sed -n -e 's/^[ ]*dx[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
-wrf_dy=$(sed -n -e 's/^[ ]*dy[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
-wrf_e_we=$(sed -n -e 's/^[ ]*e_we[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
-wrf_e_sn=$(sed -n -e 's/^[ ]*e_sn[ ]*=[ ]*//p' namelist.input | sed -n -e 's/,.*//p')
+
+# Get values from namelist
+cp $submit_dir/../../pymodules/wrfinfra/namelist.py "$SCRATCH/"
+wrf_dx=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/dx-0"
+)
+wrf_dy=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/dy-0"
+)
+wrf_e_we=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+          --read "domains/e_we-0"
+)
+wrf_e_sn=$($cmd_python -u \
+           namelist.py \
+           --namelist namelist.input \
+           --read "domains/e_sn-0"
+)
+
 xwavenum=$(( (wrf_dx * wrf_e_we) / nudging_scale))
 ywavenum=$(( (wrf_dy * wrf_e_sn) / nudging_scale))
 # Edit the namelist
@@ -133,7 +158,7 @@ cp "$dir_shared_data/upper_boundary_chem/ubvals_b40.20th.track1_1996-2005.nc" "$
 echo " "
 echo "-------- $SLURM_JOB_NAME: run wrf.exe ---------"
 echo " "
-mpirun ./wrf.exe
+${cmd_mpirun} ./wrf.exe
 
 #----------#
 # Finalize #

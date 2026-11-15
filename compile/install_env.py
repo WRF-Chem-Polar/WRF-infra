@@ -1,4 +1,4 @@
-# Copyright (c) 2025 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
+# Copyright (c) 2025-2026 LATMOS (France, UMR 8190) and IGE (France, UMR 5001).
 #
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 
@@ -10,10 +10,11 @@ repository's pyproject.toml file.
 
 """
 
-import os
 import argparse
 import datetime
+import os
 import tomllib
+
 from wrfinfra import generic
 
 # Command-line arguments
@@ -26,6 +27,9 @@ conda = "micromamba"
 if host == "spirit":
     env_root_prefix = "/proju/wrf-chem/software/conda-envs/shared"
     conda = "/proju/wrf-chem/software/micromamba/micromamba"
+elif host == "jed":
+    env_root_prefix = "/work/eerl/wrf-chem-polar/software/conda-envs/shared"
+    conda = "/work/eerl/wrf-chem-polar/software/micromamba/micromamba"
 
 parser = argparse.ArgumentParser(
     description="Install the environment to compile and run WRF-Chem-Polar.",
@@ -81,8 +85,11 @@ if os.path.lexists(generic.process_path(env_dir)):
 file_pyproject = os.path.join(generic.path_of_repo(), "pyproject.toml")
 with open(file_pyproject, mode="rb") as f:
     pyproject = tomllib.load(f)
-python = pyproject["project"]["requires-python"].replace(" ", "")
-dependencies = pyproject["project"]["dependencies"]
+python_version = pyproject["project"]["requires-python"].strip()
+try:
+    dependencies = pyproject["project"]["dependencies"]
+except KeyError:
+    dependencies = []
 
 # Prepare and run the conda-like command
 
@@ -100,7 +107,7 @@ cmd = [
     "--override-channels",
     "--strict-channel-priority",
     "--yes",
-    f"python{python}",
+    f"python{python_version}",
     *dependencies,
 ]
 
@@ -119,6 +126,23 @@ for group in groups:
         raise ValueError("Unknown group of optional dependencies: %s." % group)
     cmd += deps
 
+generic.run(cmd)
+
+# Install wrfpp inside that environment
+
+cmd = [
+    os.path.expanduser(args.conda),
+    "run",
+    "--root-prefix",
+    args.env_root_prefix,
+    "--name",
+    args.env_name,
+    "python",
+    "-m",
+    "pip",
+    "install",
+    "wrfpp[all]@git+https://github.com/WRF-Chem-Polar/wrfpp.git",
+]
 generic.run(cmd)
 
 # Fix permissions:
@@ -145,6 +169,8 @@ def exec_chmod(chmod, perm):
     """
     return ["-exec", chmod, perm, "{}", ";"]
 
+
+print("Installation complete. Fixing permissions... this may take a while...")
 
 # Executable files
 generic.run_stdout(
