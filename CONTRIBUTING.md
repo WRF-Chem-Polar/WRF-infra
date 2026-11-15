@@ -83,6 +83,8 @@ WRF-infra code must respect the following:
 
  - All Bash and Python functions must be documented with a [numpy-style docstring](https://numpydoc.readthedocs.io/en/latest/format.html), to the exception of standard Python dunder functions (eg. `__str__`).
 
+ - Lines do not have trailing space (see section "Configure your text editor below"). This reduces unnecessary `diff`erences between files.
+
 In addition, Python code must respect the following:
 
  - Python's style guide described in [PEP8](https://peps.python.org/pep-0008/).
@@ -96,6 +98,23 @@ Each WRF-infra script should be self-documenting as previously detailed. In addi
 ## Use of AI to create WRF-infra content
 
 There is currently no policy in favor or against the use of artificial intelligence to contribute to WRF-infra. However, each contributing author is held accountable for the quality of the code they send to the review process, as well as for following the rules described in this document. Furthermore, authors are expected to fully understand each line of code they contribute. This is required to be able to engage in the technical discussions that are meant to occur between the author and the reviewer during the review process.
+
+## Configure your text editor
+
+We recommend you to configure your text editor so that all trailing space is removed as soon as you save a file:
+
+```
+# Emacs
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+# Vim
+fun! TrimWhiteSpaceEndOfLines()
+	let l:save = winsaveview()
+	keeppatterns %s/\s\+$//e
+	call winrestview(l:save)
+endfun
+autocmd BufWritePre * if !&binary | call TrimWhiteSpaceEndOfLines() | endif
+```
 
 ## Derivative works
 
