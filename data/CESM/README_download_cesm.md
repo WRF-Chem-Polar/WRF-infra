@@ -91,8 +91,10 @@ The standalone merger does **not** delete the daily input files.
 ## Check a result
 
 ```bash
-ncks -M time /scratch/$USER/cesm/2022-01-CESM.nc
+ncks -M /scratch/$USER/cesm/2022-01-CESM.nc
 ncks -v time -H /scratch/$USER/cesm/2022-01-CESM.nc
 ```
+
+`ncks -M` prints the file header, including the record dimension (`time = UNLIMITED ; // (124 currently)` for a full month, 4 six-hourly records per day).
 
 The downloaded files use the original NCAR filename prefix and `-21600.nc` suffix. `ncrcat` concatenates time records; it does **not** calculate monthly averages. Actual availability of files depends on the NCAR server.
