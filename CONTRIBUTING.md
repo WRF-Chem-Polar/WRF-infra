@@ -17,6 +17,8 @@ WRF-infra is mainly made up of scripts. WRF-infra uses Bash and Python for scrip
 
 We use Python by default. Bash is used instead when there is a good reason to use it over Python. A typical example is for job scripts that are meant to be sent directly to a scheduler on a supercomputer.
 
+We use the file extension `.py` for Python scripts and `.bash` for Bash scripts.
+
 Scripts must be entirely configurable via command-line arguments. It is not acceptable to expect or require a user to open and modify a script to use it.
 
 Every WRF-infra script must print a technical documentation when called with the command-line argument `--help`. This documentation must provide a short description of what the script does (one line or a few lines), and a short description of all command-line arguments supported by the script.
