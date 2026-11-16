@@ -9,6 +9,10 @@
 # Full month:    YYYY-MM-CESM.nc
 # Partial month: YYYY-MM-CESM-STARTDAY-ENDDAY.nc (plus an error)
 #
+# Merging is done with ncrcat (NCO). If ncrcat is not installed on the
+# host, the script re-runs itself inside the WRF-Chem-Polar runtime
+# container (that is how it works on dahu).
+#
 
 set -u
 
@@ -29,7 +33,21 @@ if [[ "$month" != "${end:0:7}" ]]; then
     echo "ERROR: Merge only one month at a time." >&2
     exit 1
 fi
-command -v cdo >/dev/null || { echo "ERROR: cdo is not installed." >&2; exit 1; }
+# The ncrcat tool (part of the NCO package) does the actual merging. It is
+# not installed on every machine: on dahu, it is only available inside the
+# WRF-Chem-Polar runtime container. If ncrcat is missing but the runtime
+# container is installed, run this script again inside the container.
+if ! command -v ncrcat >/dev/null; then
+    runtime_container=/bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif
+    if command -v apptainer >/dev/null && [[ -f "$runtime_container" ]]; then
+        # -B /bettik makes the project storage visible inside the container,
+        # and the "@" command activates the project environment inside it.
+        script_path=$(readlink -f "$0")
+        exec apptainer exec -B /bettik "$runtime_container" @ bash "$script_path" "$@"
+    fi
+    echo "ERROR: ncrcat is not installed." >&2
+    exit 1
+fi
 mkdir -p "$output_dir" || exit 1
 
 incomplete=0
@@ -54,13 +72,21 @@ merge_days() {
 
     temporary="$output_dir/.$name.tmp.$$"
     echo "Merging $first to $last -> $name"
-    operation=mergetime
-    [[ ${#files[@]} -eq 1 ]] && operation=copy
-    if cdo -O "$operation" "${files[@]}" "$temporary" && \
-       [[ -s "$temporary" ]] && mv "$temporary" "$output_dir/$name"; then
+
+    merge_succeeded=0
+    if [[ ${#files[@]} -eq 1 ]]; then
+        # A single day needs no concatenation, only a copy.
+        cp "${files[0]}" "$temporary" && merge_succeeded=1
+    else
+        # ncrcat concatenates the daily files along the time dimension.
+        ncrcat -O "${files[@]}" "$temporary" && merge_succeeded=1
+    fi
+
+    if [[ "$merge_succeeded" == 1 && -s "$temporary" ]]; then
+        mv "$temporary" "$output_dir/$name"
         outputs+=("$name")
     else
-        echo "ERROR: CDO merge failed for $name" >&2
+        echo "ERROR: merge failed for $name" >&2
         rm -f "$temporary"
         failed=1
     fi

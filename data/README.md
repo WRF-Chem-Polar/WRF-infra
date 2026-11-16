@@ -59,7 +59,7 @@ python get-chlorophyll-data-from-copernicus-marine.py --help
 
 Prerequisites:
 
- - Install `wget` and `cdo` (eg. from conda-forge). No account is needed.
+ - Install `wget` and the NCO tool `ncrcat` (eg. from conda-forge). No account is needed. On dahu, `ncrcat` is provided by the WRF-Chem-Polar runtime container and is picked up automatically by the scripts.
 
 The `CESM/` subdirectory contains a script that downloads daily CESM files from the NCAR OSDF server and merges them into monthly NetCDF files. For example, for January to March 2022:
 

@@ -3,12 +3,12 @@
 Two Bash scripts:
 
 - `download_cesm.sh` downloads daily NetCDF files into a temporary folder, then calls the merger once per month.
-- `merge_cesm_monthly.sh` combines the available daily files using **CDO**. The downloader calls it automatically; it can also run by itself.
+- `merge_cesm_monthly.sh` combines the available daily files using **ncrcat** (NCO). The downloader calls it automatically; it can also run by itself.
 
 ## Requirements
 
-Linux with Bash, GNU `date`, `wget`, `cdo` and (for batch jobs) SLURM.
-Keep the two `.sh` files in the **same directory**. Load CDO on your cluster if needed (`module load cdo`; module names vary).
+Linux with Bash, GNU `date`, `wget`, `flock` and the NCO tool `ncrcat` (for batch jobs, a scheduler such as SLURM or OAR).
+Keep the two `.sh` files in the **same directory**. Load NCO on your cluster if needed (`module load nco`; module names vary). On dahu, `ncrcat` is provided by the WRF-Chem-Polar runtime container: the merger detects this and runs itself inside the container (see "Running on dahu" below).
 
 ## Download and merge
 
@@ -29,6 +29,27 @@ bash download_cesm.sh 2022-01-01 2022-01-31 /scratch/$USER/cesm
 ```
 
 Dates are **inclusive**. Date ranges may cross months and years, including leap years. The output folder is created if needed. The data set covers **2001-01-01 to 2022-12-31**; other dates are not on the server. Daily files are about 2.4 GB, so one month needs about 75 GB of disk space, up to twice as much during processing. Only one run at a time may use an output directory.
+
+## Running on dahu (GRICAD)
+
+On dahu, `wget`, `flock`, Bash and GNU `date` are available on the cluster nodes, but the NCO tools are not: they are provided by the WRF-Chem-Polar runtime container. The merger detects this and re-runs itself inside the container automatically — no manual steps are needed.
+
+Dahu uses the OAR scheduler (not SLURM), and OAR jobs must specify a project. Submit the download as an OAR job:
+
+```bash
+oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
+    "bash /home/USER/WRF-infra/data/CESM/download_cesm.sh 2022-01-01 2022-03-31 \
+     /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/input-data/chem/cesm"
+```
+
+Notes for dahu:
+
+- The runtime container is at
+  `/bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif`.
+- Apptainer only works on compute nodes (not on the login nodes), so the
+  merge step runs inside the OAR job, not interactively on a login node.
+- The container has no `wget`, which is why the downloads run on the host
+  and only the merge step runs in the container.
 
 ## Output files
 
@@ -61,8 +82,8 @@ The standalone merger does **not** delete the daily input files.
 ## Check a result
 
 ```bash
-cdo -s ntime /scratch/$USER/cesm/2022-01-CESM.nc
-cdo -s showdate /scratch/$USER/cesm/2022-01-CESM.nc
+ncks -M time /scratch/$USER/cesm/2022-01-CESM.nc
+ncks -v time -H /scratch/$USER/cesm/2022-01-CESM.nc
 ```
 
-The downloaded files use the original NCAR filename prefix and `-21600.nc` suffix. CDO `mergetime` concatenates time records; it does **not** calculate monthly averages. Actual availability of files depends on the NCAR server.
+The downloaded files use the original NCAR filename prefix and `-21600.nc` suffix. `ncrcat` concatenates time records; it does **not** calculate monthly averages. Actual availability of files depends on the NCAR server.

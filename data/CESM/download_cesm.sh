@@ -41,7 +41,10 @@ if [[ "$start" > "$end" ]]; then
     echo "ERROR: Start date is after end date." >&2
     exit 1
 fi
-for program in wget cdo; do
+# wget and flock run on the host. The merge tool (ncrcat) is checked by
+# the merger itself, which falls back to the WRF-Chem-Polar runtime
+# container if ncrcat is not installed (the situation on dahu).
+for program in wget flock; do
     command -v "$program" >/dev/null || { echo "ERROR: $program is not installed." >&2; exit 1; }
 done
 [[ -f "$merge_script" ]] || { echo "ERROR: Missing $merge_script" >&2; exit 1; }
