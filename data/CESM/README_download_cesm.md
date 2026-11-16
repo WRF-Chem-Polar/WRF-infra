@@ -32,9 +32,21 @@ Dates are **inclusive**. Date ranges may cross months and years, including leap 
 
 ## Running on dahu (GRICAD)
 
-On dahu, `wget`, `flock`, Bash and GNU `date` are available on the cluster nodes, but the NCO tools are not: they are provided by the WRF-Chem-Polar runtime container. The merger detects this and re-runs itself inside the container automatically — no manual steps are needed.
+On dahu, the download and the merge must run in two separate passes, because of the network and tooling restrictions of the cluster:
 
-Dahu uses the OAR scheduler (not SLURM), and OAR jobs must specify a project. Submit the download as an OAR job:
+- The NCAR data caches are only reachable from the **login nodes** (the compute nodes' network blocks the caches' non-standard HTTPS port). The downloads therefore run on a login node.
+- The NCO tools (`ncrcat`) are only available on the **compute nodes**, inside the WRF-Chem-Polar runtime container (Apptainer does not run on the login nodes). The merges therefore run in an OAR job, and the merger re-runs itself inside the container automatically.
+
+The two passes use the same command; the scripts are resumable. Pass 1 (on a login node) downloads everything; its merge steps fail with an error, which is expected — the daily files are kept. Pass 2 (in an OAR job) skips the existing downloads, merges each month through the container, and deletes the daily files.
+
+Pass 1 — on a login node:
+
+```bash
+bash /home/USER/WRF-infra/data/CESM/download_cesm.sh 2022-01-01 2022-03-31 \
+    /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/input-data/chem/cesm
+```
+
+Pass 2 — in an OAR job (OAR jobs on dahu require a project):
 
 ```bash
 oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
@@ -46,10 +58,9 @@ Notes for dahu:
 
 - The runtime container is at
   `/bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif`.
-- Apptainer only works on compute nodes (not on the login nodes), so the
-  merge step runs inside the OAR job, not interactively on a login node.
-- The container has no `wget`, which is why the downloads run on the host
-  and only the merge step runs in the container.
+- The container has no `wget`, which is why the downloads run on the host.
+- `wget` is forced to IPv4 in the download script: the OSDF director
+  resolves to an IPv6 address first, and IPv6 is not routed on dahu.
 
 ## Output files
 

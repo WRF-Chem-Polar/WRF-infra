@@ -82,7 +82,10 @@ while [[ ! "$current" > "$end" ]]; do
 
             if [[ ! -s "$file" ]]; then
                 echo "Downloading $day"
-                if wget -nv -c --tries=5 --timeout=60 -O "$file.part" "$url" && [[ -s "$file.part" ]]; then
+                # Force IPv4: the OSDF director resolves to an IPv6 address
+                # first, and IPv6 is not routed on some clusters (eg. dahu),
+                # where wget would then time out instead of downloading.
+                if wget -4 -nv -c --tries=5 --timeout=60 -O "$file.part" "$url" && [[ -s "$file.part" ]]; then
                     mv "$file.part" "$file"
                 else
                     echo "ERROR: Could not download $day" >&2
