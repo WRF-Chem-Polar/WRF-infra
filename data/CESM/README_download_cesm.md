@@ -32,21 +32,11 @@ Dates are **inclusive**. Date ranges may cross months and years, including leap 
 
 ## Running on dahu (GRICAD)
 
-On dahu, the download and the merge must run in two separate passes, because of the network and tooling restrictions of the cluster:
+On dahu, all work goes through the queue (OAR jobs; they require a project: `--project pr-regionalchem`). The merge step works in an OAR job: the NCO tools (`ncrcat`) are not installed on the cluster itself, but they are provided by the WRF-Chem-Polar runtime container, and the merger detects this and re-runs itself inside the container automatically. The runtime container is at
 
-- The NCAR data caches are only reachable from the **login nodes** (the compute nodes' network blocks the caches' non-standard HTTPS port). The downloads therefore run on a login node.
-- The NCO tools (`ncrcat`) are only available on the **compute nodes**, inside the WRF-Chem-Polar runtime container (Apptainer does not run on the login nodes). The merges therefore run in an OAR job, and the merger re-runs itself inside the container automatically.
+    /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif
 
-The two passes use the same command; the scripts are resumable. Pass 1 (on a login node) downloads everything; its merge steps fail with an error, which is expected — the daily files are kept. Pass 2 (in an OAR job) skips the existing downloads, merges each month through the container, and deletes the daily files.
-
-Pass 1 — on a login node:
-
-```bash
-bash /home/USER/WRF-infra/data/CESM/download_cesm.sh 2022-01-01 2022-03-31 \
-    /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/input-data/chem/cesm
-```
-
-Pass 2 — in an OAR job (OAR jobs on dahu require a project):
+Once the download step works (see the known problem below), the downloads and the merges run in a single OAR job:
 
 ```bash
 oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
@@ -54,13 +44,19 @@ oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
      /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/input-data/chem/cesm"
 ```
 
-Notes for dahu:
+### Known problem on dahu: downloads are blocked on the compute nodes
 
-- The runtime container is at
-  `/bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif`.
-- The container has no `wget`, which is why the downloads run on the host.
+The download step does not currently work on dahu, for a network reason. The NCAR files are served through the OSDF/Pelican federation in two steps: the director (`osdf-director.osg-htc.org`, standard HTTPS) answers every request with a redirect (HTTP 307) to a data cache, and **all the caches listen on a non-standard HTTPS port**. The dahu compute nodes' network silently drops outgoing connections to a non-standard HTTPS port: the director answers from the compute nodes, but connections to the caches time out (measured on 2026-11-16; the same caches answer normally from other networks). Downloads therefore cannot run in OAR jobs on dahu until one of these is available:
+
+- GRICAD opens outgoing connections to a non-standard HTTPS port on the compute network (a request to GRICAD support), or
+- an alternative endpoint on a standard port is found for the d313008 collection.
+
+Two further dahu notes:
+
+- The container has no `wget`; the download script runs on the host, not in the container.
 - `wget` is forced to IPv4 in the download script: the OSDF director
-  resolves to an IPv6 address first, and IPv6 is not routed on dahu.
+  resolves to an IPv6 address first, and IPv6 is not routed on dahu
+  (wget would otherwise time out on every retry).
 
 ## Output files
 
