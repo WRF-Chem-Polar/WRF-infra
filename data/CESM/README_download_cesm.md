@@ -5,6 +5,8 @@ Two Bash scripts:
 - `download_cesm.sh` downloads daily NetCDF files into a temporary folder, then calls the merger once per month.
 - `merge_cesm_monthly.sh` combines the available daily files using **ncrcat** (NCO). The downloader calls it automatically; it can also run by itself.
 
+These scripts were written for, and have only been tested on, the **dahu** cluster (GRICAD; OAR scheduler). The dahu-specific behaviour is built in and automatic: on dahu the downloads are routed through cargo and the merge runs inside the WRF-Chem-Polar runtime container (see "Running on dahu"). On any other Linux host that meets the requirements below, the scripts download with a local `wget` instead; this has not been tested.
+
 ## Requirements
 
 Linux with Bash, GNU `date`, `wget`, `flock` and the NCO tool `ncrcat` (for batch jobs, a scheduler such as SLURM or OAR).
@@ -74,7 +76,21 @@ Files are written directly to `OUTPUT_DIR`:
 
 Daily downloads are staged in `OUTPUT_DIR/.cesm_raw_tmp/`. They are deleted after a successful **full-month** merge, but kept if the month is incomplete or the merge fails. Interrupted downloads use `.part` files and can be retried by rerunning the same command.
 
-A successful retry replaces obsolete partial-month outputs with the updated output. Existing complete monthly files are skipped by the downloader.
+If a run fails or is interrupted, rerun the same command; it resumes from what is already on disk (see "Restarting after a failure" below).
+
+## Restarting after a failure
+
+The script heals most failures by itself: the NCAR caches answer with sporadic HTTP errors that wget's own retries do not always ride out, so after one pass over a month, the days that are still missing are retried a few times with a pause in between (interrupted `.part` files are resumed, not restarted).
+
+A run can still be cut short from the outside (walltime, network outage). Nothing needs to be cleaned up in that case: **rerun the same command** (on dahu: resubmit the same `oarsub` line), and the new run continues where the old one stopped:
+
+- months whose `YYYY-MM-CESM.nc` already exists are skipped entirely;
+- inside an incomplete month, days already present in `.cesm_raw_tmp/` are skipped; only the missing days are downloaded;
+- a day whose download was interrupted resumes from its `.part` file (`wget -c`) instead of starting over;
+- obsolete partial-month outputs (`YYYY-MM-CESM-DD-DD.nc`) are deleted automatically once the full month is merged;
+- the lock file (`OUTPUT_DIR/.cesm.lock`) prevents a second run from using the same output directory while one is still active.
+
+The `ERROR` lines in the job log name the days that are still missing. The exit status says whether a rerun is needed: `0` means every requested month is complete; nonzero means at least one month is incomplete or failed even after the script's own retries. A rerun that only fills a few gaps downloads only the missing days (a few minutes each) and then merges.
 
 ## Merge already-downloaded files
 

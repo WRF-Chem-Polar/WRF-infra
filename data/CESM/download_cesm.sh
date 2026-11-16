@@ -10,6 +10,12 @@
 #
 # Submit through your scheduler if needed (eg. sbatch on SLURM clusters,
 # oarsub on OAR clusters such as dahu; see README_download_cesm.md).
+#
+# Written for and tested on the dahu cluster (GRICAD) only; the
+# dahu-specific behaviour (downloads through cargo, merge through the
+# runtime container) is automatic. Failed downloads are retried by the
+# script itself; if a run is cut short (eg. walltime), rerunning the
+# same command resumes where it stopped. See README_download_cesm.md.
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -76,6 +82,24 @@ flock -n 9 || { echo "ERROR: $output_dir is already in use by another run." >&2;
 # months are the only exception, kept so that a retry can resume them.
 trap 'rm -f "$output_dir/.cesm.lock"' EXIT
 
+# Download one daily file into PART_FILE. Returns 0 on success.
+# On dahu, run wget on the transfer host (cargo); the paths are the
+# same there as here because /bettik is shared. Elsewhere, run wget
+# locally. IPv4 is forced because the OSDF director resolves to an
+# IPv6 address first, and IPv6 is not routed everywhere (eg. on
+# dahu, wget would time out on every retry).
+download_day() {
+    local url="$1"
+    local part_file="$2"
+
+    if [[ -n "$download_host" ]]; then
+        ssh -o BatchMode=yes "$download_host" \
+            "wget -4 -nv -c --tries=5 --timeout=60 -O '$part_file' '$url'"
+    else
+        wget -4 -nv -c --tries=5 --timeout=60 -O "$part_file" "$url"
+    fi
+}
+
 errors=0
 current=$start
 
@@ -92,38 +116,43 @@ while [[ ! "$current" > "$end" ]]; do
           -s "$output_dir/$month-CESM.nc" ]]; then
         echo "Already complete: $month-CESM.nc"
     else
-        day=$current
-        while [[ ! "$day" > "$last_day" ]]; do
-            filename="$prefix.$day-21600.nc"
-            file="$raw_dir/$filename"
-            url="$base_url/${day:0:4}/$filename"
+        # Download the days of the month. The NCAR caches fail
+        # sporadically with HTTP errors that wget's own retries do not
+        # always ride out, so after one pass over the month, the days
+        # that are still missing are retried a few times with a pause
+        # in between. wget -c resumes the interrupted .part files, so
+        # a retry continues where it stopped. This way a run heals
+        # itself instead of ending with gaps that need a new job.
+        pass=1
+        max_passes=5
+        while (( pass <= max_passes )); do
+            missing=""
+            day=$current
+            while [[ ! "$day" > "$last_day" ]]; do
+                filename="$prefix.$day-21600.nc"
+                file="$raw_dir/$filename"
+                url="$base_url/${day:0:4}/$filename"
 
-            if [[ ! -s "$file" ]]; then
-                echo "Downloading $day"
-
-                # On dahu, run wget on the transfer host; the paths are the
-                # same there as here because /bettik is shared. Elsewhere,
-                # run wget locally. IPv4 is forced because the OSDF director
-                # resolves to an IPv6 address first, and IPv6 is not routed
-                # everywhere (eg. on dahu, wget would time out on every
-                # retry).
-                download_succeeded=0
-                if [[ -n "$download_host" ]]; then
-                    ssh -o BatchMode=yes "$download_host" \
-                        "wget -4 -nv -c --tries=5 --timeout=60 -O '$file.part' '$url'" \
-                        && download_succeeded=1
-                else
-                    wget -4 -nv -c --tries=5 --timeout=60 -O "$file.part" "$url" \
-                        && download_succeeded=1
+                if [[ ! -s "$file" ]]; then
+                    echo "Downloading $day"
+                    if download_day "$url" "$file.part" && [[ -s "$file.part" ]]; then
+                        mv "$file.part" "$file"
+                    else
+                        echo "ERROR: Could not download $day" >&2
+                        missing="$missing $day"
+                    fi
                 fi
+                day=$(date -u -d "$day +1 day" +%F)
+            done
 
-                if [[ "$download_succeeded" == 1 && -s "$file.part" ]]; then
-                    mv "$file.part" "$file"
-                else
-                    echo "ERROR: Could not download $day" >&2
-                fi
-            fi
-            day=$(date -u -d "$day +1 day" +%F)
+            # Stop as soon as every day of the month is on disk.
+            [[ -z "$missing" ]] && break
+            # Give up on the last pass and let the merger write the
+            # partial output; otherwise wait a bit and try again.
+            (( pass == max_passes )) && break
+            echo "Retrying failed days of $month (pass $((pass + 1)) of $max_passes):$missing"
+            sleep 60
+            pass=$((pass + 1))
         done
 
         # Missing days are handled by the merger (partial files + an error).
