@@ -5,10 +5,11 @@
 # License: BSD 3-clause "new" or "revised" license (BSD-3-Clause).
 #
 # Download CESM daily files, then merge them into monthly NetCDF files.
-# Usage: sbatch download_cesm.sh START_DATE END_DATE OUTPUT_DIR
-# Example: sbatch download_cesm.sh 2022-01-01 2022-03-31 /scratch/$USER/cesm
+# Usage: bash download_cesm.sh START_DATE END_DATE OUTPUT_DIR
+# Example: bash download_cesm.sh 2022-01-01 2022-03-31 /scratch/$USER/cesm
 #
-# Add cluster-specific directives below if needed (eg. --account on Jean Zay).
+# Submit through your scheduler if needed (eg. sbatch on SLURM clusters,
+# oarsub on OAR clusters such as dahu; see README_download_cesm.md).
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -30,6 +31,17 @@ base_url="https://osdf-director.osg-htc.org/ncar/gdex/d313008/hist"
 prefix="FCnudged_f09.mam.mar27.2000_2021.001.cam.h2"
 merge_script="$(dirname "$(readlink -f "$0")")/merge_cesm_monthly.sh"
 
+# Where to run wget. The NCAR data caches all use a non-standard HTTPS port, which the
+# dahu compute nodes' network blocks. cargo (the GRICAD data transfer
+# host) has open network access and mounts the same /bettik storage,
+# so on dahu the downloads run on cargo through SSH and the files are
+# written directly to the shared storage. Everywhere else, wget runs
+# locally.
+download_host=""
+if [[ "$(hostname)" == dahu* ]]; then
+    download_host="cargo"
+fi
+
 # Check dates and required commands.
 for day in "$start" "$end"; do
     if [[ $(date -u -d "$day" +%F 2>/dev/null) != "$day" ]]; then
@@ -47,6 +59,12 @@ fi
 for program in wget flock; do
     command -v "$program" >/dev/null || { echo "ERROR: $program is not installed." >&2; exit 1; }
 done
+# On dahu, the downloads run on the transfer host; check that it is
+# reachable through SSH before starting.
+if [[ -n "$download_host" ]]; then
+    ssh -o BatchMode=yes "$download_host" true \
+        || { echo "ERROR: cannot reach $download_host through SSH." >&2; exit 1; }
+fi
 [[ -f "$merge_script" ]] || { echo "ERROR: Missing $merge_script" >&2; exit 1; }
 mkdir -p "$raw_dir" || exit 1
 
@@ -82,10 +100,24 @@ while [[ ! "$current" > "$end" ]]; do
 
             if [[ ! -s "$file" ]]; then
                 echo "Downloading $day"
-                # Force IPv4: the OSDF director resolves to an IPv6 address
-                # first, and IPv6 is not routed on some clusters (eg. dahu),
-                # where wget would then time out instead of downloading.
-                if wget -4 -nv -c --tries=5 --timeout=60 -O "$file.part" "$url" && [[ -s "$file.part" ]]; then
+
+                # On dahu, run wget on the transfer host; the paths are the
+                # same there as here because /bettik is shared. Elsewhere,
+                # run wget locally. IPv4 is forced because the OSDF director
+                # resolves to an IPv6 address first, and IPv6 is not routed
+                # everywhere (eg. on dahu, wget would time out on every
+                # retry).
+                download_succeeded=0
+                if [[ -n "$download_host" ]]; then
+                    ssh -o BatchMode=yes "$download_host" \
+                        "wget -4 -nv -c --tries=5 --timeout=60 -O '$file.part' '$url'" \
+                        && download_succeeded=1
+                else
+                    wget -4 -nv -c --tries=5 --timeout=60 -O "$file.part" "$url" \
+                        && download_succeeded=1
+                fi
+
+                if [[ "$download_succeeded" == 1 && -s "$file.part" ]]; then
                     mv "$file.part" "$file"
                 else
                     echo "ERROR: Could not download $day" >&2

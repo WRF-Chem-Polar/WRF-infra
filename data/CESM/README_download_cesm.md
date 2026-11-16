@@ -36,7 +36,7 @@ On dahu, all work goes through the queue (OAR jobs; they require a project: `--p
 
     /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif
 
-Once the download step works (see the known problem below), the downloads and the merges run in a single OAR job:
+The downloads and the merges run in a single OAR job (the downloads are routed through cargo; see below):
 
 ```bash
 oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
@@ -44,16 +44,18 @@ oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
      /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/input-data/chem/cesm"
 ```
 
-### Known problem on dahu: downloads are blocked on the compute nodes
+### Downloads on dahu go through cargo
 
-The download step does not currently work on dahu, for a network reason. The NCAR files are served through the OSDF/Pelican federation in two steps: the director (`osdf-director.osg-htc.org`, standard HTTPS) answers every request with a redirect (HTTP 307) to a data cache, and **all the caches listen on a non-standard HTTPS port**. The dahu compute nodes' network silently drops outgoing connections to a non-standard HTTPS port: the director answers from the compute nodes, but connections to the caches time out (measured on 2026-11-16; the same caches answer normally from other networks). Downloads therefore cannot run in OAR jobs on dahu until one of these is available:
+The NCAR data caches all use a non-standard HTTPS port, which the dahu compute nodes' network blocks (measured on 2026-11-16: the OSDF director answers from the compute nodes, but connections to the caches time out). The download script therefore runs wget on **cargo** (the GRICAD data transfer host) through SSH when it finds itself on a dahu node. cargo has open network access and mounts the same `/bettik` storage, so the files are written directly to the output directory. The rest of the script (merging through the runtime container) runs in the OAR job as usual.
 
-- GRICAD opens outgoing connections to a non-standard HTTPS port on the compute network (a request to GRICAD support), or
-- an alternative endpoint on a standard port is found for the d313008 collection.
+One-time setup per user, for the SSH step to work:
+
+- key-based SSH from the dahu nodes to cargo (the home directory is shared, so a key in `~/.ssh` works), and
+- cargo's host key in `~/.ssh/known_hosts` (eg. run once from a dahu node: `ssh-keyscan cargo >> ~/.ssh/known_hosts`).
 
 Two further dahu notes:
 
-- The container has no `wget`; the download script runs on the host, not in the container.
+- The container has no `wget`; the download script runs on the host (on dahu: on cargo), not in the container.
 - `wget` is forced to IPv4 in the download script: the OSDF director
   resolves to an IPv6 address first, and IPv6 is not routed on dahu
   (wget would otherwise time out on every retry).
