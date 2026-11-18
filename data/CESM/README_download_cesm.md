@@ -46,6 +46,8 @@ oarsub --project pr-regionalchem -l /core=1,walltime=24:00:00 \
      /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/input-data/chem/cesm"
 ```
 
+A production run of this example needed about 16 h (2022-01 was already on disk and was skipped): the NCAR caches answer at very different speeds depending on the hour — about 6 minutes per day in the evening, up to about 25 minutes per day overnight. The 24 h walltime of the example covers a quarter-year with margin; scale it for longer ranges.
+
 ### Downloads on dahu go through cargo
 
 The NCAR data caches all use a non-standard HTTPS port, which the dahu compute nodes' network blocks (measured on 2026-11-16: the OSDF director answers from the compute nodes, but connections to the caches time out). The download script therefore runs wget on **cargo** (the GRICAD data transfer host) through SSH when it finds itself on a dahu node. cargo has open network access and mounts the same `/bettik` storage, so the files are written directly to the output directory. The rest of the script (merging through the runtime container) runs in the OAR job as usual.
