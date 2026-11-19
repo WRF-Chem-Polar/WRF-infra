@@ -34,6 +34,8 @@ Dates are **inclusive**. Date ranges may cross months and years, including leap 
 
 ## Running on dahu (GRICAD)
 
+A step-by-step walkthrough of this (one-time setup, submitting, monitoring, checking the result, rerunning) is in [`README_dahu_runbook.md`](README_dahu_runbook.md); the section below explains the background.
+
 On dahu, all work goes through the queue (OAR jobs; they require a project: `--project pr-regionalchem`). The merge step works in an OAR job: the NCO tools (`ncrcat`) are not installed on the cluster itself, but they are provided by the WRF-Chem-Polar runtime container, and the merger detects this and re-runs itself inside the container automatically. The runtime container is at
 
     /bettik/PROJECTS/pr-regionalchem/COMMON/WRF-Chem-Polar/containers/runtime.sif

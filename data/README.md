@@ -69,4 +69,6 @@ sbatch CESM/download_cesm.sh 2022-01-01 2022-03-31 /scratch/$USER/cesm
 
 The scripts were written for and have only been tested on dahu (GRICAD); the dahu-specific behaviour (downloads through cargo, merge through the runtime container) is built in. The downloader retries failed days by itself, and if a run is cut short, rerunning the same command resumes where it stopped.
 
-See `CESM/README_download_cesm.md` for details.
+See `CESM/README_download_cesm.md` for details, and
+`CESM/README_dahu_runbook.md` for a step-by-step manual runbook for
+running the workflow on dahu through OAR jobs.
