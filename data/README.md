@@ -54,3 +54,21 @@ For more documentation and a list of all available options:
 ```sh
 python get-chlorophyll-data-from-copernicus-marine.py --help
 ```
+
+## CESM data
+
+Prerequisites:
+
+ - Install `wget` and the NCO tool `ncrcat` (eg. from conda-forge). No account is needed. On dahu, `ncrcat` is provided by the WRF-Chem-Polar runtime container and is picked up automatically by the scripts.
+
+The `CESM/` subdirectory contains a script that downloads daily CESM files from the NCAR OSDF server and merges them into monthly NetCDF files. For example, for January to March 2022:
+
+```sh
+sbatch CESM/download_cesm.sh 2022-01-01 2022-03-31 /scratch/$USER/cesm
+```
+
+The scripts were written for and have only been tested on dahu (GRICAD); the dahu-specific behaviour (downloads through cargo, merge through the runtime container) is built in. The downloader retries failed days by itself, and if a run is cut short, rerunning the same command resumes where it stopped.
+
+See `CESM/README_download_cesm.md` for details, and
+`CESM/README_dahu_runbook.md` for a step-by-step manual runbook for
+running the workflow on dahu through OAR jobs.
