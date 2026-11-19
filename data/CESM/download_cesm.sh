@@ -37,12 +37,12 @@ base_url="https://osdf-director.osg-htc.org/ncar/gdex/d313008/hist"
 prefix="FCnudged_f09.mam.mar27.2000_2021.001.cam.h2"
 merge_script="$(dirname "$(readlink -f "$0")")/merge_cesm_monthly.sh"
 
-# Where to run wget. The NCAR data caches all use a non-standard HTTPS port, which the
-# dahu compute nodes' network blocks. cargo (the GRICAD data transfer
-# host) has open network access and mounts the same /bettik storage,
-# so on dahu the downloads run on cargo through SSH and the files are
-# written directly to the shared storage. Everywhere else, wget runs
-# locally.
+# Where to run wget. The NCAR data caches all use a non-standard
+# HTTPS port, which the dahu compute nodes' network blocks. cargo
+# (the GRICAD data transfer host) has open network access and mounts
+# the same /bettik storage, so on dahu the downloads run on cargo
+# through SSH and the files are written directly to the shared
+# storage. Everywhere else, wget runs locally.
 download_host=""
 if [[ "$(hostname)" == dahu* ]]; then
     download_host="cargo"
