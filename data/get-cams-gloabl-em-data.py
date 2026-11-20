@@ -83,7 +83,7 @@ overwrite = args.overwrite == "true"
 # Prepare the API connection and the data request
 
 dataset = "cams-global-emission-inventories"
-client = cdsapi.Client()
+client = cdsapi.Client(url="https://ads.atmosphere.copernicus.eu/api")
 request = {
     "year": years,
     "variable": species,
@@ -93,4 +93,4 @@ request = {
 
 # Download the data
 
-client.retrieve(dataset, request).download()
+client.retrieve(dataset, request).download("cams.zip")
