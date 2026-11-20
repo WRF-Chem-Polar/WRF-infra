@@ -152,7 +152,7 @@ variables_single_levels = (
 
 # Prepare API connection and request
 
-client = cdsapi.Client()
+client = cdsapi.Client(url="https://cds.climate.copernicus.eu/api")
 request = {
     "product_type": ["reanalysis"],
     "data_format": "grib",
