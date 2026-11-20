@@ -25,11 +25,25 @@ The cdsapi package can be installed via pip or conda-forge.
 """
 
 import argparse
+import configparser
 import os
 import re
 from zipfile import ZipFile
 
 import cdsapi
+from wrfinfra import generic
+
+# Prepare default values
+
+host = generic.identify_host_platform()
+config = configparser.ConfigParser()
+config.read(os.path.join(generic.path_of_repo(), "env", f"{host}.config"))
+
+default_workdir = os.path.join(
+    config["data"]["shared-input-dir"],
+    "emissions",
+    "anthro",
+)
 
 # Command-line arguments
 
@@ -63,7 +77,7 @@ parser.add_argument(
 parser.add_argument(
     "--workdir",
     help="Directory where to download the data. It must already exist.",
-    default=".",
+    default=default_workdir,
 )
 parser.add_argument(
     "--overwrite",
@@ -87,7 +101,7 @@ overwrite = args.overwrite == "true"
 zip_file = "cams.zip"
 re_sector = "[A-Z]+"
 re_version = "v[0-9]+\\.[0-9]+(|rev[0-9]+)"
-re_species = "[a-z]+(_[a-z]+)*"
+re_species = "[a-z]+((-|_)[a-z]+)*"
 re_year = "[0-9][0-9][0-9][0-9]"
 re_nc_file = re.compile(
     f"^CAMS-GLOB-{re_sector}_{re_version}_{re_species}_{re_year}\\.nc$"
@@ -113,6 +127,7 @@ except FileNotFoundError:
 
 # Download the data, unzip the file, and move files around
 
+os.chdir(args.workdir)
 client.retrieve(dataset, request).download("cams.zip")
 
 with ZipFile(zip_file) as z:
@@ -128,6 +143,25 @@ with ZipFile(zip_file) as z:
         species = "_".join(split[2:-1])
         year = int(split[-1][:-3])
 
-        print(sector, version, species, year)
+        # Create target directory
+        os.chdir(args.workdir)
+        for subdir in (f"cams-glob-{sector.lower()}", version, str(year)):
+            if os.path.lexists(subdir):
+                if not os.path.isdir(subdir):
+                    msg = f'Target dir. "{subdir}" exists but is not a dir.'
+                    raise RuntimeError(msg)
+            else:
+                os.mkdir(subdir)
 
-        # TODO Move the file around
+        # Remove redundant information from the file's name
+        target_file = f"{species}.nc"
+
+        # Extract and rename file
+        print(f"Extracting {obj.filename} into {target_file}")
+        for filename in [obj.filename, target_file]:
+            try:
+                os.remove(filename)
+            except FileNotFoundError:
+                pass
+        z.extract(obj, path=".")
+        os.rename(obj.filename, target_file)
