@@ -26,6 +26,8 @@ The cdsapi package can be installed via pip or conda-forge.
 
 import argparse
 import os
+import re
+from zipfile import ZipFile
 
 import cdsapi
 
@@ -80,6 +82,17 @@ versions = [version.strip() for version in args.versions.split(",")]
 dir_work = os.path.abspath(os.path.expanduser(args.workdir))
 overwrite = args.overwrite == "true"
 
+# Hard-coded parameters
+
+zip_file = "cams.zip"
+re_sector = "[A-Z]+"
+re_version = "v[0-9]+\\.[0-9]+(|rev[0-9]+)"
+re_species = "[a-z]+(_[a-z]+)*"
+re_year = "[0-9][0-9][0-9][0-9]"
+re_nc_file = re.compile(
+    f"^CAMS-GLOB-{re_sector}_{re_version}_{re_species}_{re_year}\\.nc$"
+)
+
 # Prepare the API connection and the data request
 
 dataset = "cams-global-emission-inventories"
@@ -91,6 +104,30 @@ request = {
     "version": versions,
 }
 
-# Download the data
+# Remove target zip file, if any
+
+try:
+    os.remove(zip_file)
+except FileNotFoundError:
+    pass
+
+# Download the data, unzip the file, and move files around
 
 client.retrieve(dataset, request).download("cams.zip")
+
+with ZipFile(zip_file) as z:
+    for obj in [obj for obj in z.infolist() if not obj.is_dir()]:
+        # Quality controls on the file name
+        if re_nc_file.fullmatch(obj.filename) is None:
+            msg = f'Unexpected file in zip archive: "{obj.filename}".'
+            raise ValueError(msg)
+
+        split = obj.filename.split("_")
+        _, _, sector = split[0].split("-")
+        version = split[1]
+        species = "_".join(split[2:-1])
+        year = int(split[-1][:-3])
+
+        print(sector, version, species, year)
+
+        # TODO Move the file around
