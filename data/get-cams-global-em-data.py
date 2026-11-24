@@ -128,6 +128,7 @@ except FileNotFoundError:
 # Download the data, unzip the file, and move files around
 
 os.chdir(args.workdir)
+workdir = os.getcwd()
 client.retrieve(dataset, request).download("cams.zip")
 
 with ZipFile(zip_file) as z:
@@ -144,7 +145,7 @@ with ZipFile(zip_file) as z:
         year = int(split[-1][:-3])
 
         # Create target directory
-        os.chdir(args.workdir)
+        os.chdir(workdir)
         for subdir in (f"cams-glob-{sector.lower()}", version, str(year)):
             if os.path.lexists(subdir):
                 if not os.path.isdir(subdir):
@@ -152,6 +153,7 @@ with ZipFile(zip_file) as z:
                     raise RuntimeError(msg)
             else:
                 os.mkdir(subdir)
+            os.chdir(subdir)
 
         # Remove redundant information from the file's name
         target_file = f"{species}.nc"
@@ -165,3 +167,7 @@ with ZipFile(zip_file) as z:
                 pass
         z.extract(obj, path=".")
         os.rename(obj.filename, target_file)
+
+# Remove the zip file
+os.chdir(workdir)
+os.remove(zip_file)
