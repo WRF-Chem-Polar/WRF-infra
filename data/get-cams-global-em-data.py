@@ -153,6 +153,7 @@ with ZipFile(zip_file) as z:
                     raise RuntimeError(msg)
             else:
                 os.mkdir(subdir)
+            os.chmod(subdir, 0o775)
             os.chdir(subdir)
 
         # Remove redundant information from the file's name
@@ -167,6 +168,7 @@ with ZipFile(zip_file) as z:
                 pass
         z.extract(obj, path=".")
         os.rename(obj.filename, target_file)
+        os.chmod(target_file, 0o444)
 
 # Remove the zip file
 os.chdir(workdir)
