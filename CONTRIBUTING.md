@@ -101,6 +101,10 @@ Each WRF-infra script should be self-documenting as previously detailed. In addi
 
 There is currently no policy in favor or against the use of artificial intelligence to contribute to WRF-infra. However, each contributing author is held accountable for the quality of the code they send to the review process, as well as for following the rules described in this document. Furthermore, authors are expected to fully understand each line of code they contribute. This is required to be able to engage in the technical discussions that are meant to occur between the author and the reviewer during the review process.
 
+## Use of AI to communicate
+
+There is a strict policy regarding the use of AI to interact with the WRF-infra community: it is not allowed. Let us keep it human-centric and friendly. Whenever you talk in written form with other WRF-infra contributors or users, write your own text without using AI. Write full sentences and avoid obscure jargon or abbreviations.
+
 ## Configure your text editor
 
 We recommend you to configure your text editor so that all trailing space is removed as soon as you save a file:
