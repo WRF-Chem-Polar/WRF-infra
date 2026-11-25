@@ -25,7 +25,7 @@ Every WRF-infra script must print a technical documentation when called with the
 
 In Python, use the `argparse` module from the standard library to implement this functionality. In Bash, use the same approach as in [this script](./testing/analyse-results.bash).
 
-All command-line arguments must have a long form starting with two dashes (eg `--output-file`). To increase human-readability of WRF-infra code, the long-form must be used when calling scripts from other scripts. Optionnally, a single-dash short form (eg. `-o`) may also be implemented, for convenience when calling scripts directly from the command-line.
+All command-line arguments must have a long form starting with two dashes (eg `--output-file`). To increase human-readability of WRF-infra code, the long-form must be used when calling scripts from other scripts. Optionally, a single-dash short form (eg. `-o`) may also be implemented, for convenience when calling scripts directly from the command-line.
 
 ## Creating issues
 
@@ -33,9 +33,9 @@ Anyone is welcome to create an issue to:
 
  - **report a bug.** In this case, please provide as much relevant information as possible to help us fix the bug.
 
- - **suggest an improvement**. In this case, please explain carefuly what is not working for you with WRF-infra as is, and what will become possible with your improvement that was not possible before.
+ - **suggest an improvement**. In this case, please explain carefully what is not working for you with WRF-infra as is, and what will become possible with your improvement that was not possible before.
 
- - **ask for a new feature**. In this case, please explain carefuly why you think adding this feature is relevant for WRF-infra, and suggest one or more usecase(s).
+ - **ask for a new feature**. In this case, please explain carefully why you think adding this feature is relevant for WRF-infra, and suggest one or more usecase(s).
 
 As far as reasonably possible, each issue should describe a single non-divisible task or improvement. If your suggested improvement or feature can be divided into multiple smaller improvements/features/tasks, then create separate issues for each of these. Do cross-reference issues as needed in your descriptions.
 
@@ -75,7 +75,7 @@ The guidelines for reviewing a pull request are:
 
    * the code adds functionality or fix parts of WRF-infra that are beyond the scope of the associated issue. These should be treated in separate issues and pull requests.
 
- - Reviewers may have ideas for new features or interesting additions related to the pull request but that go beyong the scope of the original issue. In this case, the reviewer should create a separate issue instead of requesting the author to implement them.
+ - Reviewers may have ideas for new features or interesting additions related to the pull request but that go beyond the scope of the original issue. In this case, the reviewer should create a separate issue instead of requesting the author to implement them.
 
 ## Coding style
 
@@ -99,7 +99,7 @@ Each WRF-infra script should be self-documenting as previously detailed. In addi
 
 ## Use of AI to create WRF-infra content
 
-There is currently no policy in favor or against the use of artificial intelligence to contribute to WRF-infra. However, each contributing author is held accountable for the quality of the code they send to the review process, as well as for following the rules described in this document. Authors are expected to fully understand each line of code they contribute. This is required to be able to engage in the technical discussion that is meant to occur between the author and the reviewer during the review process.
+There is currently no policy in favour or against the use of artificial intelligence to contribute to WRF-infra. However, each contributing author is held accountable for the quality of the code they send to the review process, as well as for following the rules described in this document. Authors are expected to fully understand each line of code they contribute. This is required to be able to engage in the technical discussion that is meant to occur between the author and the reviewer during the review process.
 
 > [!IMPORTANT]
 > AI has a tendency to clutter what it produces with needless information. We ask you to prune whatever is irrelevant or unnecessary out of your pull requests before submitting them for review by peers.
