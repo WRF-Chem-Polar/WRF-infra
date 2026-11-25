@@ -16,6 +16,7 @@
 # be used.
 
 dahu[0-9]*             dahu
+dahu-fat[0-9]+         dahu
 jean-zay[1-3]          jeanzay
 r[1-2]i[0-9]n[0-9]+    jeanzay
 jed[1-2]               jed
